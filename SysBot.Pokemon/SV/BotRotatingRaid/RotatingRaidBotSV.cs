@@ -12,7 +12,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using RaidCrawler.Core.Structures;
 using System.Text.RegularExpressions;
-using pkNX.Structures.FlatBuffers.Gen9;
 using Newtonsoft.Json;
 using System.Net.Http;
 using System.Drawing;
@@ -223,13 +222,10 @@ namespace SysBot.Pokemon
                     TodaySeed = BitConverter.ToUInt64(await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP, 8, token).ConfigureAwait(false), 0);
                     Log($"Today Seed: {TodaySeed:X8}");
                 }
-
                 if (!Settings.RaidEmbedParameters[RotationCount].IsSet)
                 {
                     Log($"Preparing parameter for {Settings.RaidEmbedParameters[RotationCount].Species}");
-                    bool verified = await ReadRaids(token).ConfigureAwait(false);
-                    if (!verified)
-                        return;
+                    await ReadRaids(token).ConfigureAwait(false);
                 }
                 else
                     Log($"Parameter for {Settings.RaidEmbedParameters[RotationCount].Species} has been set previously, skipping raid reads.");
@@ -336,7 +332,33 @@ namespace SysBot.Pokemon
             else
                 Log("Failed to fetch the global ban list. Ensure you have the correct URL.");
         }
+        private async Task LocateSeedIndex(CancellationToken token)
+        {
+            var data = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP, 2304, token).ConfigureAwait(false);
+            for (int i = 0; i < 69; i++)
+            {
+                var seed = BitConverter.ToUInt32(data.Slice(0x20 + (i * 0x20), 4));
+                if (seed == 0)
+                {
+                    SeedIndexToReplace = i;
+                    Log($"Index located at {i}");
+                    return;
+                }
+            }
 
+            data = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerK + 0x10, 0xC80, token).ConfigureAwait(false);
+            for (int i = 69; i < 95; i++)
+            {
+                var seed = BitConverter.ToUInt32(data.Slice((i - 69) * 0x20, 4));
+                if (seed == 0)
+                {
+                    SeedIndexToReplace = i;
+                    Log($"Index located at {i}");
+                    return;
+                }
+            }
+            Log($"Index not located.");
+        }
         private async Task CompleteRaid(List<(ulong, TradeMyStatus)> trainers, CancellationToken token)
         {
             bool ready = false;
@@ -424,7 +446,7 @@ namespace SysBot.Pokemon
                 if (!await IsConnectedToLobby(token).ConfigureAwait(false) && !await IsOnOverworld(OverworldOffset, token).ConfigureAwait(false))
                 {
                     Settings.AddCompletedRaids();
-                    Log("We defeated the raid boss!");
+                    Log("We defeated {Settings.RaidEmbedParameters[RotationCount].Species}!");
                     WinCount++;
                     if (trainers.Count > 0 && Settings.CatchLimit != 0)
                         ApplyPenalty(trainers);
@@ -455,7 +477,8 @@ namespace SysBot.Pokemon
         Log("Returning to overworld...");
             while (!await IsOnOverworld(OverworldOffset, token).ConfigureAwait(false))
                 await Click(A, 1_000, token).ConfigureAwait(false);
-
+            await LocateSeedIndex(token).ConfigureAwait(false);
+            await Task.Delay(0_500, token).ConfigureAwait(false);
             await CloseGame(Hub.Config, token).ConfigureAwait(false);
             if (ready)
                 await StartGameRaid(Hub.Config, token).ConfigureAwait(false);
@@ -945,39 +968,6 @@ namespace SysBot.Pokemon
                 userMention = $"<@{userIdWhoRequested}>, your requested raid for {Settings.RaidEmbedParameters[RotationCount].Species} is about to begin!";
             }
 
-            var embed = new EmbedBuilder()
-            {
-                Title = disband ? $"**Raid canceled: [{TeraRaidCode}]**" : upnext && Settings.TotalRaidsToHost != 0 ? $"Preparing Raid {RaidCount}/{Settings.TotalRaidsToHost}" : upnext && Settings.TotalRaidsToHost == 0 ? $"Preparing Raid" : title,
-                Color = disband ? Discord.Color.Red : hatTrick ? Discord.Color.Purple : Discord.Color.Green,
-                Description = disband ? message : upnext ? Settings.RaidEmbedParameters[RotationCount].Title : raidstart ? "" : description,
-                ImageUrl = bytes.Length > 0 ? "attachment://zap.jpg" : default,
-            }.WithFooter(new EmbedFooterBuilder()
-            {
-                Text = $"Host: {HostSAV.OT} | Uptime: {StartTime - DateTime.Now:d\\.hh\\:mm\\:ss}\n" +
-                       $"Raids: {RaidCount} | Wins: {WinCount} | Losses: {LossCount}\n" + disclaimer
-            });
-
-            if (!disband && names is not null && !upnext)
-            {
-                var players = string.Empty;
-                if (names.Count == 0)
-                    players = "Though our party did not make it :(";
-                else
-                {
-                    int i = 2;
-                    names.ForEach(x =>
-                    {
-                        players += $"Player {i} - **{x}**\n";
-                        i++;
-                    });
-                }
-
-                embed.AddField($"**Raid #{RaidCount} is starting!**", players);
-            }
-            else
-            {
-                embed.AddField(Settings.IncludeCountdown ? $"**Raid Countdown: <t:{DateTimeOffset.Now.ToUnixTimeSeconds() + Settings.TimeToWait}:R>**" : $"**Waiting in lobby!**", $"Raid Code: {code}");
-            }
             var turl = string.Empty;
             var form = string.Empty;
 
@@ -1001,19 +991,54 @@ namespace SysBot.Pokemon
 
             if (Settings.RaidEmbedParameters[RotationCount].Species is 0)
                 turl = "https://i.imgur.com/uHSaGGJ.png";
+            Log($"Using image URL for embed: {turl}");
 
             // Fetch the dominant color from the image only AFTER turl is assigned
             (int R, int G, int B) dominantColor = GetDominantColor(turl);
+            Log($"Dominant Color for embed: R-{dominantColor.R}, G-{dominantColor.G}, B-{dominantColor.B}");
 
             // Use the dominant color, unless it's a disband or hatTrick situation
             var embedColor = disband ? Discord.Color.Red : hatTrick ? Discord.Color.Purple : new Discord.Color(dominantColor.R, dominantColor.G, dominantColor.B);
+            var embed = new EmbedBuilder()
+            {
+                Title = disband ? $"**Raid canceled: [{TeraRaidCode}]**" : upnext && Settings.TotalRaidsToHost != 0 ? $"Preparing Raid {RaidCount}/{Settings.TotalRaidsToHost}" : upnext && Settings.TotalRaidsToHost == 0 ? $"Preparing Raid" : title,
+                Color = embedColor,
+                Description = disband ? message : upnext ? Settings.RaidEmbedParameters[RotationCount].Title : raidstart ? "" : description,
+                ImageUrl = bytes.Length > 0 ? "attachment://zap.jpg" : default,
+            }.WithFooter(new EmbedFooterBuilder()
+            {
+                Text = $"Host: {HostSAV.OT} | Uptime: {StartTime - DateTime.Now:d\\.hh\\:mm\\:ss}\n" +
+                       $"Raids: {RaidCount} | Wins: {WinCount} | Losses: {LossCount}\n" + disclaimer
+            });
 
+            if (!disband && names is null && !upnext)
+            {
+                embed.AddField(Settings.IncludeCountdown ? $"**Raid Countdown: <t:{DateTimeOffset.Now.ToUnixTimeSeconds() + Settings.TimeToWait}:R>**" : $"**Waiting in lobby!**", $"Raid Code: {code}");
+            }
+
+            if (!disband && names is not null && !upnext)
+            {
+                var players = string.Empty;
+                if (names.Count == 0)
+                    players = "Though our party did not make it :(";
+                else
+                {
+                    int i = 2;
+                    names.ForEach(x =>
+                    {
+                        players += $"Player {i} - **{x}**\n";
+                        i++;
+                    });
+                }
+
+                embed.AddField($"**Raid #{RaidCount} is starting!**", players);
+            }
             var fileName = $"raidecho{RotationCount}.jpg";
             embed.ThumbnailUrl = turl;
             embed.WithImageUrl($"attachment://{fileName}");
             EchoUtil.RaidEmbed(bytes, fileName, embed);
         }
-        private (int R, int G, int B) GetDominantColor(string imageUrl)
+        public (int R, int G, int B) GetDominantColor(string imageUrl)
         {
             using var httpClient = new HttpClient();
             using var response = httpClient.GetAsync(imageUrl).Result;
@@ -1027,6 +1052,14 @@ namespace SysBot.Pokemon
                 for (int x = 0; x < image.Width; x++)
                 {
                     var pixelColor = image.GetPixel(x, y);
+
+                    // If the pixel is mostly transparent or very light, skip it
+                    if (pixelColor.A < 128 || pixelColor.GetBrightness() > 0.9) continue;
+
+                    var brightnessFactor = (int)(pixelColor.GetBrightness() * 100);
+                    var saturationFactor = (int)(pixelColor.GetSaturation() * 100);
+                    var combinedFactor = brightnessFactor + saturationFactor; // Combine both brightness and saturation for weight
+
                     var quantizedColor = System.Drawing.Color.FromArgb(
                         pixelColor.R / 10 * 10,
                         pixelColor.G / 10 * 10,
@@ -1035,19 +1068,22 @@ namespace SysBot.Pokemon
 
                     if (colorCount.ContainsKey(quantizedColor))
                     {
-                        colorCount[quantizedColor]++;
+                        colorCount[quantizedColor] += combinedFactor;
                     }
                     else
                     {
-                        colorCount[quantizedColor] = 1;
+                        colorCount[quantizedColor] = combinedFactor;
                     }
                 }
             }
 
+            if (colorCount.Count == 0)
+                return (255, 255, 255);  // Return white if no suitable pixels found
+
             var dominantColor = colorCount.Aggregate((a, b) => a.Value > b.Value ? a : b).Key;
             return (dominantColor.R, dominantColor.G, dominantColor.B);
         }
-        
+
         // From PokeTradeBotSV, modified.
         private async Task<bool> ConnectToOnline(PokeTradeHubConfig config, CancellationToken token)
         {
@@ -1207,7 +1243,7 @@ namespace SysBot.Pokemon
 
         #region RaidCrawler
         // via RaidCrawler modified for this proj
-        private async Task<bool> ReadRaids(CancellationToken token)
+        private async Task ReadRaids(CancellationToken token)
         {
             Log("Starting raid reads..");
             if (RaidBlockPointerP == 0)
@@ -1233,9 +1269,9 @@ namespace SysBot.Pokemon
 
             await ReadEventRaids(BaseBlockKeyPointer, container, token).ConfigureAwait(false);
 
-            var data = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP + RaidBlock.HEADER_SIZE, (int)(RaidBlock.SIZE_BASE - RaidBlock.HEADER_SIZE), token).ConfigureAwait(false);
+            var data = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP + RaidBlock.HEADER_SIZE, (int)RaidBlock.SIZE_BASE, token).ConfigureAwait(false);
 
-            (int delivery, int enc) = container.ReadAllRaids(data, StoryProgress, EventProgress, 0, RaidSerializationFormat.BaseROM);
+            (int delivery, int enc) = container.ReadAllRaids(data, StoryProgress, EventProgress, 0, TeraRaidMapParent.Paldea);
             if (enc > 0)
                 Log($"Failed to find encounters for {enc} raid(s).");
 
@@ -1245,10 +1281,13 @@ namespace SysBot.Pokemon
             var raids = container.Raids;
             var encounters = container.Encounters;
             var rewards = container.Rewards;
+            container.ClearRaids();
+            container.ClearEncounters();
+            container.ClearRewards();
 
-            data = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerK, 0xC80, token).ConfigureAwait(false);
+            data = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerK, (int)RaidBlock.SIZE_KITAKAMI, token).ConfigureAwait(false);
 
-            (delivery, enc) = container.ReadAllRaids(data, StoryProgress, EventProgress, 0, RaidSerializationFormat.KitakamiROM);
+            (delivery, enc) = container.ReadAllRaids(data, StoryProgress, EventProgress, 0, TeraRaidMapParent.Kitakami);
 
             if (enc > 0)
                 Log($"Failed to find encounters for {enc} raid(s).");
@@ -1268,13 +1307,13 @@ namespace SysBot.Pokemon
             for (int i = 0; i < container.Raids.Count; i++)
             {
                 if (done is true)
-                    continue;
+                    break;
 
                 var (pk, seed) = IsSeedReturned(container.Encounters[i], container.Raids[i]);
                 for (int a = 0; a < Settings.RaidEmbedParameters.Count; a++)
                 {
                     if (done is true)
-                        continue;
+                        break;
 
                     var set = uint.Parse(Settings.RaidEmbedParameters[a].Seed, NumberStyles.AllowHexSpecifier);
                     if (seed == set)
@@ -1284,7 +1323,7 @@ namespace SysBot.Pokemon
                             res = string.Empty;
                         else
                             res = "**Special Rewards:**\n" + res;
-                        Log($"Seed {seed:X8} found for {(Species)pk.Species}");
+                        Log($"Seed {seed:X8} found for {(Species)container.Encounters[i].Species}");
                         Settings.RaidEmbedParameters[a].Seed = $"{seed:X8}";
                         var stars = container.Raids[i].IsEvent ? container.Encounters[i].Stars : RaidExtensions.GetStarCount(container.Raids[i], container.Raids[i].Difficulty, StoryProgress, container.Raids[i].IsBlack);
                         string starcount = string.Empty;
@@ -1300,8 +1339,8 @@ namespace SysBot.Pokemon
                         }
                         Settings.RaidEmbedParameters[a].IsShiny = container.Raids[i].IsShiny;
                         Settings.RaidEmbedParameters[a].CrystalType = container.Raids[i].IsBlack ? TeraCrystalType.Black : container.Raids[i].IsEvent && stars == 7 ? TeraCrystalType.Might : container.Raids[i].IsEvent ? TeraCrystalType.Distribution : TeraCrystalType.Base;
-                        Settings.RaidEmbedParameters[a].Species = (Species)pk.Species;
-                        Settings.RaidEmbedParameters[a].SpeciesForm = pk.Form;
+                        Settings.RaidEmbedParameters[a].Species = (Species)container.Encounters[i].Species;
+                        Settings.RaidEmbedParameters[a].SpeciesForm = container.Encounters[i].Form;
                         var pkinfo = Hub.Config.StopConditions.GetRaidPrintName(pk);
                         pkinfo += $"\nTera Type: {(MoveType)container.Raids[i].TeraType}";
                         var strings = GameInfo.GetStrings(1);
@@ -1367,7 +1406,7 @@ namespace SysBot.Pokemon
                         else if (!Settings.PresetFilters.UsePresetFile)
                         {
                             Settings.RaidEmbedParameters[a].Description = new[] { "\n**Raid Info:**", pkinfo, "\n**Moveset:**", movestr, extramoves, BaseDescription, res };
-                            Settings.RaidEmbedParameters[a].Title = $"{(Species)pk.Species} {starcount} - {(MoveType)container.Raids[i].TeraType}";
+                            Settings.RaidEmbedParameters[a].Title = $"{(Species)container.Encounters[i].Species} {starcount} - {(MoveType)container.Raids[i].TeraType}";
                         }
 
                         Settings.RaidEmbedParameters[a].IsSet = true;
@@ -1387,15 +1426,10 @@ namespace SysBot.Pokemon
                                 }
                             }
                         }
-                        SeedIndexToReplace = i;
-                        Log($"Storing index at location {i}");
                         done = true;
-                        return true;
                     }
                 }
             }
-            Log("Seed not found, make sure your input is active in game.");
-            return false;
         }
         #endregion
     }
