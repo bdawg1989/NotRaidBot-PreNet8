@@ -672,6 +672,12 @@ namespace SysBot.Pokemon
         }
         private async Task<bool> GetLobbyReady(CancellationToken token)
         {
+            if (Settings.RaidEmbedParameters[RotationCount].AddedByRACommand)
+            {
+                var user = Settings.RaidEmbedParameters[RotationCount].User;
+                if (user != null)
+                    await user.SendMessageAsync("Your raid is about to start!").ConfigureAwait(false);
+            }
             var x = 0;
             Log("Connecting to lobby...");
             while (!await IsConnectedToLobby(token).ConfigureAwait(false))

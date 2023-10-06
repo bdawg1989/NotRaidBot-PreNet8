@@ -626,10 +626,10 @@ namespace SysBot.Pokemon.Discord
                 var move1 = lines[3].Trim().TrimStart('-').Trim();
 
                 // convert PartyPK
-                partyPKFormat = $"{pokemonName}\n" +
-                                $"{pokemonLevel}\n" +
-                                $"{ability}\n" +
-                                $"- {move1}\n";
+                partyPKFormat = $"{pokemonName}\r\n" +
+                                $"{pokemonLevel}\r\n" +
+                                $"{ability}\r\n" +
+                                $"- {move1}\r\n";
             }
             else
             {
