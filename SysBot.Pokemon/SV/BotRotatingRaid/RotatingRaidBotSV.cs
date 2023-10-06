@@ -222,6 +222,7 @@ namespace SysBot.Pokemon
                     TodaySeed = BitConverter.ToUInt64(await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP, 8, token).ConfigureAwait(false), 0);
                     Log($"Today Seed: {TodaySeed:X8}");
                 }
+
                 if (!Settings.RaidEmbedParameters[RotationCount].IsSet)
                 {
                     Log($"Preparing parameter for {Settings.RaidEmbedParameters[RotationCount].Species}");
@@ -332,6 +333,7 @@ namespace SysBot.Pokemon
             else
                 Log("Failed to fetch the global ban list. Ensure you have the correct URL.");
         }
+
         private async Task LocateSeedIndex(CancellationToken token)
         {
             var data = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP, 2304, token).ConfigureAwait(false);
@@ -446,16 +448,14 @@ namespace SysBot.Pokemon
                 if (!await IsConnectedToLobby(token).ConfigureAwait(false) && !await IsOnOverworld(OverworldOffset, token).ConfigureAwait(false))
                 {
                     Settings.AddCompletedRaids();
-                    Log("We defeated {Settings.RaidEmbedParameters[RotationCount].Species}!");
+                    Log($"We defeated {Settings.RaidEmbedParameters[RotationCount].Species}!");
                     WinCount++;
                     if (trainers.Count > 0 && Settings.CatchLimit != 0)
                         ApplyPenalty(trainers);
 
                     if (Settings.RaidEmbedParameters.Count > 1)
-                    {
-                        Log($"Replacing seed at location {SeedIndexToReplace}.");
                         await SanitizeRotationCount(token).ConfigureAwait(false);
-                    }
+
                     await EnqueueEmbed(null, "", false, false, true, false, token).ConfigureAwait(false);
                     ready = true;
                 }
@@ -474,9 +474,10 @@ namespace SysBot.Pokemon
                 }
             }
 
-        Log("Returning to overworld...");
+            Log("Returning to overworld...");
             while (!await IsOnOverworld(OverworldOffset, token).ConfigureAwait(false))
                 await Click(A, 1_000, token).ConfigureAwait(false);
+
             await LocateSeedIndex(token).ConfigureAwait(false);
             await Task.Delay(0_500, token).ConfigureAwait(false);
             await CloseGame(Hub.Config, token).ConfigureAwait(false);
@@ -665,18 +666,12 @@ namespace SysBot.Pokemon
 
             await Click(A, 3_000, token).ConfigureAwait(false);
             await Click(A, 3_000, token).ConfigureAwait(false);
+
             await Click(A, 8_000, token).ConfigureAwait(false);
             return true;
         }
-
         private async Task<bool> GetLobbyReady(CancellationToken token)
         {
-            if (Settings.RaidEmbedParameters[RotationCount].AddedByRACommand)
-            {
-                var user = Settings.RaidEmbedParameters[RotationCount].User;
-                if (user != null)
-                    await user.SendMessageAsync("Your raid is about to start!").ConfigureAwait(false);
-            }
             var x = 0;
             Log("Connecting to lobby...");
             while (!await IsConnectedToLobby(token).ConfigureAwait(false))
@@ -933,7 +928,6 @@ namespace SysBot.Pokemon
             }
             Log("Caching offsets complete!");
         }
-
         private async Task EnqueueEmbed(List<string>? names, string message, bool hatTrick, bool disband, bool upnext, bool raidstart, CancellationToken token)
         {
             // Title can only be up to 256 characters.
@@ -959,7 +953,7 @@ namespace SysBot.Pokemon
             if (Settings.TakeScreenshot && !upnext)
                 bytes = await SwitchConnection.PixelPeek(token).ConfigureAwait(false) ?? Array.Empty<byte>();
 
-            string disclaimer = Settings.RaidEmbedParameters.Count > 1 ? "NotRaidBot v1.8.2 by Gengar\n" : "";
+            string disclaimer = Settings.RaidEmbedParameters.Count > 1 ? "NotRaidBot v1.8.3 by Gengar\n" : "";
 
             var userIdWhoRequested = Settings.RaidEmbedParameters[RotationCount].RequestedByUserID;
             var userMention = string.Empty;
