@@ -108,7 +108,7 @@ namespace SysBot.Pokemon
             public TeraCrystalType CrystalType { get; set; } = TeraCrystalType.Base;
             public string[] Description { get; set; } = Array.Empty<string>();
             public bool IsCoded { get; set; } = true;
-            public bool IsSet { get; set; } = true;
+            public bool IsSet { get; set; } = false;
             public bool IsShiny { get; set; } = true;
             public Species Species { get; set; } = Species.None;
             public int SpeciesForm { get; set; } = 0;
