@@ -127,7 +127,7 @@ namespace SysBot.Pokemon
             public override string ToString() => "Preset filters.";
 
             [Category(Hosting), Description("If true, the bot will attempt to auto-generate Raid Embeds based on the \"preset.txt\" file.")]
-            public bool UsePresetFile { get; set; } = false;
+            public bool UsePresetFile { get; set; } = true;
 
             [Category(Hosting), Description("If true, the bot will use the first line of preset as title.")]
             public bool TitleFromPreset { get; set; } = true;
