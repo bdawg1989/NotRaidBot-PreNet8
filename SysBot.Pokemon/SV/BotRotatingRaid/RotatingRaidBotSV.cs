@@ -15,6 +15,7 @@ using System.Text.RegularExpressions;
 using pkNX.Structures.FlatBuffers.Gen9;
 using Newtonsoft.Json;
 using System.Net.Http;
+using System.Drawing;
 using static SysBot.Base.SwitchButton;
 
 namespace SysBot.Pokemon
@@ -947,7 +948,7 @@ namespace SysBot.Pokemon
             var embed = new EmbedBuilder()
             {
                 Title = disband ? $"**Raid canceled: [{TeraRaidCode}]**" : upnext && Settings.TotalRaidsToHost != 0 ? $"Preparing Raid {RaidCount}/{Settings.TotalRaidsToHost}" : upnext && Settings.TotalRaidsToHost == 0 ? $"Preparing Raid" : title,
-                Color = disband ? Color.Red : hatTrick ? Color.Purple : Color.Green,
+                Color = disband ? Discord.Color.Red : hatTrick ? Discord.Color.Purple : Discord.Color.Green,
                 Description = disband ? message : upnext ? Settings.RaidEmbedParameters[RotationCount].Title : raidstart ? "" : description,
                 ImageUrl = bytes.Length > 0 ? "attachment://zap.jpg" : default,
             }.WithFooter(new EmbedFooterBuilder()
@@ -977,7 +978,6 @@ namespace SysBot.Pokemon
             {
                 embed.AddField(Settings.IncludeCountdown ? $"**Raid Countdown: <t:{DateTimeOffset.Now.ToUnixTimeSeconds() + Settings.TimeToWait}:R>**" : $"**Waiting in lobby!**", $"Raid Code: {code}");
             }
-
             var turl = string.Empty;
             var form = string.Empty;
 
@@ -1002,12 +1002,52 @@ namespace SysBot.Pokemon
             if (Settings.RaidEmbedParameters[RotationCount].Species is 0)
                 turl = "https://i.imgur.com/uHSaGGJ.png";
 
+            // Fetch the dominant color from the image only AFTER turl is assigned
+            (int R, int G, int B) dominantColor = GetDominantColor(turl);
+
+            // Use the dominant color, unless it's a disband or hatTrick situation
+            var embedColor = disband ? Discord.Color.Red : hatTrick ? Discord.Color.Purple : new Discord.Color(dominantColor.R, dominantColor.G, dominantColor.B);
+
             var fileName = $"raidecho{RotationCount}.jpg";
             embed.ThumbnailUrl = turl;
             embed.WithImageUrl($"attachment://{fileName}");
             EchoUtil.RaidEmbed(bytes, fileName, embed);
         }
+        private (int R, int G, int B) GetDominantColor(string imageUrl)
+        {
+            using var httpClient = new HttpClient();
+            using var response = httpClient.GetAsync(imageUrl).Result;
+            using var stream = response.Content.ReadAsStreamAsync().Result;
+            using var image = new Bitmap(stream);
 
+            var colorCount = new Dictionary<System.Drawing.Color, int>();
+
+            for (int y = 0; y < image.Height; y++)
+            {
+                for (int x = 0; x < image.Width; x++)
+                {
+                    var pixelColor = image.GetPixel(x, y);
+                    var quantizedColor = System.Drawing.Color.FromArgb(
+                        pixelColor.R / 10 * 10,
+                        pixelColor.G / 10 * 10,
+                        pixelColor.B / 10 * 10
+                    );
+
+                    if (colorCount.ContainsKey(quantizedColor))
+                    {
+                        colorCount[quantizedColor]++;
+                    }
+                    else
+                    {
+                        colorCount[quantizedColor] = 1;
+                    }
+                }
+            }
+
+            var dominantColor = colorCount.Aggregate((a, b) => a.Value > b.Value ? a : b).Key;
+            return (dominantColor.R, dominantColor.G, dominantColor.B);
+        }
+        
         // From PokeTradeBotSV, modified.
         private async Task<bool> ConnectToOnline(PokeTradeHubConfig config, CancellationToken token)
         {
