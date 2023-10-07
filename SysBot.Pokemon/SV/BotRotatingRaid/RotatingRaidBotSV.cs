@@ -959,7 +959,7 @@ namespace SysBot.Pokemon
             if (Settings.TakeScreenshot && !upnext)
                 bytes = await SwitchConnection.PixelPeek(token).ConfigureAwait(false) ?? Array.Empty<byte>();
 
-            string disclaimer = Settings.RaidEmbedParameters.Count > 1 ? "NotRaidBot v1.8.3 by Gengar\n" : "";
+            string disclaimer = Settings.RaidEmbedParameters.Count > 1 ? "NotRaidBot v1.8.4 by Gengar\n" : "";
 
             var userIdWhoRequested = Settings.RaidEmbedParameters[RotationCount].RequestedByUserID;
             var userMention = string.Empty;
@@ -1426,6 +1426,7 @@ namespace SysBot.Pokemon
                                 }
                             }
                         }
+                        SeedIndexToReplace = i;
                         done = true;
                     }
                 }
