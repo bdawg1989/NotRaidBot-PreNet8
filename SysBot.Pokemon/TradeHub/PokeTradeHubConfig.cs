@@ -21,6 +21,9 @@ namespace SysBot.Pokemon
         [TypeConverter(typeof(ExpandableObjectConverter))]
         public TimingSettings Timings { get; set; } = new();
 
+        [Category(BotEncounter), Description("Name of the Discord Bot the Program is Running. This will Title the window for easier recognition. Requires program restart.")]
+        public string BotName { get; set; } = string.Empty;
+
         // Trade Bots
         [Browsable(false)]
         [Category(BotTrade)]
