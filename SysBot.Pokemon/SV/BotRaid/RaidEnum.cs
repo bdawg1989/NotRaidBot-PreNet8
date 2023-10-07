@@ -18,6 +18,7 @@ namespace SysBot.Pokemon
     public enum LobbyMethodOptions
     {
         SkipRaid,
+        OpenLobby,
         ContinueRaid,
     }
 

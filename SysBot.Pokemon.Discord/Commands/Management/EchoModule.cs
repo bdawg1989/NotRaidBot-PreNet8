@@ -65,8 +65,8 @@ namespace SysBot.Pokemon.Discord
                 EchoUtil.Echo("Added echo notification to Discord channel(s) on Bot startup.");
         }
 
-        [Command("echoHere")]
-        [Summary("Makes the bot echo special messages to the channel.")]
+        [Command("aec")]
+        [Summary("Makes the bot post raid embeds to the channel.")]
         [RequireSudo]
         public async Task AddEchoAsync()
         {
@@ -82,7 +82,7 @@ namespace SysBot.Pokemon.Discord
 
             // Add to discord global loggers (saves on program close)
             SysCordSettings.Settings.EchoChannels.AddIfNew(new[] { GetReference(Context.Channel) });
-            await ReplyAsync("Added Echo output to this channel!").ConfigureAwait(false);
+            await ReplyAsync("Added Raid Embed output to this channel!").ConfigureAwait(false);
         }
 
         private static void AddEchoChannel(ISocketMessageChannel c, ulong cid)

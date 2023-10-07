@@ -25,7 +25,28 @@ namespace SysBot.Pokemon.WinForms
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+
+            // Event Handler for exiting app
+            Application.ApplicationExit += new EventHandler(OnApplicationExit);
+
             Application.Run(new Main());
+        }
+
+        // Delete cache folder on exit.
+        private static void OnApplicationExit(object sender, EventArgs e)
+        {
+            var folder = Path.Combine(Directory.GetCurrentDirectory(), "cache");
+            if (Directory.Exists(folder))
+            {
+                try
+                {
+                    Directory.Delete(folder, true);
+                }
+                catch (Exception ex)
+                {
+                    // Handle or log the error
+                }
+            }
         }
     }
 }

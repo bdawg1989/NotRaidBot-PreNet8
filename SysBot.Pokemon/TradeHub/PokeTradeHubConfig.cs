@@ -12,7 +12,7 @@ namespace SysBot.Pokemon
 
         [Browsable(false)]
         public override bool Shuffled => Distribution.Shuffled;
-
+        [Browsable(false)]
         [Category(Operation)]
         [TypeConverter(typeof(ExpandableObjectConverter))]
         public QueueSettings Queues { get; set; } = new();

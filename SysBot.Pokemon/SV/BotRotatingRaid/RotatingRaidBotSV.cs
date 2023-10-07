@@ -666,7 +666,12 @@ namespace SysBot.Pokemon
 
             await Click(A, 3_000, token).ConfigureAwait(false);
             await Click(A, 3_000, token).ConfigureAwait(false);
-
+            if (!Settings.RaidEmbedParameters[RotationCount].IsCoded || Settings.RaidEmbedParameters[RotationCount].IsCoded && EmptyRaid == Settings.LobbyOptions.EmptyRaidLimit && Settings.LobbyOptions.LobbyMethodOptions == LobbyMethodOptions.OpenLobby)
+            {
+                if (Settings.RaidEmbedParameters[RotationCount].IsCoded && EmptyRaid == Settings.LobbyOptions.EmptyRaidLimit && Settings.LobbyOptions.LobbyMethodOptions == LobbyMethodOptions.OpenLobby)
+                    Log($"We had {Settings.LobbyOptions.EmptyRaidLimit} empty raids.. Opening this raid to all!");
+                await Click(DDOWN, 1_000, token).ConfigureAwait(false);
+            }
             await Click(A, 8_000, token).ConfigureAwait(false);
             return true;
         }
@@ -837,7 +842,8 @@ namespace SysBot.Pokemon
                 EmptyRaid++;
                 LostRaid++;
                 Log($"Nobody joined the raid, recovering...");
-
+                if (Settings.LobbyOptions.LobbyMethodOptions == LobbyMethodOptions.OpenLobby)
+                    Log($"Empty Raid Count #{EmptyRaid}");
                 if (Settings.LobbyOptions.LobbyMethodOptions == LobbyMethodOptions.SkipRaid)
                     Log($"Lost/Empty Lobbies: {LostRaid}/{Settings.LobbyOptions.SkipRaidLimit}");
 
@@ -949,8 +955,18 @@ namespace SysBot.Pokemon
             string code = string.Empty;
             if (names is null && !upnext)
             {
-                code = $"**{(Settings.RaidEmbedParameters[RotationCount].IsCoded && !Settings.HideRaidCode ? await GetRaidCode(token).ConfigureAwait(false) : Settings.RaidEmbedParameters[RotationCount].IsCoded && Settings.HideRaidCode ? "||Is Hidden!||" : "Free For All")}**";
+                if (Settings.LobbyOptions.LobbyMethodOptions == LobbyMethodOptions.OpenLobby)
+                {
+                    code = $"**{(Settings.RaidEmbedParameters[RotationCount].IsCoded && EmptyRaid < Settings.LobbyOptions.EmptyRaidLimit ? await GetRaidCode(token).ConfigureAwait(false) : "Free For All")}**";
+                }
+                else
+                {
+                    code = $"**{(Settings.RaidEmbedParameters[RotationCount].IsCoded && !Settings.HideRaidCode ? await GetRaidCode(token).ConfigureAwait(false) : Settings.RaidEmbedParameters[RotationCount].IsCoded && Settings.HideRaidCode ? "||Is Hidden!||" : "Free For All")}**";
+                }
             }
+
+            if (EmptyRaid == Settings.LobbyOptions.EmptyRaidLimit && Settings.LobbyOptions.LobbyMethodOptions == LobbyMethodOptions.OpenLobby)
+                EmptyRaid = 0;
 
             if (disband) // Wait for trainer to load before disband
                 await Task.Delay(5_000, token).ConfigureAwait(false);
@@ -959,7 +975,7 @@ namespace SysBot.Pokemon
             if (Settings.TakeScreenshot && !upnext)
                 bytes = await SwitchConnection.PixelPeek(token).ConfigureAwait(false) ?? Array.Empty<byte>();
 
-            string disclaimer = Settings.RaidEmbedParameters.Count > 1 ? "NotRaidBot v1.8.4 by Gengar\n" : "";
+            string disclaimer = Settings.RaidEmbedParameters.Count > 1 ? "NotRaidBot v1.8.6 by Gengar\n" : "";
 
             var userIdWhoRequested = Settings.RaidEmbedParameters[RotationCount].RequestedByUserID;
             var userMention = string.Empty;
@@ -991,11 +1007,9 @@ namespace SysBot.Pokemon
 
             if (Settings.RaidEmbedParameters[RotationCount].Species is 0)
                 turl = "https://i.imgur.com/uHSaGGJ.png";
-            Log($"Using image URL for embed: {turl}");
 
             // Fetch the dominant color from the image only AFTER turl is assigned
             (int R, int G, int B) dominantColor = GetDominantColor(turl);
-            Log($"Dominant Color for embed: R-{dominantColor.R}, G-{dominantColor.G}, B-{dominantColor.B}");
 
             // Use the dominant color, unless it's a disband or hatTrick situation
             var embedColor = disband ? Discord.Color.Red : hatTrick ? Discord.Color.Purple : new Discord.Color(dominantColor.R, dominantColor.G, dominantColor.B);
@@ -1013,7 +1027,7 @@ namespace SysBot.Pokemon
 
             if (!disband && names is null && !upnext)
             {
-                embed.AddField(Settings.IncludeCountdown ? $"**Raid Countdown: <t:{DateTimeOffset.Now.ToUnixTimeSeconds() + Settings.TimeToWait}:R>**" : $"**Waiting in lobby!**", $"Raid Code: {code}");
+                embed.AddField(Settings.IncludeCountdown ? $"**Raid Starting: <t:{DateTimeOffset.Now.ToUnixTimeSeconds() + Settings.TimeToWait}:R>**" : $"**Waiting in lobby!**", $"Raid Code: {code}");
             }
 
             if (!disband && names is not null && !upnext)

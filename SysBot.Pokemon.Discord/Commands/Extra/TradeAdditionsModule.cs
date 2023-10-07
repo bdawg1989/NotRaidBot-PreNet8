@@ -678,6 +678,24 @@ namespace SysBot.Pokemon.Discord
             await ReplyAsync(msg).ConfigureAwait(false);
         }
 
+        [Command("rqc")]
+        [Summary("Removes the raid added by the user.")]
+        public async Task RemoveOwnRaidParam()
+        {
+            var userId = Context.User.Id;
+            var list = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters;
+
+            var raid = list.FirstOrDefault(r => r.RequestedByUserID == userId && r.AddedByRACommand);
+            if (raid == null)
+            {
+                await ReplyAsync("You don't have a raid added.").ConfigureAwait(false);
+                return;
+            }
+
+            list.Remove(raid);
+            var msg = $"Your raid for {raid.Title} | {raid.Seed:X8} has been removed!";
+            await ReplyAsync(msg).ConfigureAwait(false);
+        }
 
 
         [Command("removeRaidParams")]
