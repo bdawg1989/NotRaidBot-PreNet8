@@ -610,26 +610,16 @@ namespace SysBot.Pokemon.Discord
                 return;
             }
 
-            var lines = partyPKData.Split('\n');
             string partyPKFormat;
             if (!string.IsNullOrEmpty(partyPKData))
             {
-                if (lines.Length < 4)
+                StringBuilder sb = new StringBuilder();
+                var lines = partyPKData.Split('\n');
+                foreach (var line in lines)
                 {
-                    await ReplyAsync("Invalid PartyPK data format.").ConfigureAwait(false);
-                    return;
+                    sb.AppendLine(line.Trim());
                 }
-
-                var pokemonName = lines[0].Trim();
-                var pokemonLevel = lines[1].Trim();
-                var ability = lines[2].Trim();
-                var move1 = lines[3].Trim().TrimStart('-').Trim();
-
-                // convert PartyPK
-                partyPKFormat = $"{pokemonName}\r\n" +
-                                $"{pokemonLevel}\r\n" +
-                                $"{ability}\r\n" +
-                                $"- {move1}\r\n";
+                partyPKFormat = sb.ToString();
             }
             else
             {
@@ -660,13 +650,6 @@ namespace SysBot.Pokemon.Discord
             if (File.Exists(pkpath))
                 data = File.ReadAllText(pkpath);
 
-            // var parse = TradeExtensions<T>.EnumParse<Species>(species);
-            // if (parse == default)
-            // {
-            //  await ReplyAsync($"{species} is not a valid Species.").ConfigureAwait(false);
-            //  return;
-            // }
-
             RotatingRaidSettingsSV.RotatingRaidParameters newparam = new()
             {
                 CrystalType = crystalType,
@@ -695,6 +678,24 @@ namespace SysBot.Pokemon.Discord
             await ReplyAsync(msg).ConfigureAwait(false);
         }
 
+        [Command("rqc")]
+        [Summary("Removes the raid added by the user.")]
+        public async Task RemoveOwnRaidParam()
+        {
+            var userId = Context.User.Id;
+            var list = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters;
+
+            var raid = list.FirstOrDefault(r => r.RequestedByUserID == userId && r.AddedByRACommand);
+            if (raid == null)
+            {
+                await ReplyAsync("You don't have a raid added.").ConfigureAwait(false);
+                return;
+            }
+
+            list.Remove(raid);
+            var msg = $"Your raid for {raid.Title} | {raid.Seed:X8} has been removed!";
+            await ReplyAsync(msg).ConfigureAwait(false);
+        }
 
 
         [Command("removeRaidParams")]

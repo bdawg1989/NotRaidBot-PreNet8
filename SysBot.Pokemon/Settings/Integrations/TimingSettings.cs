@@ -33,59 +33,59 @@ namespace SysBot.Pokemon
         // Raid-specific timings.
         [Category(Raid), Description("[RaidBot] Extra time in milliseconds to wait for the raid to load after clicking on the den.")]
         public int ExtraTimeLoadRaid { get; set; }
-
+        [Browsable(false)]
         [Category(Raid), Description("[RaidBot] Extra time in milliseconds to wait after clicking \"Invite Others\" before locking into a Pokémon.")]
         public int ExtraTimeOpenRaid { get; set; }
-
+        [Browsable(false)]
         [Category(Raid), Description("[RaidBot] Extra time in milliseconds to wait before closing the game to reset the raid.")]
         public int ExtraTimeEndRaid { get; set; }
-
+        [Browsable(false)]
         [Category(Raid), Description("[RaidBot] Extra time in milliseconds to wait after accepting a friend.")]
         public int ExtraTimeAddFriend { get; set; }
-
+        [Browsable(false)]
         [Category(Raid), Description("[RaidBot] Extra time in milliseconds to wait after deleting a friend.")]
         public int ExtraTimeDeleteFriend { get; set; }
-
+        [Browsable(false)]
         [Category(Raid), Description("[RollingRaidBot] Extra time in milliseconds to wait before toggling airplane mode.")]
         public int ExtraTimeAirplane { get; set; }
-
+        [Browsable(false)]
         [Category(Raid), Description("[RollingRaidBot] Time in milliseconds to wait for game to unfreeze after toggling airplane mode and YComm state to refresh.")]
         public int AirplaneConnectionFreezeDelay { get; set; }
-
+        [Browsable(false)]
         [Category(Raid), Description("[RollingRaidBot] Extra time in milliseconds to enter a lobby for AutoRoll.")]
         public int ExtraTimeLoadLobbyAR { get; set; }
-
+        [Browsable(false)]
         [Category(Raid), Description("[RollingRaidBot] Extra time in milliseconds between A button clicks when collecting watts. More than 250ms shouldn't be needed.")]
         public int ExtraTimeAButtonClickAR { get; set; }
-
+        [Browsable(false)]
         [Category(Raid), Description("[RollingRaidBot] Extra scroll down duration in milliseconds for accessing date/time settings during rollover correction. [Default: 750ms]")]
         public int ExtraTimeScrollDownAR { get; set; }
 
         // Miscellaneous settings.
         [Category(Misc), Description("[SWSH/SV] Extra time in milliseconds to wait after clicking + to connect to Y-Comm (SWSH) or L to connect online (SV).")]
         public int ExtraTimeConnectOnline { get; set; }
-
+        [Browsable(false)]
         [Category(Misc), Description("Number of times to attempt reconnecting to a socket connection after a connection is lost. Set this to -1 to try indefinitely.")]
         public int ReconnectAttempts { get; set; } = 30;
-
+        [Browsable(false)]
         [Category(Misc), Description("Extra time in milliseconds to wait between attempts to reconnect. Base time is 30 seconds.")]
         public int ExtraReconnectDelay { get; set; }
-
+        [Browsable(false)]
         [Category(Misc), Description("[BDSP] Extra time in milliseconds to wait for the overworld to load after leaving the Union Room.")]
         public int ExtraTimeLeaveUnionRoom { get; set; } = 1000;
-
+        [Browsable(false)]
         [Category(Misc), Description("[BDSP] Extra time in milliseconds to wait for the Y Menu to load at the start of each trade loop.")]
         public int ExtraTimeOpenYMenu { get; set; } = 500;
-
+        [Browsable(false)]
         [Category(Misc), Description("[BDSP] Extra time in milliseconds to wait for the Union Room to load before trying to call for a trade.")]
         public int ExtraTimeJoinUnionRoom { get; set; } = 500;
 
         [Category(Misc), Description("[SV] Extra time in milliseconds to wait for the Poké Portal to load.")]
         public int ExtraTimeLoadPortal { get; set; } = 1000;
-
+        [Browsable(false)]
         [Category(Misc), Description("Extra time in milliseconds to wait for the box to load after finding a trade.")]
         public int ExtraTimeOpenBox { get; set; } = 1000;
-
+        [Browsable(false)]
         [Category(Misc), Description("Time to wait after opening the keyboard for code entry during trades.")]
         public int ExtraTimeOpenCodeEntry { get; set; } = 1000;
 

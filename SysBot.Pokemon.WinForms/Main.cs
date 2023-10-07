@@ -46,7 +46,7 @@ namespace SysBot.Pokemon.WinForms
             }
 
             LoadControls();
-            Text = $"{Text} ({Config.Mode})";
+            Text = $"{(string.IsNullOrEmpty(Config.Hub.BotName) ? "NOT RaidBot" : Config.Hub.BotName)} ({Config.Mode})"; ;
             Task.Run(BotMonitor);
             InitUtil.InitializeStubs(Config.Mode);
         }
