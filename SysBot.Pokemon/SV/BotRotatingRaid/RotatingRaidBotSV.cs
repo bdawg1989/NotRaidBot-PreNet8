@@ -11,11 +11,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using RaidCrawler.Core.Structures;
-using System.Text.RegularExpressions;
 using Newtonsoft.Json;
+using static SysBot.Base.SwitchButton;
 using System.Net.Http;
 using System.Drawing;
-using static SysBot.Base.SwitchButton;
 
 namespace SysBot.Pokemon
 {
@@ -65,11 +64,11 @@ namespace SysBot.Pokemon
                 Log("Done.");
             }
 
-            if (Settings.PresetFilters.UsePresetFile)
+            /*if (Settings.PresetFilters.UsePresetFile)
             {
                 LoadDefaultFile();
                 Log("Using Preset file.");
-            }
+            }*/
 
             if (Settings.ConfigureRolloverCorrection)
             {
@@ -319,6 +318,7 @@ namespace SysBot.Pokemon
 
         public override async Task HardStop()
         {
+            Directory.Delete("cache", true);
             await CleanExit(CancellationToken.None).ConfigureAwait(false);
         }
 
@@ -361,6 +361,7 @@ namespace SysBot.Pokemon
             }
             Log($"Index not located.");
         }
+
         private async Task CompleteRaid(List<(ulong, TradeMyStatus)> trainers, CancellationToken token)
         {
             bool ready = false;
@@ -675,6 +676,7 @@ namespace SysBot.Pokemon
             await Click(A, 8_000, token).ConfigureAwait(false);
             return true;
         }
+
         private async Task<bool> GetLobbyReady(CancellationToken token)
         {
             if (Settings.RaidEmbedParameters[RotationCount].AddedByRACommand)
@@ -940,17 +942,18 @@ namespace SysBot.Pokemon
             }
             Log("Caching offsets complete!");
         }
+
         private async Task EnqueueEmbed(List<string>? names, string message, bool hatTrick, bool disband, bool upnext, bool raidstart, CancellationToken token)
         {
             // Title can only be up to 256 characters.
-            var title = hatTrick && names is not null ? $"**🪄🎩✨ {names[0]} with the Hat Trick! ✨🎩🪄**" : Settings.RaidEmbedParameters[RotationCount].Title.Length > 0 ? Settings.RaidEmbedParameters[RotationCount].Title : "Tera Raid Notification";
+            var title = hatTrick && names is not null ? $"**🪄🎩✨ {names[0]} with the Hat Trick! ✨🎩🪄**" : Settings.RaidEmbedParameters[RotationCount].Title.Length > 0 ? RaidEmbedInfo.RaidEmbedTitle : "Tera Raid Notification";
             if (title.Length > 256)
                 title = title[..256];
 
             // Description can only be up to 4096 characters.
-            var description = Settings.RaidEmbedParameters[RotationCount].Description.Length > 0 ? string.Join("\n", Settings.RaidEmbedParameters[RotationCount].Description) : "";
-            if (description.Length > 4096)
-                description = description[..4096];
+            //var description = Settings.RaidEmbedParameters[RotationCount].Description.Length > 0 ? string.Join("\n", Settings.RaidEmbedParameters[RotationCount].Description) : "";
+            var description = Settings.EmbedToggles.RaidEmbedDescription.Length > 0 ? string.Join("\n", Settings.EmbedToggles.RaidEmbedDescription) : "";
+            if (description.Length > 4096) description = description[..4096];
 
             string code = string.Empty;
             if (names is null && !upnext)
@@ -1025,6 +1028,21 @@ namespace SysBot.Pokemon
                        $"Raids: {RaidCount} | Wins: {WinCount} | Losses: {LossCount}\n" + disclaimer
             });
 
+            if (!disband && !upnext && !raidstart)
+            {
+                embed.AddField("**Stats:**", $"**Gender**: {RaidEmbedInfo.RaidSpeciesGender}\n**Nature:** {RaidEmbedInfo.RaidSpeciesNature}\n**Ability:** {RaidEmbedInfo.RaidSpeciesAbility}\n**IVs:** {RaidEmbedInfo.RaidSpeciesIVs}\n**Scale:** {RaidEmbedInfo.ScaleText}({RaidEmbedInfo.ScaleNumber})", true);
+            }
+
+            if (!disband && !upnext && !raidstart && Settings.EmbedToggles.IncludeMoves)
+            {
+                embed.AddField("**Moves:**", (string.IsNullOrEmpty($"{RaidEmbedInfo.ExtraMoves}") ? $"{RaidEmbedInfo.Moves}" : $"{RaidEmbedInfo.Moves}\n**Extra Moves:**\n{RaidEmbedInfo.ExtraMoves}"), true);
+            }
+
+            if (!disband && !upnext && !raidstart)
+            {
+                embed.AddField(" **SpecialRewards:**", string.IsNullOrEmpty($"{RaidEmbedInfo.SpecialRewards}") ? "No Rewards To Display" : $"{RaidEmbedInfo.SpecialRewards}", Settings.EmbedToggles.IncludeMoves ? false : true);
+            }
+
             if (!disband && names is null && !upnext)
             {
                 embed.AddField(Settings.IncludeCountdown ? $"**Raid Starting: <t:{DateTimeOffset.Now.ToUnixTimeSeconds() + Settings.TimeToWait}:R>**" : $"**Waiting in lobby!**", $"Raid Code: {code}");
@@ -1052,6 +1070,7 @@ namespace SysBot.Pokemon
             embed.WithImageUrl($"attachment://{fileName}");
             EchoUtil.RaidEmbed(bytes, fileName, embed);
         }
+
         public (int R, int G, int B) GetDominantColor(string imageUrl)
         {
             using var httpClient = new HttpClient();
@@ -1333,6 +1352,7 @@ namespace SysBot.Pokemon
                     if (seed == set)
                     {
                         var res = GetSpecialRewards(container.Rewards[i]);
+                        RaidEmbedInfo.SpecialRewards = res;
                         if (string.IsNullOrEmpty(res))
                             res = string.Empty;
                         else
@@ -1363,12 +1383,22 @@ namespace SysBot.Pokemon
                         var extramoves = string.Empty;
                         if (container.Encounters[i].ExtraMoves.Length != 0)
                         {
-                            var extraMovesList = container.Encounters[i].ExtraMoves.Where(z => z != 0).Select(z => $"{strings.Move[z]}ㅤ{Environment.NewLine}");
-                            extramoves = string.Concat(extraMovesList.Take(extraMovesList.Count() - 1)).TrimEnd(Environment.NewLine.ToCharArray());
-                            extramoves += extraMovesList.LastOrDefault()?.TrimEnd(Environment.NewLine.ToCharArray());
+                            var extraMovesList = container.Encounters[i].ExtraMoves.Where(z => z != 0).Select(z => $"{strings.Move[z]}\n");
+                            extramoves = string.Concat(extraMovesList.Take(extraMovesList.Count()));
+                            RaidEmbedInfo.ExtraMoves = extramoves;
                         }
-
-                        if (Settings.PresetFilters.UsePresetFile)
+                        var titlePrefix = container.Raids[i].IsShiny ? " Shiny " : " ";
+                        RaidEmbedInfo.RaidSpecies = (Species)container.Encounters[i].Species;
+                        RaidEmbedInfo.RaidEmbedTitle = $"**{(Species)container.Encounters[i].Species} {starcount} {titlePrefix} {(MoveType)container.Raids[i].TeraType}**";
+                        RaidEmbedInfo.RaidSpeciesGender = $"{(pk.Gender == 0 ? "♂" : pk.Gender == 1 ? "♀" : "")}";
+                        RaidEmbedInfo.RaidSpeciesNature = GameInfo.Strings.Natures[pk.Nature];
+                        RaidEmbedInfo.RaidSpeciesAbility = $"{(Ability)pk.Ability}";
+                        RaidEmbedInfo.RaidSpeciesIVs = $"{pk.IV_HP}/{pk.IV_ATK}/{pk.IV_DEF}/{pk.IV_SPA}/{pk.IV_SPD}/{pk.IV_SPE}";
+                        RaidEmbedInfo.RaidSpeciesTeraType = $"{(MoveType)container.Raids[i].TeraType}";
+                        RaidEmbedInfo.Moves = string.Concat(moves.Where(z => z != 0).Select(z => $"{strings.Move[z]}\n")).TrimEnd(Environment.NewLine.ToCharArray());
+                        RaidEmbedInfo.ScaleText = $"{PokeSizeDetailedUtil.GetSizeRating(pk.Scale)}";
+                        RaidEmbedInfo.ScaleNumber = pk.Scale;
+                        /*if (Settings.PresetFilters.UsePresetFile)
                         {
                             string tera = $"{(MoveType)container.Raids[i].TeraType}";
                             if (!string.IsNullOrEmpty(Settings.RaidEmbedParameters[a].Title) && !Settings.PresetFilters.ForceTitle)
@@ -1422,7 +1452,7 @@ namespace SysBot.Pokemon
                             Settings.RaidEmbedParameters[a].Description = new[] { "\n**Raid Info:**", pkinfo, "\n**Moveset:**", movestr, extramoves, BaseDescription, res };
                             Settings.RaidEmbedParameters[a].Title = $"{(Species)container.Encounters[i].Species} {starcount} - {(MoveType)container.Raids[i].TeraType}";
                         }
-
+                        */
                         Settings.RaidEmbedParameters[a].IsSet = true;
                         if (RaidCount == 0)
                         {
@@ -1447,5 +1477,21 @@ namespace SysBot.Pokemon
             }
         }
         #endregion
+
+        public class RaidEmbedInfo
+        {
+            public static string RaidEmbedTitle = string.Empty;
+            public static Species RaidSpecies = Species.None;
+            public static string RaidSpeciesGender = string.Empty;
+            public static string RaidSpeciesIVs = string.Empty;
+            public static string RaidSpeciesAbility = string.Empty;
+            public static string RaidSpeciesNature = string.Empty;
+            public static string RaidSpeciesTeraType = string.Empty;
+            public static string Moves = string.Empty;
+            public static string ExtraMoves = string.Empty;
+            public static string ScaleText = string.Empty;
+            public static string SpecialRewards = string.Empty;
+            public static int ScaleNumber;
+        }
     }
 }

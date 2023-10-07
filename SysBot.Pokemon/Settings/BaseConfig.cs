@@ -26,7 +26,7 @@ namespace SysBot.Pokemon
         [Category(Operation)]
         [TypeConverter(typeof(ExpandableObjectConverter))]
         public LegalitySettings Legality { get; set; } = new();
-
+        [Browsable(false)]
         [Category(Operation)]
         [TypeConverter(typeof(ExpandableObjectConverter))]
         public FolderSettings Folder { get; set; } = new();

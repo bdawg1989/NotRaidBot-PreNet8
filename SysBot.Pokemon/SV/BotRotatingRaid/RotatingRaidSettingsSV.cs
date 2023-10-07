@@ -21,22 +21,22 @@ namespace SysBot.Pokemon
         [Browsable(false)]
         [Category(FeatureToggle), Description("URL to Pokémon Automation's Tera Global Ban List json (or one matching the required structure).")]
         public string GlobalBanListURL { get; set; } = "";
-
+        [Browsable(false)]
         [Category(Hosting), Description("Amount of raids before updating the ban list. If you want the global ban list off, set this to -1.")]
-        public int RaidsBetweenUpdate { get; set; } = 3;
+        public int RaidsBetweenUpdate { get; set; } = -1;
 
         [Category(Hosting), Description("When enabled, the bot will attempt to auto-generate Raid Parameters from the \"raidsv.txt\" file on botstart.")]
         public bool GenerateParametersFromFile { get; set; } = true;
 
         [Category(Hosting), Description("RotatingRaid Preset Filters"), DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
-        public RotatingRaidPresetFiltersCategory PresetFilters { get; set; } = new();
+        public RotatingRaidPresetFiltersCategory EmbedToggles { get; set; } = new();
 
         [Category(Hosting), Description("Raid embed parameters.")]
         public List<RotatingRaidParameters> RaidEmbedParameters { get; set; } = new();
 
         [Category(Hosting), Description("Enter the total number of raids to host before the bot automatically stops. Default is 0 to ignore this setting.")]
         public int TotalRaidsToHost { get; set; } = 0;
-
+        [Browsable(false)]
         [Category(Hosting), Description("Catch limit per player before they get added to the ban list automatically. If set to 0 this setting will be ignored.")]
         public int CatchLimit { get; set; } = 0;
 
@@ -124,22 +124,22 @@ namespace SysBot.Pokemon
         [Category(Hosting), TypeConverter(typeof(CategoryConverter<RotatingRaidPresetFiltersCategory>))]
         public class RotatingRaidPresetFiltersCategory
         {
-            public override string ToString() => "Preset filters.";
-
+            public override string ToString() => "Embed Toggles";
+           /* 
             [Category(Hosting), Description("If true, the bot will attempt to auto-generate Raid Embeds based on the \"preset.txt\" file.")]
             public bool UsePresetFile { get; set; } = true;
-
+            
             [Category(Hosting), Description("If true, the bot will use the first line of preset as title.")]
             public bool TitleFromPreset { get; set; } = true;
-
+            
             [Category(Hosting), Description("If true, the bot will overwrite any set Title with the new one.")]
             public bool ForceTitle { get; set; } = true;
-
-            [Category(Hosting), Description("If true, the bot will overwrite any set Description with the new one.")]
-            public bool ForceDescription { get; set; } = true;
+           */
+            [Category(Hosting), Description("Raid embed description.")]
+            public string[] RaidEmbedDescription { get; set; } = Array.Empty<string>();
 
             [Category(Hosting), Description("If true, the bot will append the moves to the preset Description.")]
-            public bool IncludeMoves { get; set; } = false;
+            public bool IncludeMoves { get; set; } = true;
 
             [Category(Hosting), Description("If true, the bot will append the Special Rewards to the preset Description.")]
             public bool IncludeRewards { get; set; } = true;
