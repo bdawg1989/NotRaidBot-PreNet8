@@ -318,7 +318,14 @@ namespace SysBot.Pokemon
 
         public override async Task HardStop()
         {
-            Directory.Delete("cache", true);
+            try
+            {
+                Directory.Delete("cache", true);
+            }
+            catch (Exception)
+            {
+                //dgaf about cache not existing
+            }
             await CleanExit(CancellationToken.None).ConfigureAwait(false);
         }
 
