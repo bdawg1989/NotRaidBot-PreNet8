@@ -1459,8 +1459,8 @@ namespace SysBot.Pokemon
                             Settings.RaidEmbedParameters[a].Description = new[] { "\n**Raid Info:**", pkinfo, "\n**Moveset:**", movestr, extramoves, BaseDescription, res };
                             Settings.RaidEmbedParameters[a].Title = $"{(Species)container.Encounters[i].Species} {starcount} - {(MoveType)container.Raids[i].TeraType}";
                         }
-                        */
-                        Settings.RaidEmbedParameters[a].IsSet = true;
+                        
+                        Settings.RaidEmbedParameters[a].IsSet = true;*/
                         if (RaidCount == 0)
                         {
                             RotatingRaidSettingsSV.RotatingRaidParameters param = new();
