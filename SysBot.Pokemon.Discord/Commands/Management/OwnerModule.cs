@@ -3,12 +3,15 @@ using Discord.Commands;
 using PKHeX.Core;
 using System;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace SysBot.Pokemon.Discord
 {
     public class OwnerModule<T> : SudoModule<T> where T : PKM, new()
     {
+        private readonly ExtraCommandUtil<T> Util = new();
+
         [Command("addSudo")]
         [Summary("Adds mentioned user to global sudo")]
         [RequireOwner]
@@ -122,6 +125,22 @@ namespace SysBot.Pokemon.Discord
             var obj = GetReference(Context.Message.Channel);
             SysCordSettings.Settings.TradeCordChannels.RemoveAll(z => z.ID == obj.ID);
             await ReplyAsync("Done.").ConfigureAwait(false);
+        }
+
+        [Command("listguilds")]
+        [Alias("guildlist", "gl")]
+        [Summary("Lists all the servers the bot is in.")]
+        [RequireOwner]
+        public async Task ListGuilds()
+        {
+            var guilds = Context.Client.Guilds.OrderBy(guild => guild.Name);
+            var guildList = new StringBuilder();
+            guildList.AppendLine("\n");
+            foreach (var guild in guilds)
+            {
+                guildList.AppendLine($"{Format.Bold($"{guild.Name}")}\nID: {guild.Id}\n");
+            }
+            await Util.ListUtil(Context, "Here is a list of all servers this bot is currently in", guildList.ToString()).ConfigureAwait(false);
         }
 
         [Command("sudoku")]
