@@ -985,7 +985,7 @@ namespace SysBot.Pokemon
             if (Settings.TakeScreenshot && !upnext)
                 bytes = await SwitchConnection.PixelPeek(token).ConfigureAwait(false) ?? Array.Empty<byte>();
 
-            string disclaimer = Settings.RaidEmbedParameters.Count > 1 ? "NotRaidBot v1.8.6 by Gengar & Kai\n" : "";
+            string disclaimer = Settings.RaidEmbedParameters.Count > 1 ? "NotRaidBot v2.0a by Gengar & Kai\n" : "";
 
             var userIdWhoRequested = Settings.RaidEmbedParameters[RotationCount].RequestedByUserID;
             var userMention = string.Empty;
@@ -1459,8 +1459,8 @@ namespace SysBot.Pokemon
                             Settings.RaidEmbedParameters[a].Description = new[] { "\n**Raid Info:**", pkinfo, "\n**Moveset:**", movestr, extramoves, BaseDescription, res };
                             Settings.RaidEmbedParameters[a].Title = $"{(Species)container.Encounters[i].Species} {starcount} - {(MoveType)container.Raids[i].TeraType}";
                         }
-                        */
-                        Settings.RaidEmbedParameters[a].IsSet = true;
+                        
+                        Settings.RaidEmbedParameters[a].IsSet = true;*/
                         if (RaidCount == 0)
                         {
                             RotatingRaidSettingsSV.RotatingRaidParameters param = new();
