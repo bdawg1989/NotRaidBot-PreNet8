@@ -31,6 +31,7 @@ namespace SysBot.Pokemon
             Settings = hub.Config.RotatingRaidSV;
         }
 
+        private int lobbyFail;
         private int RaidCount;
         private int WinCount;
         private int LossCount;
@@ -234,12 +235,67 @@ namespace SysBot.Pokemon
                     await GrabGlobalBanlist(token).ConfigureAwait(false);
 
                 var currentSeed = BitConverter.ToUInt64(await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP, 8, token).ConfigureAwait(false), 0);
-                if (TodaySeed != currentSeed)
+                if (TodaySeed != currentSeed || lobbyFail >= 3)
                 {
-                    var msg = $"Current Today Seed {currentSeed:X8} does not match Starting Today Seed: {TodaySeed:X8} after rolling back 1 day. ";
+                    var msg = "";
+                    if (TodaySeed != currentSeed)
+                        msg = $"Current Today Seed {currentSeed:X8} does not match Starting Today Seed: {TodaySeed:X8}.\n ";
+
+                    if (lobbyFail >= 3)
+                    {
+                        msg = $"Failed to create a lobby {lobbyFail} times.\n ";
+                        dayRoll++;
+                    }
+
                     if (dayRoll != 0)
                     {
-                        Log(msg + "Stopping routine for lost raid.");
+                        Log(msg + "Raid Lost initiating recovery sequence.");
+                        bool denFound = false;
+                        while (!denFound)
+                        {
+                            if (!await PrepareForDayroll(token).ConfigureAwait(false))
+                            {
+                                Log("Failed to save for dayroll.");
+                                await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
+                                continue;
+                            }
+                            await Click(B, 0_500, token).ConfigureAwait(false);
+                            await Click(HOME, 3_500, token).ConfigureAwait(false);
+                            Log("Closed out of the game!");
+
+                            await RolloverCorrectionSV(token).ConfigureAwait(false);
+                            await Click(A, 1_500, token).ConfigureAwait(false);
+                            Log("Back in the game!");
+
+                            EmptyRaid = 1;
+                            // Connect online and enter den.
+                            if (!await PrepareForRaid(token).ConfigureAwait(false))
+                                continue;
+
+                            // Wait until we're in lobby.
+                            if (!await CheckForLobby(token).ConfigureAwait(false))
+                            {
+                                continue;
+                            }
+                            else
+                            {
+                                Log("Den Found, continuing routine!");
+
+                                TodaySeed = BitConverter.ToUInt64(await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP, 8, token).ConfigureAwait(false), 0);
+                                lobbyFail = 0;
+
+                                denFound = true;
+                                await Click(B, 1_000, token).ConfigureAwait(false);
+                                await Task.Delay(2_000, token).ConfigureAwait(false);
+                                await Click(A, 1_000, token).ConfigureAwait(false);
+                                await Task.Delay(5_000, token).ConfigureAwait(false);
+                                await Click(B, 1_000, token).ConfigureAwait(false);
+                                await Click(B, 1_000, token).ConfigureAwait(false);
+                            }
+                        };
+                        if (denFound)
+                            continue;
+
                         return;
                     }
                     Log(msg);
@@ -701,6 +757,7 @@ namespace SysBot.Pokemon
                 if (x == 45)
                 {
                     Log("Failed to connect to lobby, restarting game incase we were in battle/bad connection.");
+                    lobbyFail++;
                     await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
                     Log("Attempting to restart routine!");
                     return false;
@@ -1484,6 +1541,47 @@ namespace SysBot.Pokemon
             }
         }
         #endregion
+
+        private async Task<bool> PrepareForDayroll(CancellationToken token)
+        {
+            // Make sure we're connected.
+            while (!await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false))
+            {
+                Log("Connecting...");
+                await RecoverToOverworld(token).ConfigureAwait(false);
+                if (!await ConnectToOnline(Hub.Config, token).ConfigureAwait(false))
+                    return false;
+            }
+            return true;
+        }
+
+        public async Task<bool> CheckForLobby(CancellationToken token)
+        {
+            var x = 0;
+            Log("Connecting to lobby...");
+            while (!await IsConnectedToLobby(token).ConfigureAwait(false))
+            {
+                await Click(A, 1_000, token).ConfigureAwait(false);
+                x++;
+                if (x == 15)
+                {
+                    Log("No den here! Rolling again.");
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private async Task<bool> SaveGame(PokeTradeHubConfig config, CancellationToken token)
+        {
+
+            await Click(X, 3_000, token).ConfigureAwait(false);
+            await Click(R, 3_000 + config.Timings.ExtraTimeConnectOnline, token).ConfigureAwait(false);
+            await Click(A, 3_000, token).ConfigureAwait(false);
+            await Click(A, 1_000, token).ConfigureAwait(false);
+            await Click(B, 1_000, token).ConfigureAwait(false);
+            return true;
+        }
 
         public class RaidEmbedInfo
         {
