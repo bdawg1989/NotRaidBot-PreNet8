@@ -267,7 +267,7 @@ namespace SysBot.Pokemon.Discord
             UserStatus state = UserStatus.Idle;
             while (!token.IsCancellationRequested)
             {
-                var time = DateTime.Now;
+                /*var time = DateTime.Now;
                 var lastLogged = LogUtil.LastLogged;
                 if (Hub.Config.Discord.BotColorStatusTradeOnly)
                 {
@@ -292,14 +292,14 @@ namespace SysBot.Pokemon.Discord
                     await Task.Delay(2_000, token).ConfigureAwait(false);
                     continue;
                 }
-
-                var active = noQueue ? UserStatus.DoNotDisturb : UserStatus.Online;
+                */
+                var active = UserStatus.Online;
                 if (active != state)
                 {
                     state = active;
                     await _client.SetStatusAsync(state).ConfigureAwait(false);
                 }
-                await Task.Delay(gap, token).ConfigureAwait(false);
+                await Task.Delay(20_000, token).ConfigureAwait(false);
             }
         }
 
