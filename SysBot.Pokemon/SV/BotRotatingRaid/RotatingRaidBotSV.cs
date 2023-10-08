@@ -1042,7 +1042,7 @@ namespace SysBot.Pokemon
 
             if (!disband && !upnext && !raidstart && Settings.EmbedToggles.IncludeMoves)
             {
-                embed.AddField("**Moves:**", (string.IsNullOrEmpty($"{RaidEmbedInfo.ExtraMoves}") ? $"{RaidEmbedInfo.Moves}" : $"{RaidEmbedInfo.Moves}\n**Extra Moves:**\n{RaidEmbedInfo.ExtraMoves}"), true);
+                embed.AddField("**Moves:**", string.IsNullOrEmpty($"{RaidEmbedInfo.ExtraMoves}") ? string.IsNullOrEmpty($"{RaidEmbedInfo.Moves}")  ? "No Moves To Display" : $"{RaidEmbedInfo.Moves}" : $"{RaidEmbedInfo.Moves}\n**Extra Moves:**\n{RaidEmbedInfo.ExtraMoves}", true);
             }
 
             if (!disband && !upnext && !raidstart)
