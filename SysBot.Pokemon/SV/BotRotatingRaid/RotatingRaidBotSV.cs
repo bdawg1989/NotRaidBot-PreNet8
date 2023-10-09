@@ -324,8 +324,19 @@ namespace SysBot.Pokemon
                     var user = Settings.RaidEmbedParameters[RotationCount].User;
                     var code = await GetRaidCode(token).ConfigureAwait(false);
                     if (user != null)
-                        await user.SendMessageAsync($"Your Raid Code is **{code}**").ConfigureAwait(false);
+                    {
+                        try
+                        {
+                            await user.SendMessageAsync($"Your Raid Code is **{code}**").ConfigureAwait(false);
+                        }
+                        catch (Discord.Net.HttpException ex)
+                        {
+                            // Handle exception (e.g., log the error or send a message to a logging channel)
+                            Log($"Failed to send DM to {user.Username}. They might have DMs turned off. Exception: {ex.Message}");
+                        }
+                    }
                 }
+
 
                 // Read trainers until someone joins.
                 (partyReady, lobbyTrainers) = await ReadTrainers(token).ConfigureAwait(false);
@@ -742,8 +753,19 @@ namespace SysBot.Pokemon
             {
                 var user = Settings.RaidEmbedParameters[RotationCount].User;
                 if (user != null)
-                    await user.SendMessageAsync("Your raid is about to start!").ConfigureAwait(false);
+                {
+                    try
+                    {
+                        await user.SendMessageAsync("Your raid is about to start!").ConfigureAwait(false);
+                    }
+                    catch (Discord.Net.HttpException ex)
+                    {
+                        // Handle exception (e.g., log the error or send a message to a logging channel)
+                        Log($"Failed to send DM to {user.Username}. They might have DMs turned off. Exception: {ex.Message}");
+                    }
+                }
             }
+
             var x = 0;
             Log("Connecting to lobby...");
             while (!await IsConnectedToLobby(token).ConfigureAwait(false))
