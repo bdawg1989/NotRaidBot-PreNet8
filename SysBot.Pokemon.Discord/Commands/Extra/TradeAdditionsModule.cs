@@ -610,16 +610,26 @@ namespace SysBot.Pokemon.Discord
                 return;
             }
 
+            var lines = partyPKData.Split('\n');
             string partyPKFormat;
             if (!string.IsNullOrEmpty(partyPKData))
             {
-                StringBuilder sb = new StringBuilder();
-                var lines = partyPKData.Split('\n');
-                foreach (var line in lines)
+                if (lines.Length < 4)
                 {
-                    sb.AppendLine(line.Trim());
+                    await ReplyAsync("Invalid PartyPK data format.").ConfigureAwait(false);
+                    return;
                 }
-                partyPKFormat = sb.ToString();
+
+                var pokemonName = lines[0].Trim();
+                var pokemonLevel = lines[1].Trim();
+                var ability = lines[2].Trim();
+                var move1 = lines[3].Trim().TrimStart('-').Trim();
+
+                // convert PartyPK
+                partyPKFormat = $"{pokemonName}\r\n" +
+                                $"{pokemonLevel}\r\n" +
+                                $"{ability}\r\n" +
+                                $"- {move1}\r\n";
             }
             else
             {
