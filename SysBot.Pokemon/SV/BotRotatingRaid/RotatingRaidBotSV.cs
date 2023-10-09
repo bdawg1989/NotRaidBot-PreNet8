@@ -1080,26 +1080,14 @@ namespace SysBot.Pokemon
 
             // Use the dominant color, unless it's a disband or hatTrick situation
             var embedColor = disband ? Discord.Color.Red : hatTrick ? Discord.Color.Purple : new Discord.Color(dominantColor.R, dominantColor.G, dominantColor.B);
-            var userIdWhoRequested = Settings.RaidEmbedParameters[RotationCount].RequestedByUserID;
-            var username = Settings.RaidEmbedParameters[RotationCount].User;
-            string modifiedTitle = title;
-            string modifiedDescription = description;
-
-            if (description.Contains("Requested Raid"))
-            {
-                modifiedTitle = $"Preparing Raid for {username}";
-                modifiedDescription = $"<@{userIdWhoRequested}>, your requested raid for {Settings.RaidEmbedParameters[RotationCount].Species} is about to begin!";
-            }
-
             var embed = new EmbedBuilder()
+
             {
-                Title = disband ? $"**Raid canceled: [{TeraRaidCode}]**" : upnext && Settings.TotalRaidsToHost != 0 ? $"Preparing Raid {RaidCount}/{Settings.TotalRaidsToHost}" : upnext && Settings.TotalRaidsToHost == 0 ? $"Preparing Raid" : modifiedTitle,
+                Title = disband ? $"**Raid canceled: [{TeraRaidCode}]**" : upnext && Settings.TotalRaidsToHost != 0 ? $"Preparing Raid {RaidCount}/{Settings.TotalRaidsToHost}" : upnext && Settings.TotalRaidsToHost == 0 ? $"Preparing Raid" : title,
                 Color = embedColor,
-                Description = disband ? message : upnext ? modifiedDescription : raidstart ? "" : modifiedDescription,
+                Description = disband ? message : upnext ? Settings.RaidEmbedParameters[RotationCount].Title : raidstart ? "" : description,
                 ImageUrl = bytes.Length > 0 ? "attachment://zap.jpg" : default,
             }.WithFooter(new EmbedFooterBuilder()
-
-
             {
                 Text = $"Host: {HostSAV.OT} | Uptime: {StartTime - DateTime.Now:d\\.hh\\:mm\\:ss}\n" +
                        $"Raids: {RaidCount} | Wins: {WinCount} | Losses: {LossCount}\n" + disclaimer
