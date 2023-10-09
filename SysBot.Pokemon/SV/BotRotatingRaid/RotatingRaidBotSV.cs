@@ -1012,6 +1012,10 @@ namespace SysBot.Pokemon
 
         private async Task EnqueueEmbed(List<string>? names, string message, bool hatTrick, bool disband, bool upnext, bool raidstart, CancellationToken token)
         {
+            if (Settings.RaidEmbedParameters[RotationCount].AddedByRACommand)
+            {
+                await Task.Delay(15000).ConfigureAwait(false);  // Delay for 15 seconds
+            }
             // Title can only be up to 256 characters.
             var title = hatTrick && names is not null ? $"**🪄🎩✨ {names[0]} with the Hat Trick! ✨🎩🪄**" : Settings.RaidEmbedParameters[RotationCount].Title.Length > 0 ? RaidEmbedInfo.RaidEmbedTitle : "Tera Raid Notification";
             if (title.Length > 256)
@@ -1047,13 +1051,6 @@ namespace SysBot.Pokemon
 
             string disclaimer = Settings.RaidEmbedParameters.Count > 1 ? "NotRaidBot v2.2a by Gengar & Kai\nhttps://notpaldea.net" : "";
 
-            var userIdWhoRequested = Settings.RaidEmbedParameters[RotationCount].RequestedByUserID;
-            var userMention = string.Empty;
-            if (upnext && Settings.RaidEmbedParameters[RotationCount].AddedByRACommand)
-            {
-                userMention = $"<@{userIdWhoRequested}>, your requested raid for {Settings.RaidEmbedParameters[RotationCount].Species} is about to begin!";
-            }
-
             var turl = string.Empty;
             var form = string.Empty;
 
@@ -1083,13 +1080,26 @@ namespace SysBot.Pokemon
 
             // Use the dominant color, unless it's a disband or hatTrick situation
             var embedColor = disband ? Discord.Color.Red : hatTrick ? Discord.Color.Purple : new Discord.Color(dominantColor.R, dominantColor.G, dominantColor.B);
+            var userIdWhoRequested = Settings.RaidEmbedParameters[RotationCount].RequestedByUserID;
+            var username = Settings.RaidEmbedParameters[RotationCount].User;
+            string modifiedTitle = title;
+            string modifiedDescription = description;
+
+            if (description.Contains("Requested Raid"))
+            {
+                modifiedTitle = $"Preparing Raid for {username}";
+                modifiedDescription = $"<@{userIdWhoRequested}>, your requested raid for {Settings.RaidEmbedParameters[RotationCount].Species} is about to begin!";
+            }
+
             var embed = new EmbedBuilder()
             {
-                Title = disband ? $"**Raid canceled: [{TeraRaidCode}]**" : upnext && Settings.TotalRaidsToHost != 0 ? $"Preparing Raid {RaidCount}/{Settings.TotalRaidsToHost}" : upnext && Settings.TotalRaidsToHost == 0 ? $"Preparing Raid" : title,
+                Title = disband ? $"**Raid canceled: [{TeraRaidCode}]**" : upnext && Settings.TotalRaidsToHost != 0 ? $"Preparing Raid {RaidCount}/{Settings.TotalRaidsToHost}" : upnext && Settings.TotalRaidsToHost == 0 ? $"Preparing Raid" : modifiedTitle,
                 Color = embedColor,
-                Description = disband ? message : upnext ? Settings.RaidEmbedParameters[RotationCount].Title : raidstart ? "" : description,
+                Description = disband ? message : upnext ? modifiedDescription : raidstart ? "" : modifiedDescription,
                 ImageUrl = bytes.Length > 0 ? "attachment://zap.jpg" : default,
             }.WithFooter(new EmbedFooterBuilder()
+
+
             {
                 Text = $"Host: {HostSAV.OT} | Uptime: {StartTime - DateTime.Now:d\\.hh\\:mm\\:ss}\n" +
                        $"Raids: {RaidCount} | Wins: {WinCount} | Losses: {LossCount}\n" + disclaimer
