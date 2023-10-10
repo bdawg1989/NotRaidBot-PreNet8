@@ -28,6 +28,9 @@ namespace SysBot.Pokemon
         [Category(Hosting), Description("When enabled, the bot will attempt to auto-generate Raid Parameters from the \"raidsv.txt\" file on botstart.")]
         public bool GenerateParametersFromFile { get; set; } = true;
 
+        [Category(Hosting), Description("When enabled, the bot will attempt to auto-generate Raid Parameters from the \"raidsv.txt\" file on botstart.")]
+        public bool EventActive { get; set; } = false;
+
         [Category(Hosting), Description("RotatingRaid Preset Filters"), DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         public RotatingRaidPresetFiltersCategory EmbedToggles { get; set; } = new();
 

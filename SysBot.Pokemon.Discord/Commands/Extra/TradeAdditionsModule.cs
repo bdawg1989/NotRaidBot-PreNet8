@@ -610,6 +610,12 @@ namespace SysBot.Pokemon.Discord
                 return;
             }
 
+            if (!Hub.Config.RotatingRaidSV.EventActive && level == 7)
+            {
+                await ReplyAsync("Invalid Raid level. No active Events.").ConfigureAwait(false);
+                return;
+            }
+
             string partyPKFormat;
             if (!string.IsNullOrEmpty(partyPKData))
             {
