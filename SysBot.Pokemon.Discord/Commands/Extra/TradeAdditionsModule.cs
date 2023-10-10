@@ -592,9 +592,9 @@ namespace SysBot.Pokemon.Discord
         [Command("ra")]
         [Summary("Adds new raid parameter next in the queue.")]
         public async Task AddNewRaidParamNext(
-        [Summary("Seed")] string seed,
-        [Summary("Difficulty Level (1-7)")] int level,
-        [Remainder] string partyPKData = "") // Default it to an empty string
+            [Summary("Seed")] string seed,
+            [Summary("Difficulty Level (1-7)")] int level,
+            [Remainder] string partyPKData = "") // Default it to an empty string
         {
             // Check if the user already has a request
             var userId = Context.User.Id;
@@ -610,26 +610,16 @@ namespace SysBot.Pokemon.Discord
                 return;
             }
 
-            var lines = partyPKData.Split('\n');
             string partyPKFormat;
             if (!string.IsNullOrEmpty(partyPKData))
             {
-                if (lines.Length < 4)
+                StringBuilder sb = new StringBuilder();
+                var lines = partyPKData.Split('\n');
+                foreach (var line in lines)
                 {
-                    await ReplyAsync("Invalid PartyPK data format.").ConfigureAwait(false);
-                    return;
+                    sb.AppendLine(line.Trim());
                 }
-
-                var pokemonName = lines[0].Trim();
-                var pokemonLevel = lines[1].Trim();
-                var ability = lines[2].Trim();
-                var move1 = lines[3].Trim().TrimStart('-').Trim();
-
-                // convert PartyPK
-                partyPKFormat = $"{pokemonName}\r\n" +
-                                $"{pokemonLevel}\r\n" +
-                                $"{ability}\r\n" +
-                                $"- {move1}\r\n";
+                partyPKFormat = sb.ToString();
             }
             else
             {
@@ -665,7 +655,7 @@ namespace SysBot.Pokemon.Discord
                 CrystalType = crystalType,
                 Description = new[] { description },
                 PartyPK = new[] { partyPKFormat },
-                Species = Species.None, // Set to "None" explicitly here or use Species = parse,
+                Species = Species.None,
                 SpeciesForm = 0,
                 Seed = seed,
                 IsCoded = true,
