@@ -477,26 +477,39 @@ namespace SysBot.Pokemon.Discord
             // Find the index of the user's request in the queue
             var userRequestIndex = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters.FindIndex(r => r.RequestedByUserID == userId);
 
+            EmbedBuilder embed = new EmbedBuilder();
+
             if (userRequestIndex == -1)
             {
-                await ReplyAsync($"{Context.User.Mention}, you do not have a raid request in the queue.").ConfigureAwait(false);
-                return;
-            }
-
-            int raidsBeforeUser = userRequestIndex - currentPosition;
-
-            if (raidsBeforeUser <= 0)
-            {
-                await ReplyAsync($"{Context.User.Mention}, your raid request is up next!").ConfigureAwait(false);
+                embed.Title = "Queue Status";
+                embed.Color = Color.Red;
+                embed.Description = $"{Context.User.Mention}, you do not have a raid request in the queue.";
             }
             else
             {
-                // Calculate ETA
-                int etaMinutes = raidsBeforeUser * 5;
-                await ReplyAsync($"{Context.User.Mention}, there are {raidsBeforeUser} raids before your request. Estimated time until your raid: {etaMinutes} minutes.").ConfigureAwait(false);
+                int raidsBeforeUser = userRequestIndex - currentPosition;
+
+                if (raidsBeforeUser <= 0)
+                {
+                    embed.Title = "Queue Status";
+                    embed.Color = Color.Green;
+                    embed.Description = $"{Context.User.Mention}, your raid request is up next!";
+                }
+                else
+                {
+                    // Calculate ETA
+                    int etaMinutes = raidsBeforeUser * 6;
+
+                    embed.Title = "Queue Status";
+                    embed.Color = Color.Orange;
+                    embed.Description = $"{Context.User.Mention}, here's the status of your raid request:";
+                    embed.AddField("Raids Before Yours", raidsBeforeUser.ToString(), true);
+                    embed.AddField("Estimated Time", $"{etaMinutes} minutes", true);
+                }
             }
 
             await Context.Message.DeleteAsync().ConfigureAwait(false);
+            await ReplyAsync(embed: embed.Build()).ConfigureAwait(false);
         }
 
         [Command("rqc")]
