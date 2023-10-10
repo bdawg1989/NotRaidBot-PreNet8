@@ -88,7 +88,6 @@ namespace SysBot.Pokemon
             {
                 Hub.Queues.ClearAll();
                 UsersInQueue.Clear();
-                TradeCordHelper<T>.TradeCordTrades.Clear();
             }
         }
 
@@ -212,9 +211,6 @@ namespace SysBot.Pokemon
             var detail = details.FirstOrDefault(x => x.Type == PokeRoutineType.TradeCord);
             if (detail == default)
                 return;
-
-            if (TradeCordHelper<T>.TradeCordTrades.TryGetValue(detail.UserID, out _))
-                TradeCordHelper<T>.TradeCordTrades.Remove(detail.UserID);
         }
 
         public IEnumerable<string> GetRaidList(string fmt)

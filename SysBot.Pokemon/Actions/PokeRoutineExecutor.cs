@@ -193,9 +193,6 @@ namespace SysBot.Pokemon
             var entry = AbuseSettings.BannedIDs.List.Find(z => z.ID == TrainerNID);
             if (entry != null)
             {
-                if (AbuseSettings.BlockDetectedBannedUser && bot is PokeRoutineExecutor8SWSH)
-                    await BlockUser(token).ConfigureAwait(false);
-
                 var msg = $"{user.TrainerName}{useridmsg} is a banned user, and was encountered in-game using OT: {TrainerName}.";
                 if (!string.IsNullOrWhiteSpace(entry.Comment))
                     msg += $"\nUser was banned for: {entry.Comment}";
@@ -236,7 +233,7 @@ namespace SysBot.Pokemon
                         if (AbuseSettings.TradeAbuseAction == TradeAbuseAction.BlockAndQuit)
                         {
                             await BlockUser(token).ConfigureAwait(false);
-                            if (AbuseSettings.BanIDWhenBlockingUser || bot is not PokeRoutineExecutor8SWSH) // Only ban ID if blocking in SWSH, always in other games.
+                            if (AbuseSettings.BanIDWhenBlockingUser) // Only ban ID if blocking in SWSH, always in other games.
                             {
                                 AbuseSettings.BannedIDs.AddIfNew(new[] { GetReference(TrainerName, TrainerNID, "in-game block for multiple accounts") });
                                 Log($"Added {TrainerNID} to the BannedIDs list.");
@@ -266,7 +263,7 @@ namespace SysBot.Pokemon
                         if (AbuseSettings.TradeAbuseAction == TradeAbuseAction.BlockAndQuit)
                         {
                             await BlockUser(token).ConfigureAwait(false);
-                            if (AbuseSettings.BanIDWhenBlockingUser || bot is not PokeRoutineExecutor8SWSH) // Only ban ID if blocking in SWSH, always in other games.
+                            if (AbuseSettings.BanIDWhenBlockingUser) // Only ban ID if blocking in SWSH, always in other games.
                             {
                                 AbuseSettings.BannedIDs.AddIfNew(new[] { GetReference(TrainerName, TrainerNID, "in-game block for sending to multiple in-game players") });
                                 Log($"Added {TrainerNID} to the BannedIDs list.");

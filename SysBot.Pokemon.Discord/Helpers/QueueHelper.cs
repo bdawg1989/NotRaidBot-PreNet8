@@ -105,9 +105,6 @@ namespace SysBot.Pokemon.Discord
                 return false;
             }
 
-            if (detail.Type == PokeTradeType.TradeCord)
-                TradeCordHelper<T>.TradeCordTrades.Add(trader.Id, catchID);
-
             var position = Info.CheckPosition(userID, type);
 
             var ticketID = "";

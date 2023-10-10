@@ -1,7 +1,5 @@
 ﻿using PKHeX.Core;
 using SysBot.Base;
-using SysBot.Pokemon.Discord;
-using SysBot.Pokemon.Z3;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -23,7 +21,6 @@ namespace SysBot.Pokemon.WinForms
         public Main()
         {
             InitializeComponent();
-            PokeTradeBotSWSH.SeedChecker = new Z3SeedSearchHandler<PK8>();
             if (File.Exists(Program.ConfigPath))
             {
                 var lines = File.ReadAllText(Program.ConfigPath);
@@ -53,9 +50,6 @@ namespace SysBot.Pokemon.WinForms
 
         private static IPokeBotRunner GetRunner(ProgramConfig cfg) => cfg.Mode switch
         {
-            ProgramMode.SWSH => new PokeBotRunnerImpl<PK8>(cfg.Hub, new BotFactory8SWSH()),
-            ProgramMode.BDSP => new PokeBotRunnerImpl<PB8>(cfg.Hub, new BotFactory8BS()),
-            ProgramMode.LA => new PokeBotRunnerImpl<PA8>(cfg.Hub, new BotFactory8LA()),
             ProgramMode.SV => new PokeBotRunnerImpl<PK9>(cfg.Hub, new BotFactory9SV()),
             _ => throw new IndexOutOfRangeException("Unsupported mode."),
         };
@@ -99,10 +93,6 @@ namespace SysBot.Pokemon.WinForms
             CB_Protocol.SelectedIndex = (int)SwitchProtocol.WiFi; // default option
 
             LogUtil.Forwarders.Add(AppendLog);
-            if (Config.Mode is not ProgramMode.LA)
-                Tab_Results.Dispose();
-            else 
-                ResultsUtil.Forwarders.Add(AppendResults);
         }
 
         private void AppendLog(string message, string identity)
@@ -155,8 +145,6 @@ namespace SysBot.Pokemon.WinForms
             var cfg = GetCurrentConfiguration();
             var lines = JsonSerializer.Serialize(cfg, ProgramConfigContext.Default.ProgramConfig);
             File.WriteAllText(Program.ConfigPath, lines);
-            if (TradeCordHelper<PK8>.TCInitialized)
-                TradeCordHelper<PK8>.CleanDB();
         }
 
         [JsonSerializable(typeof(ProgramConfig))]
@@ -287,7 +275,7 @@ namespace SysBot.Pokemon.WinForms
             var cfg = BotConfigUtil.GetConfig<SwitchConnectionConfig>(ip, port);
             cfg.Protocol = (SwitchProtocol)WinFormsUtil.GetIndex(CB_Protocol);
 
-            var pk = new PokeBotState {Connection = cfg};
+            var pk = new PokeBotState { Connection = cfg };
             var type = (PokeRoutineType)WinFormsUtil.GetIndex(CB_Routine);
             pk.Initialize(type);
             return pk;
@@ -302,55 +290,6 @@ namespace SysBot.Pokemon.WinForms
         private void CB_Protocol_SelectedIndexChanged(object sender, EventArgs e)
         {
             TB_IP.Visible = CB_Protocol.SelectedIndex == 0;
-        }
-
-        //Zyro additions
-        private void AppendResults(string message, string identity)
-        {
-            var line = $"[{DateTime.Now:HH:mm:ss}] - {identity}: {message}{Environment.NewLine}";
-            if (InvokeRequired)
-                Invoke((MethodInvoker)(() => UpdateResults(line)));
-            else
-                UpdateResults(line);
-        }
-
-        private void UpdateResults(string line)
-        {
-            // ghetto truncate
-            if (RTB_Results.Lines.Length > 99_999)
-                RTB_Results.Lines = RTB_Results.Lines.Skip(25_0000).ToArray();
-
-            RTB_Results.AppendText(line);
-            RTB_Results.ScrollToCaret();
-        }
-
-        private void ContinueButton_Click(object sender, EventArgs e)
-        {
-            var bots = SysCord<PA8>.Runner.Bots.Select(z => z.Bot);
-            foreach (var b in bots)
-            {
-                if (b is not IArceusBot x)
-                    continue;
-                x.AcknowledgeConfirmation();
-                ResultsUtil.Log("Acknowledged. Continuing...", "");
-            }
-        }
-
-        private void TossButton_Click(object sender, EventArgs e)
-        {
-            var bots = SysCord<PA8>.Runner.Bots.Select(z => z.Bot);
-            foreach (var b in bots)
-            {
-                if (b is not IEncounterBot x)
-                    continue;
-                x.Acknowledge();
-                ResultsUtil.Log("Acknowledged. Tossing now!", "");
-            }
-            if (Config.Hub.ArceusLA.OutbreakConditions.Permute)
-            {
-                RTB_Results.Clear();
-                ResultsUtil.Log("Clearing Results log for permutations!\n", "");
-            }
         }
     }
 }

@@ -80,30 +80,6 @@ namespace SysBot.Pokemon.Discord
             }
         }
 
-        public static async Task TCUserBanned(SocketUser user, SocketGuild guild)
-        {
-            if (!TradeCordHelper<T>.TCInitialized)
-                return;
-
-            var instance = SysCord<T>.Runner.Hub.Config;
-            var helper = new TradeCordHelper<T>(instance.TradeCord);
-            var ctx = new TradeCordHelper<T>.TC_CommandContext() { Context = TCCommandContext.DeleteUser, ID = user.Id, Username = user.Username };
-            var result = await helper.ProcessTradeCord(ctx, new string[] { user.Id.ToString() }).ConfigureAwait(false);
-            if (result.Success)
-            {
-                var channels = instance.Discord.EchoChannels.List;
-                for (int i = 0; i < channels.Count; i++)
-                {
-                    ISocketMessageChannel? channel = (ISocketMessageChannel?)guild.Channels.FirstOrDefault(x => x.Id == channels[i].ID);
-                    if (channel == default)
-                        continue;
-
-                    await channel.SendMessageAsync($"**[TradeCord]** Automatically deleted TradeCord data for: \n**{user.Username}{user.Discriminator}** ({user.Id}) in: **{guild.Name}**.\n Reason: Banned.").ConfigureAwait(false);
-                }
-                Base.LogUtil.LogInfo($"Automatically deleted TradeCord data for: {user.Username}{user.Discriminator} ({user.Id}) in: {guild.Name}.", "TradeCord: ");
-            }
-        }
-
         public static Task HandleReactionAsync(Cacheable<IUserMessage, ulong> cachedMsg, Cacheable<IMessageChannel, ulong> ch, SocketReaction reaction)
         {
             _ = Task.Run(async () =>
@@ -121,7 +97,7 @@ namespace SysBot.Pokemon.Discord
                     msg = await cachedMsg.GetOrDownloadAsync().ConfigureAwait(false);
                 else msg = cachedMsg.Value;
 
-                bool process = msg.Embeds.Count > 0 && (TradeCordHelper<T>.TCInitialized || msg.Embeds.First().Fields[0].Name.Contains("Giveaway Pool") || msg.Embeds.First().Fields[0].Name.Contains("List"));
+                bool process = msg.Embeds.First().Fields[0].Name.Contains("Giveaway Pool") || msg.Embeds.First().Fields[0].Name.Contains("List");
                 if (!process || !reaction.User.IsSpecified)
                     return;
 

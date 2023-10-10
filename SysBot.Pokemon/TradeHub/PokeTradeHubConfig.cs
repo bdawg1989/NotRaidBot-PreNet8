@@ -51,14 +51,6 @@ namespace SysBot.Pokemon
         [Category(BotEncounter), Description("Stop conditions for EggBot, FossilBot, and EncounterBot.")]
         [TypeConverter(typeof(ExpandableObjectConverter))]
         public StopConditionSettings StopConditions { get; set; } = new();
-        [Browsable(false)]
-        [Category(BotEncounter)]
-        [TypeConverter(typeof(ExpandableObjectConverter))]
-        public OverworldSettingsSV OverworldSV { get; set; } = new();
-        [Browsable(false)]
-        [Category(BotEncounter)]
-        [TypeConverter(typeof(ExpandableObjectConverter))]
-        public EggSettingsSV EggSV { get; set; } = new();
 
         [Browsable(false)]
         [Category(BotEncounter)]
@@ -68,46 +60,7 @@ namespace SysBot.Pokemon
         [Category(BotEncounter)]
         [TypeConverter(typeof(ExpandableObjectConverter))]
         public RotatingRaidSettingsSV RotatingRaidSV { get; set; } = new();
-        [Browsable(false)]
-        [Category(BotEncounter)]
-        [TypeConverter(typeof(ExpandableObjectConverter))]
-        public TIDResetBotSettingsSV TIDResetSV { get; set; } = new();
-        [Browsable(false)]
-        [Category(BotEncounter)]
-        [TypeConverter(typeof(ExpandableObjectConverter))]
-        public ArceusBotSettings ArceusLA { get; set; } = new();
-        [Browsable(false)]
-        [Category(BotEncounter)]
-        [TypeConverter(typeof(ExpandableObjectConverter))]
-        public OverworldSettings OverworldSWSH { get; set; } = new();
-        [Browsable(false)]
-        [Category(BotEncounter)]
-        [TypeConverter(typeof(ExpandableObjectConverter))]
-        public EncounterSettings EncounterSWSH { get; set; } = new();
-        [Browsable(false)]
-        [Category(BotEncounter)]
-        [TypeConverter(typeof(ExpandableObjectConverter))]
-        public RaidSettings RaidSWSH { get; set; } = new();
-        [Browsable(false)]
-        [Category(BotEncounter)]
-        [TypeConverter(typeof(ExpandableObjectConverter))]
-        public LairBotSettings LairSWSH { get; set; } = new();
-        [Browsable(false)]
-        [Category(BotEncounter)]
-        [TypeConverter(typeof(ExpandableObjectConverter))]
-        public DenSettings DenSWSH { get; set; } = new();
-        [Browsable(false)]
-        [Category(BotEncounter)]
-        [TypeConverter(typeof(ExpandableObjectConverter))]
-        public BoolSettings BoolSWSH { get; set; } = new();
-        [Browsable(false)]
-        [Category(BotEncounter)]
-        [TypeConverter(typeof(ExpandableObjectConverter))]
-        public CurryBotSettings CurrySWSH { get; set; } = new();
-        [Browsable(false)]
-        [Category(BotEncounter)]
-        [TypeConverter(typeof(ExpandableObjectConverter))]
-        public RollingRaidSettings RollingRaidSWSH { get; set; } = new();
+
         [Browsable(false)]
         [Category(BotTrade)]
         [TypeConverter(typeof(ExpandableObjectConverter))]
