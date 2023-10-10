@@ -387,6 +387,10 @@ namespace SysBot.Pokemon
             {
                 //dgaf about cache not existing
             }
+
+            // Remove all entries in RaidEmbedParameters where AddedByRACommand is true
+            Settings.RaidEmbedParameters.RemoveAll(p => p.AddedByRACommand);
+
             await CleanExit(CancellationToken.None).ConfigureAwait(false);
         }
 

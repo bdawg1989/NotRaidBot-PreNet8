@@ -1,6 +1,5 @@
 ﻿using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
 using PKHeX.Core;
 using System;
 using System.Collections.Generic;
@@ -604,13 +603,13 @@ namespace SysBot.Pokemon.Discord
                 return;
             }
 
-            if (level < 1 || level > 7)
+            if (level < 1 || level > 8)
             {
-                await ReplyAsync("Invalid raid level. Please enter a level between 1 and 7.").ConfigureAwait(false);
+                await ReplyAsync("Invalid raid level. Please enter a level between 1 and 8.").ConfigureAwait(false);
                 return;
             }
 
-            if (!Hub.Config.RotatingRaidSV.EventActive && level == 7)
+            if (!Hub.Config.RotatingRaidSV.EventActive && (level == 7 || level == 8))
             {
                 await ReplyAsync("Invalid Raid level. No active Events.").ConfigureAwait(false);
                 return;
@@ -633,10 +632,14 @@ namespace SysBot.Pokemon.Discord
             }
 
             // Determine the CrystalType based on the given difficulty level
-            TeraCrystalType crystalType;
-            if (level >= 1 && level <= 5) crystalType = (TeraCrystalType)0;
-            else if (level == 6) crystalType = (TeraCrystalType)1;
-            else crystalType = (TeraCrystalType)3; // For level 7
+            var crystalType = level switch
+            {
+                >= 1 and <= 5 => (TeraCrystalType)0,
+                6 => (TeraCrystalType)1,
+                7 => (TeraCrystalType)3,
+                8 => (TeraCrystalType)2,
+                _ => throw new ArgumentException("Invalid difficulty level.")
+            };
 
             var description = string.Empty;
             var prevpath = "bodyparam.txt";
@@ -682,6 +685,7 @@ namespace SysBot.Pokemon.Discord
 
             var msg = $"{Context.User.Mention}, a new raid for seed {newparam.Seed} and level {level} has been scheduled!  You will be DM'd when it's about to start.";
             await ReplyAsync(msg).ConfigureAwait(false);
+            await Context.Message.DeleteAsync().ConfigureAwait(false);
         }
 
         [Command("rqc")]
@@ -701,6 +705,7 @@ namespace SysBot.Pokemon.Discord
             list.Remove(raid);
             var msg = $"Your raid for {raid.Title} | {raid.Seed:X8} has been removed!";
             await ReplyAsync(msg).ConfigureAwait(false);
+            await Context.Message.DeleteAsync().ConfigureAwait(false);
         }
 
 

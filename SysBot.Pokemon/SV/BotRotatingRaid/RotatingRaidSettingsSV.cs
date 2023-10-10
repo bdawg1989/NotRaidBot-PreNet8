@@ -28,7 +28,7 @@ namespace SysBot.Pokemon
         [Category(Hosting), Description("When enabled, the bot will attempt to auto-generate Raid Parameters from the \"raidsv.txt\" file on botstart.")]
         public bool GenerateParametersFromFile { get; set; } = true;
 
-        [Category(Hosting), Description("When enabled, the bot will attempt to auto-generate Raid Parameters from the \"raidsv.txt\" file on botstart.")]
+        [Category(Hosting), Description("Set to \"true\" when events are active to properly process level 7 (event) and level 8 (distribution) raids.")]
         public bool EventActive { get; set; } = false;
 
         [Category(Hosting), Description("RotatingRaid Preset Filters"), DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
