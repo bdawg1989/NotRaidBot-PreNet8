@@ -36,7 +36,7 @@ namespace SysBot.Pokemon
         public RaidEmbedFiltersCategory RaidEmbedFilters { get; set; } = new();
 
         [Category(Hosting), Description("When enabled, the bot will use the superior sprite art courtesy of SHA.")]
-        public bool SpriteAlternateArt { get; set; } = true;
+        public bool SpriteAlternateArt { get; set; } = false;
 
         [Category(Hosting), Description("Enter the total number of raids to host before the bot automatically stops. Default is 0 to ignore this setting.")]
         public int TotalRaidsToHost { get; set; } = 0;

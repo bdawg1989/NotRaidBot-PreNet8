@@ -118,6 +118,7 @@ namespace SysBot.Pokemon
             public Species Species { get; set; } = Species.None;
             public int SpeciesForm { get; set; } = 0;
             public string[] PartyPK { get; set; } = Array.Empty<string>();
+            [Browsable(false)]
             public bool SpriteAlternateArt { get; set; } = false;
             public string Seed { get; set; } = "0";
             public string Title { get; set; } = string.Empty;
