@@ -15,6 +15,8 @@ using Newtonsoft.Json;
 using static SysBot.Base.SwitchButton;
 using System.Net.Http;
 using System.Drawing;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 
 namespace SysBot.Pokemon
 {
@@ -1121,7 +1123,7 @@ namespace SysBot.Pokemon
 
             if (!disband && !upnext && !raidstart)
             {
-                embed.AddField("**Stats:**", $"**Gender**: {RaidEmbedInfo.RaidSpeciesGender}\n**Nature:** {RaidEmbedInfo.RaidSpeciesNature}\n**Ability:** {RaidEmbedInfo.RaidSpeciesAbility}\n**IVs:** {RaidEmbedInfo.RaidSpeciesIVs}\n**Scale:** {RaidEmbedInfo.ScaleText}({RaidEmbedInfo.ScaleNumber})", true);
+                embed.AddField("**Stats:**", $"**Tera Type:** {RaidEmbedInfo.RaidSpeciesTeraType}\n**Gender**: {RaidEmbedInfo.RaidSpeciesGender}\n**Nature:** {RaidEmbedInfo.RaidSpeciesNature}\n**Ability:** {RaidEmbedInfo.RaidSpeciesAbility}\n**IVs:** {RaidEmbedInfo.RaidSpeciesIVs}\n**Scale:** {RaidEmbedInfo.ScaleText}({RaidEmbedInfo.ScaleNumber})\n**Seed:** ||{Settings.RaidEmbedParameters[RotationCount].Seed}||", true);
             }
 
             if (!disband && !upnext && !raidstart && Settings.EmbedToggles.IncludeMoves)
@@ -1131,7 +1133,7 @@ namespace SysBot.Pokemon
 
             if (!disband && !upnext && !raidstart)
             {
-                embed.AddField(" **SpecialRewards:**", string.IsNullOrEmpty($"{RaidEmbedInfo.SpecialRewards}") ? "No Rewards To Display" : $"{RaidEmbedInfo.SpecialRewards}", Settings.EmbedToggles.IncludeMoves ? false : true);
+                embed.AddField(" **Special Rewards:**", string.IsNullOrEmpty($"{RaidEmbedInfo.SpecialRewards}") ? "No Rewards To Display" : $"{RaidEmbedInfo.SpecialRewards}", Settings.EmbedToggles.IncludeMoves ? false : true);
             }
 
             if (!disband && names is null && !upnext)
@@ -1480,8 +1482,8 @@ namespace SysBot.Pokemon
                         }
                         var titlePrefix = container.Raids[i].IsShiny ? " Shiny " : " ";
                         RaidEmbedInfo.RaidSpecies = (Species)container.Encounters[i].Species;
-                        RaidEmbedInfo.RaidEmbedTitle = $"**{(Species)container.Encounters[i].Species} {starcount} {titlePrefix} {(MoveType)container.Raids[i].TeraType}**";
-                        RaidEmbedInfo.RaidSpeciesGender = $"{(pk.Gender == 0 ? "♂" : pk.Gender == 1 ? "♀" : "")}";
+                        RaidEmbedInfo.RaidEmbedTitle = $"**{starcount} {titlePrefix} {(Species)container.Encounters[i].Species}**";
+                        RaidEmbedInfo.RaidSpeciesGender = $"{(pk.Gender == 0 ? "Male" : pk.Gender == 1 ? "Female" : "")}";
                         RaidEmbedInfo.RaidSpeciesNature = GameInfo.Strings.Natures[pk.Nature];
                         RaidEmbedInfo.RaidSpeciesAbility = $"{(Ability)pk.Ability}";
                         RaidEmbedInfo.RaidSpeciesIVs = $"{pk.IV_HP}/{pk.IV_ATK}/{pk.IV_DEF}/{pk.IV_SPA}/{pk.IV_SPD}/{pk.IV_SPE}";
@@ -1624,6 +1626,6 @@ namespace SysBot.Pokemon
             public static string ScaleText = string.Empty;
             public static string SpecialRewards = string.Empty;
             public static int ScaleNumber;
-        }
+    }
     }
 }
