@@ -13,10 +13,4 @@
 		<ProjectReference Include="..\SysBot.Base\SysBot.Base.csproj" />
 		<ProjectReference Include="..\SysBot.Pokemon\SysBot.Pokemon.csproj" />
 	</ItemGroup>
-
-	<ItemGroup>
-		<Reference Include="PermuteMMO.Lib">
-			<HintPath>deps\PermuteMMO.Lib.dll</HintPath>
-		</Reference>
-	</ItemGroup>
 </Project>

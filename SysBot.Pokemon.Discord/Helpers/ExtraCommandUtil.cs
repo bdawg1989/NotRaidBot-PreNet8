@@ -80,30 +80,6 @@ namespace SysBot.Pokemon.Discord
             }
         }
 
-        public static async Task TCUserBanned(SocketUser user, SocketGuild guild)
-        {
-            if (!TradeCordHelper<T>.TCInitialized)
-                return;
-
-            var instance = SysCord<T>.Runner.Hub.Config;
-            var helper = new TradeCordHelper<T>(instance.TradeCord);
-            var ctx = new TradeCordHelper<T>.TC_CommandContext() { Context = TCCommandContext.DeleteUser, ID = user.Id, Username = user.Username };
-            var result = await helper.ProcessTradeCord(ctx, new string[] { user.Id.ToString() }).ConfigureAwait(false);
-            if (result.Success)
-            {
-                var channels = instance.Discord.EchoChannels.List;
-                for (int i = 0; i < channels.Count; i++)
-                {
-                    ISocketMessageChannel? channel = (ISocketMessageChannel?)guild.Channels.FirstOrDefault(x => x.Id == channels[i].ID);
-                    if (channel == default)
-                        continue;
-
-                    await channel.SendMessageAsync($"**[TradeCord]** Automatically deleted TradeCord data for: \n**{user.Username}{user.Discriminator}** ({user.Id}) in: **{guild.Name}**.\n Reason: Banned.").ConfigureAwait(false);
-                }
-                Base.LogUtil.LogInfo($"Automatically deleted TradeCord data for: {user.Username}{user.Discriminator} ({user.Id}) in: {guild.Name}.", "TradeCord: ");
-            }
-        }
-
         public static Task HandleReactionAsync(Cacheable<IUserMessage, ulong> cachedMsg, Cacheable<IMessageChannel, ulong> ch, SocketReaction reaction)
         {
             _ = Task.Run(async () =>
@@ -121,7 +97,7 @@ namespace SysBot.Pokemon.Discord
                     msg = await cachedMsg.GetOrDownloadAsync().ConfigureAwait(false);
                 else msg = cachedMsg.Value;
 
-                bool process = msg.Embeds.Count > 0 && (TradeCordHelper<T>.TCInitialized || msg.Embeds.First().Fields[0].Name.Contains("Giveaway Pool") || msg.Embeds.First().Fields[0].Name.Contains("List"));
+                bool process = msg.Embeds.First().Fields[0].Name.Contains("Giveaway Pool") || msg.Embeds.First().Fields[0].Name.Contains("List");
                 if (!process || !reaction.User.IsSpecified)
                     return;
 
@@ -267,65 +243,6 @@ namespace SysBot.Pokemon.Discord
                 });
             }
             await ctx.Message.Channel.SendMessageAsync(embed: embed.Build()).ConfigureAwait(false);
-        }
-
-        public static Task ButtonExecuted(SocketMessageComponent component)
-        {
-            _ = Task.Run(async () =>
-            {
-                var id = component.Data.CustomId;
-                if (id.Contains("etumrep") && !component.HasResponded)
-                {
-                    try
-                    {
-                        await component.DeferAsync().ConfigureAwait(false);
-                        await EtumrepUtil.HandleEtumrepRequestAsync(component, id).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        var msg = $"{ex.Message}\n{ex.StackTrace}\n{ex.InnerException}";
-                        Base.LogUtil.LogError(msg, "[ButtonExecuted Event]");
-                    }
-                }
-                else if (id.Contains("permute"))
-                {
-                    var service = id.Contains(';') ? id.Split(';')[1] : "";
-                    await PermuteUtil.HandlePermuteRequestAsync(component, service, id).ConfigureAwait(false);
-                }
-            });
-
-            return Task.CompletedTask;
-        }
-
-        public static Task SelectMenuExecuted(SocketMessageComponent component)
-        {
-            _ = Task.Run(async () =>
-            {
-                var id = component.Data.CustomId;
-                string service = id.Contains(';') ? id.Split(';')[1] : component.Data.Values.First() ?? "";
-                await component.DeferAsync().ConfigureAwait(false);
-
-                if (id.Contains("permute_json_filter"))
-                    await PermuteUtil.HandlePermuteButtonAsync(component, service).ConfigureAwait(false);
-                else if (id.Contains("permute_json_select"))
-                    await PermuteUtil.HandlePermuteRequestAsync(component, service, id).ConfigureAwait(false);
-            });
-
-            return Task.CompletedTask;
-        }
-
-        public static Task ModalSubmitted(SocketModal modal)
-        {
-            _ = Task.Run(async () =>
-            {
-                await modal.DeferAsync().ConfigureAwait(false);
-                var id = modal.Data.CustomId;
-                string service = id.Contains(';') ? id.Split(';')[1] : "";
-                if (id.Contains("permute_json"))
-                    await PermuteUtil.VerifyAndRunPermuteAsync(modal, service).ConfigureAwait(false);
-            });
-
-            return Task.CompletedTask;
         }
 
         private static List<string> SpliceAtWord(string entry, int start, int length)
