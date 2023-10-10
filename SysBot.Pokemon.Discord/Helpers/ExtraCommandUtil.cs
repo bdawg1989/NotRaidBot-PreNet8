@@ -245,65 +245,6 @@ namespace SysBot.Pokemon.Discord
             await ctx.Message.Channel.SendMessageAsync(embed: embed.Build()).ConfigureAwait(false);
         }
 
-        public static Task ButtonExecuted(SocketMessageComponent component)
-        {
-            _ = Task.Run(async () =>
-            {
-                var id = component.Data.CustomId;
-                if (id.Contains("etumrep") && !component.HasResponded)
-                {
-                    try
-                    {
-                        await component.DeferAsync().ConfigureAwait(false);
-                        await EtumrepUtil.HandleEtumrepRequestAsync(component, id).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        var msg = $"{ex.Message}\n{ex.StackTrace}\n{ex.InnerException}";
-                        Base.LogUtil.LogError(msg, "[ButtonExecuted Event]");
-                    }
-                }
-                else if (id.Contains("permute"))
-                {
-                    var service = id.Contains(';') ? id.Split(';')[1] : "";
-                    await PermuteUtil.HandlePermuteRequestAsync(component, service, id).ConfigureAwait(false);
-                }
-            });
-
-            return Task.CompletedTask;
-        }
-
-        public static Task SelectMenuExecuted(SocketMessageComponent component)
-        {
-            _ = Task.Run(async () =>
-            {
-                var id = component.Data.CustomId;
-                string service = id.Contains(';') ? id.Split(';')[1] : component.Data.Values.First() ?? "";
-                await component.DeferAsync().ConfigureAwait(false);
-
-                if (id.Contains("permute_json_filter"))
-                    await PermuteUtil.HandlePermuteButtonAsync(component, service).ConfigureAwait(false);
-                else if (id.Contains("permute_json_select"))
-                    await PermuteUtil.HandlePermuteRequestAsync(component, service, id).ConfigureAwait(false);
-            });
-
-            return Task.CompletedTask;
-        }
-
-        public static Task ModalSubmitted(SocketModal modal)
-        {
-            _ = Task.Run(async () =>
-            {
-                await modal.DeferAsync().ConfigureAwait(false);
-                var id = modal.Data.CustomId;
-                string service = id.Contains(';') ? id.Split(';')[1] : "";
-                if (id.Contains("permute_json"))
-                    await PermuteUtil.VerifyAndRunPermuteAsync(modal, service).ConfigureAwait(false);
-            });
-
-            return Task.CompletedTask;
-        }
-
         private static List<string> SpliceAtWord(string entry, int start, int length)
         {
             int counter = 0;

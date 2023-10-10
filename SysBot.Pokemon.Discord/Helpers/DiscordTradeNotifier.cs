@@ -149,33 +149,6 @@ namespace SysBot.Pokemon.Discord
                 Trader.SendPKMAsync(result, message).ConfigureAwait(false);
         }
 
-        public void SendIncompleteEtumrepEmbed(PokeRoutineExecutor<T> routine, PokeTradeDetail<T> info, string msg, IReadOnlyList<PA8> pkms)
-        {
-            var list = new List<FileAttachment>();
-            for (int i = 0; i < pkms.Count; i++)
-            {
-                var pk = pkms[i];
-                var ms = new MemoryStream(pk.Data);
-                var name = Util.CleanFileName(pk.FileName);
-                list.Add(new(ms, name));
-            }
-
-            var embed = new EmbedBuilder
-            {
-                Color = Color.Blue,
-                Description = "Here are all the Pokémon you dumped!",
-            }.WithAuthor(x => { x.Name = "Pokémon Legends: Arceus Dump"; });
-
-            var ch = Trader.CreateDMChannelAsync().Result;
-            ch.SendFilesAsync(list, msg, false, embed: embed.Build()).ConfigureAwait(false);
-        }
-
-        public void SendEtumrepEmbed(PokeRoutineExecutor<T> routine, PokeTradeDetail<T> info, IReadOnlyList<PA8> pkms)
-        {
-            OnFinish?.Invoke(routine);
-            _ = Task.Run(() => EtumrepUtil.SendEtumrepEmbedAsync(Trader, pkms).ConfigureAwait(false));
-        }
-
         public readonly string[] MarkTitle =
         {
             " the Peckish"," the Sleepy"," the Dozy"," the Early Riser"," the Cloud Watcher"," the Sodden"," the Thunderstruck"," the Snow Frolicker"," the Shivering"," the Parched"," the Sandswept"," the Mist Drifter",

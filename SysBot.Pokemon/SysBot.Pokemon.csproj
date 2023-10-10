@@ -35,9 +35,6 @@
 		<ProjectReference Include="..\SysBot.Base\SysBot.Base.csproj" />
 	</ItemGroup>
 	<ItemGroup>
-		<Reference Include="PermuteMMO.Lib">
-			<HintPath>deps\PermuteMMO.Lib.dll</HintPath>
-		</Reference>
 		<Reference Include="PKHeX.Core.AutoMod">
 			<HintPath>deps\PKHeX.Core.AutoMod.dll</HintPath>
 		</Reference>
