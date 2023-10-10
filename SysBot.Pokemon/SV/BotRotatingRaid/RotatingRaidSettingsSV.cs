@@ -109,8 +109,10 @@ namespace SysBot.Pokemon
             public override string ToString() => $"{Title}";
             public bool ActiveInRotation { get; set; } = true;
             public TeraCrystalType CrystalType { get; set; } = TeraCrystalType.Base;
+            [Browsable(false)]
             public string[] Description { get; set; } = Array.Empty<string>();
             public bool IsCoded { get; set; } = true;
+            [Browsable(false)]
             public bool IsSet { get; set; } = false;
             public bool IsShiny { get; set; } = true;
             public Species Species { get; set; } = Species.None;
@@ -119,7 +121,9 @@ namespace SysBot.Pokemon
             public bool SpriteAlternateArt { get; set; } = false;
             public string Seed { get; set; } = "0";
             public string Title { get; set; } = string.Empty;
+            [Browsable(false)]
             public bool AddedByRACommand { get; set; } = false;
+            [Browsable(false)]
             public ulong RequestedByUserID { get; set; } // Add this line for User ID
             public SocketUser? User { get; set; }
         }

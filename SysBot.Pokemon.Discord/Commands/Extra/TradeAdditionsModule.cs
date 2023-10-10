@@ -592,9 +592,9 @@ namespace SysBot.Pokemon.Discord
         [Command("ra")]
         [Summary("Adds new raid parameter next in the queue.")]
         public async Task AddNewRaidParamNext(
-        [Summary("Seed")] string seed,
-        [Summary("Difficulty Level (1-7)")] int level,
-        [Remainder] string partyPKData = "") // Default it to an empty string
+            [Summary("Seed")] string seed,
+            [Summary("Difficulty Level (1-7)")] int level,
+            [Remainder] string partyPKData = "") // Default it to an empty string
         {
             // Check if the user already has a request
             var userId = Context.User.Id;
@@ -661,7 +661,7 @@ namespace SysBot.Pokemon.Discord
                 CrystalType = crystalType,
                 Description = new[] { description },
                 PartyPK = new[] { partyPKFormat },
-                Species = Species.None, // Set to "None" explicitly here or use Species = parse,
+                Species = Species.None,
                 SpeciesForm = 0,
                 Seed = seed,
                 IsCoded = true,
