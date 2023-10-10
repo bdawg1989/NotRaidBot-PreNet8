@@ -465,6 +465,40 @@ namespace SysBot.Pokemon.Discord
             await ReplyAsync(msg).ConfigureAwait(false);
         }
 
+        [Command("rqs")]
+        [Summary("Checks the number of raids before the user's request and gives an ETA.")]
+        public async Task CheckQueueStatus()
+        {
+            var userId = Context.User.Id;
+
+            // Assuming RotatingRaidBotSV.RotationCount holds the current position in the queue
+            int currentPosition = RotatingRaidBotSV.RotationCount;
+
+            // Find the index of the user's request in the queue
+            var userRequestIndex = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters.FindIndex(r => r.RequestedByUserID == userId);
+
+            if (userRequestIndex == -1)
+            {
+                await ReplyAsync($"{Context.User.Mention}, you do not have a raid request in the queue.").ConfigureAwait(false);
+                return;
+            }
+
+            int raidsBeforeUser = userRequestIndex - currentPosition;
+
+            if (raidsBeforeUser <= 0)
+            {
+                await ReplyAsync($"{Context.User.Mention}, your raid request is up next!").ConfigureAwait(false);
+            }
+            else
+            {
+                // Calculate ETA
+                int etaMinutes = raidsBeforeUser * 5;
+                await ReplyAsync($"{Context.User.Mention}, there are {raidsBeforeUser} raids before your request. Estimated time until your raid: {etaMinutes} minutes.").ConfigureAwait(false);
+            }
+
+            await Context.Message.DeleteAsync().ConfigureAwait(false);
+        }
+
         [Command("rqc")]
         [Summary("Removes the raid added by the user.")]
         public async Task RemoveOwnRaidParam()
