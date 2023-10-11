@@ -43,6 +43,7 @@ namespace SysBot.Pokemon
         private int EventProgress;
         private int EmptyRaid = 0;
         private int LostRaid = 0;
+        private bool firstRun = true;
         public static int RotationCount { get; set; }
         private ulong TodaySeed;
         private ulong OverworldOffset;
@@ -536,6 +537,7 @@ namespace SysBot.Pokemon
             }
 
             Log("Returning to overworld...");
+
             while (!await IsOnOverworld(OverworldOffset, token).ConfigureAwait(false))
                 await Click(A, 1_000, token).ConfigureAwait(false);
             await CountRaids(trainers, token).ConfigureAwait(false);
@@ -687,7 +689,12 @@ namespace SysBot.Pokemon
                 // If the current raid wasn't added by the RA command, move to the next raid.
                 RotationCount++;
             }
-
+            if (firstRun)
+            {
+                RotationCount = 0; // Start back at 0 on first run.
+                Log($"Resetting Rotation Count to {RotationCount}");
+                firstRun = false;
+            }
             if (RotationCount >= Settings.RaidEmbedParameters.Count)
             {
                 RotationCount = 0;
@@ -773,12 +780,24 @@ namespace SysBot.Pokemon
 
             await Click(A, 3_000, token).ConfigureAwait(false);
             await Click(A, 3_000, token).ConfigureAwait(false);
-            if (!Settings.RaidEmbedParameters[RotationCount].IsCoded || Settings.RaidEmbedParameters[RotationCount].IsCoded && EmptyRaid == Settings.LobbyOptions.EmptyRaidLimit && Settings.LobbyOptions.LobbyMethodOptions == LobbyMethodOptions.OpenLobby)
+
+            if (firstRun) // If it's the first run
             {
+                Log("First Run detected. Opening Lobby up to all to start raid rotation.");
+                await Click(DDOWN, 1_000, token).ConfigureAwait(false);
+            }
+            else if (!Settings.RaidEmbedParameters[RotationCount].IsCoded || Settings.RaidEmbedParameters[RotationCount].IsCoded && EmptyRaid == Settings.LobbyOptions.EmptyRaidLimit && Settings.LobbyOptions.LobbyMethodOptions == LobbyMethodOptions.OpenLobby)
+            {
+                // If not the first run, then apply the Settings logic
                 if (Settings.RaidEmbedParameters[RotationCount].IsCoded && EmptyRaid == Settings.LobbyOptions.EmptyRaidLimit && Settings.LobbyOptions.LobbyMethodOptions == LobbyMethodOptions.OpenLobby)
                     Log($"We had {Settings.LobbyOptions.EmptyRaidLimit} empty raids.. Opening this raid to all!");
                 await Click(DDOWN, 1_000, token).ConfigureAwait(false);
             }
+            else
+            {
+                await Click(A, 3_000, token).ConfigureAwait(false);
+            }
+
             await Click(A, 8_000, token).ConfigureAwait(false);
             return true;
         }
@@ -1072,6 +1091,11 @@ namespace SysBot.Pokemon
 
         private async Task EnqueueEmbed(List<string>? names, string message, bool hatTrick, bool disband, bool upnext, bool raidstart, CancellationToken token)
         {
+            if (firstRun)
+            {
+                // First Run detected. Not sending the embed to start raid rotation.
+                return;
+            }
             if (Settings.RaidEmbedParameters[RotationCount].AddedByRACommand)
             {
                 await Task.Delay(15000).ConfigureAwait(false);  // Delay for 15 seconds
