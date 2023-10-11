@@ -481,12 +481,11 @@ namespace SysBot.Pokemon.Discord
                 var userId = Context.User.Id;
                 var raidParameters = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters;
                 var raidToUpdate = raidParameters.FirstOrDefault(r => r.RequestedByUserID == userId);
-                string partyPK;
-                var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries); // Remove empty lines
-                partyPK = string.Join("\n", lines).Trim();
+                string[] partyPK = content.Split('\n', StringSplitOptions.RemoveEmptyEntries); // Remove empty lines
                 if (raidToUpdate != null)
                 {
-                    raidToUpdate.PartyPK = new[] { partyPK };
+                    raidToUpdate.PartyPK = partyPK;
+                    await Context.Message.DeleteAsync().ConfigureAwait(false);
                     var msg = "Updated your raid's Pokémon!";
                     await ReplyAsync(msg).ConfigureAwait(false);
                 }
