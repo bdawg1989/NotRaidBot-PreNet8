@@ -111,9 +111,9 @@ namespace SysBot.Pokemon
             if (pk is PK9 pkl)
             {
                 if (pkl.Scale == 0)
-                    markEntryText = " the Teeny";
+                    markEntryText = " The Teeny";
                 if (pkl.Scale == 255)
-                    markEntryText = " the Great";
+                    markEntryText = " The Great";
             }
             return markEntryText;
         }

@@ -566,10 +566,9 @@ namespace SysBot.Pokemon.Discord
 
             list.Remove(raid);
             await Context.Message.DeleteAsync().ConfigureAwait(false);
-            var msg = $"Your raid for {raid.Title} | {raid.Seed:X8} has been removed!";
+            var msg = $"Cleared your Raid from the queue.";
             await ReplyAsync(msg).ConfigureAwait(false);
         }
-
 
         [Command("removeRaidParams")]
         [Alias("rrp")]
