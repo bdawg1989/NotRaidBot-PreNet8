@@ -107,7 +107,7 @@ namespace SysBot.Pokemon
             string markEntryText = "";
             HasMark((IRibbonIndex)pk, out RibbonIndex mark);
             if (mark == RibbonIndex.MarkMightiest)
-                markEntryText = "the Unrivaled";
+                markEntryText = " The Unrivaled";
             if (pk is PK9 pkl)
             {
                 if (pkl.Scale == 0)
