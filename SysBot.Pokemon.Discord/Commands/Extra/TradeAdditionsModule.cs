@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using PKHeX.Core;
+using SysBot.Base;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,7 +18,7 @@ namespace SysBot.Pokemon.Discord
         private static TradeQueueInfo<T> Info => SysCord<T>.Runner.Hub.Queues.Info;
         private readonly PokeTradeHub<T> Hub = SysCord<T>.Runner.Hub;
         private readonly ExtraCommandUtil<T> Util = new();
-
+        
         [Command("giveawayqueue")]
         [Alias("gaq")]
         [Summary("Prints the users in the giveway queues.")]
@@ -367,10 +368,7 @@ namespace SysBot.Pokemon.Discord
 
         [Command("ra")]
         [Summary("Adds new raid parameter next in the queue.")]
-        public async Task AddNewRaidParamNext(
-            [Summary("Seed")] string seed,
-            [Summary("Difficulty Level (1-7)")] int level,
-            [Remainder] string partyPKData = "") // Default it to an empty string
+        public async Task AddNewRaidParamNext([Summary("Seed")] string seed, [Summary("Difficulty Level (1-7)")] int level)
         {
             // Check if the user already has a request
             var userId = Context.User.Id;
@@ -390,23 +388,7 @@ namespace SysBot.Pokemon.Discord
             {
                 await ReplyAsync("Invalid Raid level. No active Events.").ConfigureAwait(false);
                 return;
-            }
-
-            string partyPKFormat;
-            if (!string.IsNullOrEmpty(partyPKData))
-            {
-                StringBuilder sb = new StringBuilder();
-                var lines = partyPKData.Split('\n');
-                foreach (var line in lines)
-                {
-                    sb.AppendLine(line.Trim());
-                }
-                partyPKFormat = sb.ToString();
-            }
-            else
-            {
-                partyPKFormat = ""; // if no data is provided
-            }
+            }          
 
             // Determine the CrystalType based on the given difficulty level
             var crystalType = level switch
@@ -440,7 +422,7 @@ namespace SysBot.Pokemon.Discord
             {
                 CrystalType = crystalType,
                 Description = new[] { description },
-                PartyPK = new[] { partyPKFormat },
+                PartyPK = new[] { "" },
                 Species = Species.None,
                 SpeciesForm = 0,
                 Seed = seed,
@@ -463,6 +445,61 @@ namespace SysBot.Pokemon.Discord
             await Context.Message.DeleteAsync().ConfigureAwait(false);
             var msg = $"{Context.User.Mention}, a new raid for seed {newparam.Seed} and level {level} has been scheduled!  You will be DM'd when it's about to start.";
             await ReplyAsync(msg).ConfigureAwait(false);
+        }
+
+        [Command("rp")]
+        [Summary("Adds provided showdown set Pokémon to the users Raid in Queue.")]
+        public async Task AddRaidPK([Summary("Showdown Set")][Remainder] string content)
+        {
+            content = ReusableActions.StripCodeBlock(content);
+            var set = new ShowdownSet(content);
+            var template = AutoLegalityWrapper.GetTemplate(set);
+            if (set.InvalidLines.Count != 0 || set.Species <= 0)
+            {
+                var msg = $"Unable to parse Showdown Set:\n{string.Join("\n", set.InvalidLines)}";
+                await ReplyAsync(msg).ConfigureAwait(false);
+                return;
+            }
+
+            try
+            {
+                var sav = AutoLegalityWrapper.GetTrainerInfo<T>();
+                var pkm = sav.GetLegal(template, out var result);
+                var la = new LegalityAnalysis(pkm);
+                var spec = GameInfo.Strings.Species[template.Species];
+                pkm = EntityConverter.ConvertToType(pkm, typeof(T), out _) ?? pkm;
+                if (pkm is not T pk || !la.Valid)
+                {
+                    var reason = result == "Timeout" ? $"That {spec} set took too long to generate." : $"I wasn't able to create a {spec} from that set.";
+                    var imsg = $"Oops! {reason}";
+                    if (result == "Failed")
+                        imsg += $"\n{AutoLegalityWrapper.GetLegalizationHint(template, sav, pkm)}";
+                    await ReplyAsync(imsg).ConfigureAwait(false);
+                    return;
+                }
+
+                var userId = Context.User.Id;
+                var raidParameters = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters;
+                var raidToUpdate = raidParameters.FirstOrDefault(r => r.RequestedByUserID == userId);
+
+                if (raidToUpdate != null)
+                {
+                    raidToUpdate.PartyPK = new[] {content};
+                    var msg = "Updated your raid's Pokémon!";
+                    await ReplyAsync(msg).ConfigureAwait(false);
+                }
+                else
+                {
+                    var msg = "You don't have a raid in queue!";
+                    await ReplyAsync(msg).ConfigureAwait(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogUtil.LogSafe(ex, nameof(TradeAdditionsModule<T>));
+                var msg = $"Oops! An unexpected problem happened with this Showdown Set:\n```{string.Join("\n", set.GetSetLines())}```";
+                await ReplyAsync(msg).ConfigureAwait(false);
+            }
         }
 
         [Command("rqs")]
