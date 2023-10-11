@@ -1538,7 +1538,7 @@ namespace SysBot.Pokemon
                         }
                         var titlePrefix = container.Raids[i].IsShiny ? " Shiny " : " ";
                         RaidEmbedInfo.RaidSpecies = (Species)container.Encounters[i].Species;
-                        RaidEmbedInfo.RaidEmbedTitle = $"**{starcount} {titlePrefix} {(Species)container.Encounters[i].Species}**";
+                        RaidEmbedInfo.RaidEmbedTitle = $"**{starcount} {titlePrefix} {(Species)container.Encounters[i].Species}**{pkinfo}";
                         RaidEmbedInfo.RaidSpeciesGender = $"{(pk.Gender == 0 ? "Male" : pk.Gender == 1 ? "Female" : "")}";
                         RaidEmbedInfo.RaidSpeciesNature = GameInfo.Strings.Natures[pk.Nature];
                         RaidEmbedInfo.RaidSpeciesAbility = $"{(Ability)pk.Ability}";
