@@ -14,7 +14,7 @@ namespace SysBot.Pokemon
         public IReadOnlyList<long> MyStatusPointer { get; } = new long[] { 0x4617648, 0xD8, 0x8, 0xB8, 0x0, 0x40 };
         public IReadOnlyList<long> ConfigPointer { get; } = new long[] { 0x4617648, 0xD8, 0x8, 0xB8, 0xD0, 0x40 };
         public IReadOnlyList<long> CurrentBoxPointer { get; } = new long[] { 0x4617648, 0xD8, 0x8, 0xB8, 0x28, 0x570 };
-        public IReadOnlyList<long> LinkTradePartnerNIDPointer { get; } = new long[] { 0x46304B8, 0xF8, 0x8 };
+        public IReadOnlyList<long> LinkTradePartnerNIDPointer { get; } = new long[] { 0x46404B8, 0xF8, 0x8 };
         public IReadOnlyList<long> LinkTradePartnerPokemonPointer { get; } = new long[] { 0x461BE58, 0x48, 0x58, 0x40, 0x148 };
         public IReadOnlyList<long> Trader1MyStatusPointer { get; } = new long[] { 0x461BE58, 0x48, 0xB0, 0x0 };
         public IReadOnlyList<long> Trader2MyStatusPointer { get; } = new long[] { 0x461BE58, 0x48, 0xE0, 0x0 };
@@ -25,7 +25,7 @@ namespace SysBot.Pokemon
         public const int BoxFormatSlotSize = 0x158;
         public const ulong LibAppletWeID = 0x010000000000100a; // One of the process IDs for the news.
 
-        public IReadOnlyList<long> TeraRaidCodePointer { get; } = new long[] { 0x46304B8, 0x10, 0x78, 0x10, 0x1A9 };
+        public IReadOnlyList<long> TeraRaidCodePointer { get; } = new long[] { 0x46404B8, 0x10, 0x78, 0x10, 0x1A9 };
         public IReadOnlyList<long> RaidBlockPointerP { get; } = new long[] { 0x4617648, 0x1C0, 0x88, 0x40 };
         public IReadOnlyList<long> RaidBlockPointerK { get; } = new long[] { 0x4617648, 0x1C0, 0x88, 0xCD8 };
         public IReadOnlyList<long> RideCollisionPointer { get; } = new long[] { 0x46455D8, 0x2A8, 0x0, 0x08, 0x80 };
@@ -34,8 +34,8 @@ namespace SysBot.Pokemon
         public IReadOnlyList<long> BlockKeyPointer = new long[] { 0x4617648, 0xD8, 0x0, 0x0, 0x30, 0x0 };
         public IReadOnlyList<long> TextBoxPointer { get; } = new long[] { 0x46455D8, 0x20, 0xF0, 0x30, 0x70, 0x198 };
         public IReadOnlyList<long> ItemBlock { get; } = new long[] { 0x4617648, 0x1C0, 0xC8, 0x40 };
-    public ulong TeraLobbyIsConnected { get; } = 0x042DA430;
-        public ulong LoadedIntoDesiredState { get; } = 0x046C3020;
-        public uint EggData = 0x04632BA8;
+    public ulong TeraLobbyIsConnected { get; } = 0x042CB430;
+        public ulong LoadedIntoDesiredState { get; } = 0x046B4020;
+        public uint EggData = 0x04623BA8;
     }
 }
