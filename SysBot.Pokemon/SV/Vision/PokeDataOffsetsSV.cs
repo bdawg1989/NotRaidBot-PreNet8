@@ -19,8 +19,8 @@ namespace SysBot.Pokemon
         public IReadOnlyList<long> BlockKeyPointer = new long[]                         { 0x4617648, 0xD8, 0x0, 0x0, 0x30, 0x0 };
         public IReadOnlyList<long> ItemBlock { get; } = new long[]                      { 0x4617648, 0x1C0, 0xC8, 0x40 };
 
-        public IReadOnlyList<long> LinkTradePartnerNIDPointer { get; } = new long[]     { 0x46304B8, 0xF8, 0x8 };
-        public IReadOnlyList<long> TeraRaidCodePointer { get; } = new long[]            { 0x46304B8, 0x10, 0x78, 0x10, 0x1A9 };
+        public IReadOnlyList<long> LinkTradePartnerNIDPointer { get; } = new long[]     { 0x46404B8, 0xF8, 0x8 };
+        public IReadOnlyList<long> TeraRaidCodePointer { get; } = new long[]            { 0x46404B8, 0x10, 0x78, 0x10, 0x1A9 };
 
         public IReadOnlyList<long> LinkTradePartnerPokemonPointer { get; } = new long[] { 0x461BE58, 0x48, 0x58, 0x40, 0x148 };
         public IReadOnlyList<long> Trader1MyStatusPointer { get; } = new long[]         { 0x461BE58, 0x48, 0xB0, 0x0 };
