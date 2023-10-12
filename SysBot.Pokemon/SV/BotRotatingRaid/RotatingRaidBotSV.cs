@@ -1188,21 +1188,39 @@ namespace SysBot.Pokemon
 
             // Use the dominant color, unless it's a disband or hatTrick situation
             var embedColor = disband ? Discord.Color.Red : hatTrick ? Discord.Color.Purple : new Discord.Color(dominantColor.R, dominantColor.G, dominantColor.B);
+
+            TimeSpan duration = new TimeSpan(0, 2, 31);
+
+            // Calculate the future time by adding the duration to the current time
+            DateTimeOffset futureTime = DateTimeOffset.Now.Add(duration);
+
+            // Convert the future time to Unix timestamp
+            long futureUnixTime = futureTime.ToUnixTimeSeconds();
+
+            // Create the future time message using Discord's timestamp formatting
+            string futureTimeMessage = $"**Raid Posting: <t:{futureUnixTime}:R>**";
+
             var embed = new EmbedBuilder()
             {
-                Title = disband ? $"**Raid canceled: [{TeraRaidCode}]**" : upnext && Settings.TotalRaidsToHost != 0 ? $"Raid Ended - Preparing Next Raid!" : upnext && Settings.TotalRaidsToHost == 0 ? $"Preparing Raid" : title,
+                Title = disband ? $"**Raid canceled: [{TeraRaidCode}]**" : upnext && Settings.TotalRaidsToHost != 0 ? $"Raid Ended - Preparing Next Raid!" : upnext && Settings.TotalRaidsToHost == 0 ? $"Raid Ended - Preparing Next Raid!" : title,
                 Color = embedColor,
-                Description = disband ? message : upnext ? Settings.RaidEmbedParameters[RotationCount].Title : raidstart ? "" : description,
+                Description = disband ? message : upnext ? $"{Settings.RaidEmbedParameters[RotationCount].Title}\n{futureTimeMessage}" : raidstart ? "" : description,
                 ImageUrl = bytes.Length > 0 ? "attachment://zap.jpg" : default,
-            }.WithFooter(new EmbedFooterBuilder()
+            };
+
+            // Only include footer if not posting 'upnext' embed with the 'Preparing Raid' title
+            if (!(upnext && Settings.TotalRaidsToHost == 0))
             {
-                Text = $"Host: {HostSAV.OT} | Uptime: {StartTime - DateTime.Now:d\\.hh\\:mm\\:ss}\n" +
-                       $"Raids: {RaidCount} | Wins: {WinCount} | Losses: {LossCount}\n" + disclaimer
-            });
+                embed.WithFooter(new EmbedFooterBuilder()
+                {
+                    Text = $"Host: {HostSAV.OT} | Uptime: {StartTime - DateTime.Now:d\\.hh\\:mm\\:ss}\n" +
+                           $"Raids: {RaidCount} | Wins: {WinCount} | Losses: {LossCount}\n" + disclaimer
+                });
+            }
 
             if (!disband && !upnext && !raidstart)
             {
-                embed.AddField("**Stats:**", $"**Tera Type:** {RaidEmbedInfo.RaidSpeciesTeraType}\n**Gender**: {RaidEmbedInfo.RaidSpeciesGender}\n**Nature:** {RaidEmbedInfo.RaidSpeciesNature}\n**Ability:** {RaidEmbedInfo.RaidSpeciesAbility}\n**IVs:** {RaidEmbedInfo.RaidSpeciesIVs}\n**Scale:** {RaidEmbedInfo.ScaleText}({RaidEmbedInfo.ScaleNumber})\n**Seed:** ||{Settings.RaidEmbedParameters[RotationCount].Seed}||", true);
+                embed.AddField("**Stats:**", $"**Tera Type:** {RaidEmbedInfo.RaidSpeciesTeraType}\n**Gender**: {RaidEmbedInfo.RaidSpeciesGender}\n**Nature:** {RaidEmbedInfo.RaidSpeciesNature}\n**Ability:** {RaidEmbedInfo.RaidSpeciesAbility}\n**IVs:** {RaidEmbedInfo.RaidSpeciesIVs}\n**Scale:** {RaidEmbedInfo.ScaleText}({RaidEmbedInfo.ScaleNumber})\n**Seed:** `{Settings.RaidEmbedParameters[RotationCount].Seed}`", true);
             }
 
             if (!disband && !upnext && !raidstart && Settings.EmbedToggles.IncludeMoves)
@@ -1529,8 +1547,7 @@ namespace SysBot.Pokemon
                             res = string.Empty;
                         else
                             res = "**Special Rewards:**\n" + res;
-                        Log($"Seed {seed:X8} found for {(Species)container.Encounters[i].Species}");
-                        firstRun = false; // if we find familiar seed, skip first run        
+                        Log($"Seed {seed:X8} found for {(Species)container.Encounters[i].Species}");       
                         Settings.RaidEmbedParameters[a].Seed = $"{seed:X8}";
                         var stars = container.Raids[i].IsEvent ? container.Encounters[i].Stars : RaidExtensions.GetStarCount(container.Raids[i], container.Raids[i].Difficulty, StoryProgress, container.Raids[i].IsBlack);
                         string starcount = string.Empty;
