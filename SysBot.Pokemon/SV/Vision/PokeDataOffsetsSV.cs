@@ -30,8 +30,8 @@ namespace SysBot.Pokemon
         public IReadOnlyList<long> IsConnectedPointer { get; } = new long[]             { 0x461B3D8, 0x30 };
         public IReadOnlyList<long> OverworldPointer { get; } = new long[]               { 0x461CB18, 0x160, 0xE8, 0x28 };
         public IReadOnlyList<long> TextBoxPointer { get; } = new long[]                 { 0x46455D8, 0x20, 0xF0, 0x30, 0x70, 0x198 };
-        public ulong TeraLobbyIsConnected { get; } = 0x042DA430;
-        public ulong LoadedIntoDesiredState { get; } = 0x046C3020;
+        public ulong TeraLobbyIsConnected { get; } = 0x042CB430;
+        public ulong LoadedIntoDesiredState { get; } = 0x046B4020;
 
         public const int BoxFormatSlotSize = 0x158;
         public const ulong LibAppletWeID = 0x010000000000100a; // One of the process IDs for the news.
