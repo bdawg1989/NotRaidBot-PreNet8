@@ -1088,6 +1088,14 @@ namespace SysBot.Pokemon
             }
             Log("Caching offsets complete!");
         }
+        private static async Task<bool> IsValidImageUrlAsync(string url)
+        {
+            using (var httpClient = new HttpClient())
+            {
+                var response = await httpClient.GetAsync(url);
+                return response.IsSuccessStatusCode;
+            }
+        }
 
         private async Task EnqueueEmbed(List<string>? names, string message, bool hatTrick, bool disband, bool upnext, bool raidstart, CancellationToken token)
         {
@@ -1152,9 +1160,25 @@ namespace SysBot.Pokemon
                 CommonEdits.SetIsShiny(pk, false);
 
             if (Settings.RaidEmbedParameters[RotationCount].SpriteAlternateArt && Settings.RaidEmbedParameters[RotationCount].IsShiny)
-                turl = AltPokeImg(pk);
+            {
+                var altUrl = AltPokeImg(pk);
+
+                // Check if AltPokeImg URL is valid
+                if (await IsValidImageUrlAsync(altUrl))
+                {
+                    turl = altUrl;
+                }
+                else
+                {
+                    Settings.RaidEmbedParameters[RotationCount].SpriteAlternateArt = false;  // Set SpriteAlternateArt to false if no img found
+                    turl = TradeExtensions<PK9>.PokeImg(pk, false, false);
+                    Log($"AltPokeImg URL was not valid. Setting SpriteAlternateArt to false.");
+                }
+            }
             else
+            {
                 turl = TradeExtensions<PK9>.PokeImg(pk, false, false);
+            }
 
             if (Settings.RaidEmbedParameters[RotationCount].Species is 0)
                 turl = "https://i.imgur.com/uHSaGGJ.png";
@@ -1184,7 +1208,7 @@ namespace SysBot.Pokemon
 
             if (!disband && !upnext && !raidstart && Settings.EmbedToggles.IncludeMoves)
             {
-                embed.AddField("**Moves:**", string.IsNullOrEmpty($"{RaidEmbedInfo.ExtraMoves}") ? string.IsNullOrEmpty($"{RaidEmbedInfo.Moves}")  ? "No Moves To Display" : $"{RaidEmbedInfo.Moves}" : $"{RaidEmbedInfo.Moves}\n**Extra Moves:**\n{RaidEmbedInfo.ExtraMoves}", true);
+                embed.AddField("**Moves:**", string.IsNullOrEmpty($"{RaidEmbedInfo.ExtraMoves}") ? string.IsNullOrEmpty($"{RaidEmbedInfo.Moves}") ? "No Moves To Display" : $"{RaidEmbedInfo.Moves}" : $"{RaidEmbedInfo.Moves}\n**Extra Moves:**\n{RaidEmbedInfo.ExtraMoves}", true);
             }
 
             if (!disband && !upnext && !raidstart)
@@ -1681,6 +1705,6 @@ namespace SysBot.Pokemon
             public static string ScaleText = string.Empty;
             public static string SpecialRewards = string.Empty;
             public static int ScaleNumber;
-    }
+        }
     }
 }
