@@ -1202,30 +1202,22 @@ namespace SysBot.Pokemon
 
             if (!disband && !upnext && !raidstart)
             {
-                // Always include the Stats field, set inline to true
-                embed.AddField("**Stats:**", $"**Tera Type:** {RaidEmbedInfo.RaidSpeciesTeraType}\n**Gender**: {RaidEmbedInfo.RaidSpeciesGender}\n**Nature:** {RaidEmbedInfo.RaidSpeciesNature}\n**Ability:** {RaidEmbedInfo.RaidSpeciesAbility}\n**IVs:** {RaidEmbedInfo.RaidSpeciesIVs}\n**Scale:** {RaidEmbedInfo.ScaleText}({RaidEmbedInfo.ScaleNumber})\n**Seed:** `{Settings.RaidEmbedParameters[RotationCount].Seed}`", true);
+                embed.AddField("**Stats:**", $"**Tera Type:** {RaidEmbedInfo.RaidSpeciesTeraType}\n**Gender**: {RaidEmbedInfo.RaidSpeciesGender}\n**Nature:** {RaidEmbedInfo.RaidSpeciesNature}\n**Ability:** {RaidEmbedInfo.RaidSpeciesAbility}\n**IVs:** {RaidEmbedInfo.RaidSpeciesIVs}\n**Scale:** {RaidEmbedInfo.ScaleText}({RaidEmbedInfo.ScaleNumber})\n**Seed:** ||{Settings.RaidEmbedParameters[RotationCount].Seed}||", true);
+            }
 
-                if (Settings.EmbedToggles.IncludeMoves)
-                {
-                    // If Moves are enabled, include them next to Stats
-                    embed.AddField("**Moves:**", string.IsNullOrEmpty($"{RaidEmbedInfo.ExtraMoves}") ? string.IsNullOrEmpty($"{RaidEmbedInfo.Moves}") ? "No Moves To Display" : $"{RaidEmbedInfo.Moves}" : $"{RaidEmbedInfo.Moves}\n**Extra Moves:**\n{RaidEmbedInfo.ExtraMoves}", true);
+            if (!disband && !upnext && !raidstart && Settings.EmbedToggles.IncludeMoves)
+            {
+                embed.AddField("**Moves:**", string.IsNullOrEmpty($"{RaidEmbedInfo.ExtraMoves}") ? string.IsNullOrEmpty($"{RaidEmbedInfo.Moves}") ? "No Moves To Display" : $"{RaidEmbedInfo.Moves}" : $"{RaidEmbedInfo.Moves}\n**Extra Moves:**\n{RaidEmbedInfo.ExtraMoves}", true);
+            }
 
-                    // Add a blank field to fill the grid so that "Special Rewards" and "Raid Starting" can be side by side
-                    embed.AddField("\u200B", "\u200B", true);
-                }
+            if (!disband && !upnext && !raidstart)
+            {
+                embed.AddField(" **Special Rewards:**", string.IsNullOrEmpty($"{RaidEmbedInfo.SpecialRewards}") ? "No Rewards To Display" : $"{RaidEmbedInfo.SpecialRewards}", Settings.EmbedToggles.IncludeMoves ? false : true);
+            }
 
-                // Include Special Rewards but inline set to false
-                embed.AddField(" **Special Rewards:**", string.IsNullOrEmpty($"{RaidEmbedInfo.SpecialRewards}") ? "No Rewards To Display" : $"{RaidEmbedInfo.SpecialRewards}", false);
-
-                // For Raid Starting/Raid Code
-                if (!disband && names is null && !upnext)
-                {
-                    // Add a blank field to fill the grid so that "Special Rewards" and "Raid Starting" can be side by side
-                    embed.AddField("\u200B", "\u200B", true);
-
-                    // Add the Raid Starting/Raid Code field, make it inline to go next to "Special Rewards"
-                    embed.AddField(Settings.IncludeCountdown ? $"**Raid Starting: <t:{DateTimeOffset.Now.ToUnixTimeSeconds() + Settings.TimeToWait}:R>**" : $"**Waiting in lobby!**", $"Raid Code: {code}", true);
-                }
+            if (!disband && names is null && !upnext)
+            {
+                embed.AddField(Settings.IncludeCountdown ? $"**Raid Starting: <t:{DateTimeOffset.Now.ToUnixTimeSeconds() + Settings.TimeToWait}:R>**" : $"**Waiting in lobby!**", $"Raid Code: {code}");
             }
 
             if (!disband && names is not null && !upnext)
