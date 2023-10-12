@@ -1165,7 +1165,6 @@ namespace SysBot.Pokemon
             // Use the dominant color, unless it's a disband or hatTrick situation
             var embedColor = disband ? Discord.Color.Red : hatTrick ? Discord.Color.Purple : new Discord.Color(dominantColor.R, dominantColor.G, dominantColor.B);
             var embed = new EmbedBuilder()
-
             {
                 Title = disband ? $"**Raid canceled: [{TeraRaidCode}]**" : upnext && Settings.TotalRaidsToHost != 0 ? $"Raid Ended - Preparing Next Raid!" : upnext && Settings.TotalRaidsToHost == 0 ? $"Preparing Raid" : title,
                 Color = embedColor,
@@ -1535,7 +1534,7 @@ namespace SysBot.Pokemon
                             extramoves = string.Concat(extraMovesList.Take(extraMovesList.Count()));
                             RaidEmbedInfo.ExtraMoves = extramoves;
                         }
-                        var titlePrefix = container.Raids[i].IsShiny ? " Shiny " : " ";
+                        var titlePrefix = container.Raids[i].IsShiny ? "Shiny" : "";
                         RaidEmbedInfo.RaidSpecies = (Species)container.Encounters[i].Species;
                         RaidEmbedInfo.RaidEmbedTitle = $"**{starcount} {titlePrefix} {(Species)container.Encounters[i].Species}**{pkinfo}";
                         RaidEmbedInfo.RaidSpeciesGender = $"{(pk.Gender == 0 ? "Male" : pk.Gender == 1 ? "Female" : "")}";
