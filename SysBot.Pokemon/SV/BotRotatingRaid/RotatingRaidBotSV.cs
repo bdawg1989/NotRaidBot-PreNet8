@@ -1202,31 +1202,30 @@ namespace SysBot.Pokemon
 
             if (!disband && !upnext && !raidstart)
             {
-                // Add Stats field, always inline
-                embed.AddField("**Stats:**", $"**Tera Type:** {RaidEmbedInfo.RaidSpeciesTeraType}\n**Gender**: {RaidEmbedInfo.RaidSpeciesGender}\n**Nature:** {RaidEmbedInfo.RaidSpeciesNature}\n**Ability:** {RaidEmbedInfo.RaidSpeciesAbility}\n**IVs:** {RaidEmbedInfo.RaidSpeciesIVs}\n**Scale:** {RaidEmbedInfo.ScaleText}({RaidEmbedInfo.ScaleNumber})\n**Seed:** ||{Settings.RaidEmbedParameters[RotationCount].Seed}||", true);
+                // Always include the Stats field, set inline to true
+                embed.AddField("**Stats:**", $"**Tera Type:** {RaidEmbedInfo.RaidSpeciesTeraType}\n**Gender**: {RaidEmbedInfo.RaidSpeciesGender}\n**Nature:** {RaidEmbedInfo.RaidSpeciesNature}\n**Ability:** {RaidEmbedInfo.RaidSpeciesAbility}\n**IVs:** {RaidEmbedInfo.RaidSpeciesIVs}\n**Scale:** {RaidEmbedInfo.ScaleText}({RaidEmbedInfo.ScaleNumber})\n**Seed:** `{Settings.RaidEmbedParameters[RotationCount].Seed}`", true);
 
                 if (Settings.EmbedToggles.IncludeMoves)
                 {
-                    // If Moves are enabled, set them inline next to Stats
+                    // If Moves are enabled, include them next to Stats
                     embed.AddField("**Moves:**", string.IsNullOrEmpty($"{RaidEmbedInfo.ExtraMoves}") ? string.IsNullOrEmpty($"{RaidEmbedInfo.Moves}") ? "No Moves To Display" : $"{RaidEmbedInfo.Moves}" : $"{RaidEmbedInfo.Moves}\n**Extra Moves:**\n{RaidEmbedInfo.ExtraMoves}", true);
-                }
-                else
-                {
-                    // If Moves are disabled, set Special Rewards inline next to Stats
-                    embed.AddField(" **Special Rewards:**", string.IsNullOrEmpty($"{RaidEmbedInfo.SpecialRewards}") ? "No Rewards To Display" : $"{RaidEmbedInfo.SpecialRewards}", true);
-                }
-            }
 
-            if (!disband && names is null && !upnext)
-            {
-                if (Settings.EmbedToggles.IncludeMoves)
-                {
-                    // If Moves are enabled, add Special Rewards inline (next to Moves)
-                    embed.AddField(" **Special Rewards:**", string.IsNullOrEmpty($"{RaidEmbedInfo.SpecialRewards}") ? "No Rewards To Display" : $"{RaidEmbedInfo.SpecialRewards}", true);
+                    // Add a blank field to fill the grid so that "Special Rewards" and "Raid Starting" can be side by side
+                    embed.AddField("\u200B", "\u200B", true);
                 }
 
-                // Add Raid Starting/Raid Code. If Moves are disabled, this will be on its own line
-                embed.AddField(Settings.IncludeCountdown ? $"**Raid Starting: <t:{DateTimeOffset.Now.ToUnixTimeSeconds() + Settings.TimeToWait}:R>**" : $"**Waiting in lobby!**", $"Raid Code: {code}", !Settings.EmbedToggles.IncludeMoves);
+                // Include Special Rewards but inline set to false
+                embed.AddField(" **Special Rewards:**", string.IsNullOrEmpty($"{RaidEmbedInfo.SpecialRewards}") ? "No Rewards To Display" : $"{RaidEmbedInfo.SpecialRewards}", false);
+
+                // For Raid Starting/Raid Code
+                if (!disband && names is null && !upnext)
+                {
+                    // Add a blank field to fill the grid so that "Special Rewards" and "Raid Starting" can be side by side
+                    embed.AddField("\u200B", "\u200B", true);
+
+                    // Add the Raid Starting/Raid Code field, make it inline to go next to "Special Rewards"
+                    embed.AddField(Settings.IncludeCountdown ? $"**Raid Starting: <t:{DateTimeOffset.Now.ToUnixTimeSeconds() + Settings.TimeToWait}:R>**" : $"**Waiting in lobby!**", $"Raid Code: {code}", true);
+                }
             }
 
             if (!disband && names is not null && !upnext)
@@ -1539,6 +1538,7 @@ namespace SysBot.Pokemon
                         else
                             res = "**Special Rewards:**\n" + res;
                         Log($"Seed {seed:X8} found for {(Species)container.Encounters[i].Species}");
+                        firstRun = false; // if we find familiar seed, skip first run        
                         Settings.RaidEmbedParameters[a].Seed = $"{seed:X8}";
                         var stars = container.Raids[i].IsEvent ? container.Encounters[i].Stars : RaidExtensions.GetStarCount(container.Raids[i], container.Raids[i].Difficulty, StoryProgress, container.Raids[i].IsBlack);
                         string starcount = string.Empty;
