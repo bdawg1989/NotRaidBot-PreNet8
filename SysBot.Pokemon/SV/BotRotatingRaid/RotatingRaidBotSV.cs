@@ -1525,7 +1525,6 @@ namespace SysBot.Pokemon
                         Settings.RaidEmbedParameters[a].Species = (Species)container.Encounters[i].Species;
                         Settings.RaidEmbedParameters[a].SpeciesForm = container.Encounters[i].Form;
                         var pkinfo = Hub.Config.StopConditions.GetRaidPrintName(pk);
-                        pkinfo += $"\nTera Type: {(MoveType)container.Raids[i].TeraType}";
                         var strings = GameInfo.GetStrings(1);
                         var moves = new ushort[4] { container.Encounters[i].Move1, container.Encounters[i].Move2, container.Encounters[i].Move3, container.Encounters[i].Move4 };
                         var movestr = string.Concat(moves.Where(z => z != 0).Select(z => $"{strings.Move[z]}ㅤ{Environment.NewLine}")).TrimEnd(Environment.NewLine.ToCharArray());
