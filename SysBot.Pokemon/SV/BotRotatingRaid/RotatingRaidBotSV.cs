@@ -1204,7 +1204,7 @@ namespace SysBot.Pokemon
             {
                 Title = disband ? $"**Raid canceled: [{TeraRaidCode}]**" : upnext && Settings.TotalRaidsToHost != 0 ? $"Raid Ended - Preparing Next Raid!" : upnext && Settings.TotalRaidsToHost == 0 ? $"Raid Ended - Preparing Next Raid!" : title,
                 Color = embedColor,
-                Description = disband ? message : upnext ? $"{Settings.RaidEmbedParameters[RotationCount].Title}\n{futureTimeMessage}" : raidstart ? "" : description,
+                Description = disband ? message : upnext ? $"# {Settings.RaidEmbedParameters[RotationCount].Title}\n\n{futureTimeMessage}" : raidstart ? "" : description,
                 ImageUrl = bytes.Length > 0 ? "attachment://zap.jpg" : default,
             };
 
