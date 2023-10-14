@@ -762,7 +762,38 @@ namespace SysBot.Pokemon
             if (recovery)
                 return true;
 
-            for (int i = 0; i < 6; i++)
+            await Task.Delay(2_500, token).ConfigureAwait(false);
+            await Click(B, 0_500, token).ConfigureAwait(false);
+
+            // Inject PartyPK after we save the game, zyro.
+            var len = string.Empty;
+            foreach (var l in Settings.RaidEmbedParameters[RotationCount].PartyPK)
+                len += l;
+            if (len.Length > 1 && EmptyRaid == 0 && !recovery)
+            {
+                Log("Preparing PartyPK. Sit tight.");
+                await SetCurrentBox(0, token).ConfigureAwait(false);
+                var res = string.Join("\n", Settings.RaidEmbedParameters[RotationCount].PartyPK);
+                if (res.Length > 4096)
+                    res = res[..4096];
+                await InjectPartyPk(res, token).ConfigureAwait(false);
+
+                await Click(X, 2_000, token).ConfigureAwait(false);
+                await Click(DRIGHT, 0_500, token).ConfigureAwait(false);
+                await SetStick(SwitchStick.LEFT, 0, -32000, 1_000, token).ConfigureAwait(false);
+                await SetStick(SwitchStick.LEFT, 0, 0, 0, token).ConfigureAwait(false);
+                for (int i = 0; i < 2; i++)
+                    await Click(DDOWN, 0_500, token).ConfigureAwait(false);
+                await Click(A, 3_500, token).ConfigureAwait(false);
+                await Click(Y, 0_500, token).ConfigureAwait(false);
+                await Click(DLEFT, 0_800, token).ConfigureAwait(false);
+                await Click(Y, 0_500, token).ConfigureAwait(false);
+                for (int i = 0; i < 2; i++)
+                    await Click(B, 1_500, token).ConfigureAwait(false);
+                Log("PartyPK switch successful.");
+            }
+
+            for (int i = 0; i < 4; i++)
                 await Click(B, 0_500, token).ConfigureAwait(false);
 
             await Task.Delay(1_500, token).ConfigureAwait(false);
@@ -774,35 +805,6 @@ namespace SysBot.Pokemon
             await Click(A, 3_000, token).ConfigureAwait(false);
             await Click(A, 3_000, token).ConfigureAwait(false);
 
-            // Inject PartyPK after we save the game, zyro.
-            var len = string.Empty;
-            foreach (var l in Settings.RaidEmbedParameters[RotationCount].PartyPK)
-                len += l;
-            if (len.Length > 1 && EmptyRaid == 0 && !recovery)
-            {
-                Log("Preparing PartyPK to inject..");
-                await SetCurrentBox(0, token).ConfigureAwait(false);
-                var res = string.Join("\n", Settings.RaidEmbedParameters[RotationCount].PartyPK);
-                if (res.Length > 4096)
-                    res = res[..4096];
-                await InjectPartyPk(res, token).ConfigureAwait(false);
-
-                await Click(X, 2_000, token).ConfigureAwait(false);
-                await Click(DRIGHT, 0_500, token).ConfigureAwait(false);
-                Log("Scrolling through menus...");
-                await SetStick(SwitchStick.LEFT, 0, -32000, 1_000, token).ConfigureAwait(false);
-                await SetStick(SwitchStick.LEFT, 0, 0, 0, token).ConfigureAwait(false);
-                Log("Tap tap...");
-                for (int i = 0; i < 2; i++)
-                    await Click(DDOWN, 0_500, token).ConfigureAwait(false);
-                await Click(A, 3_500, token).ConfigureAwait(false);
-                await Click(Y, 0_500, token).ConfigureAwait(false);
-                await Click(DLEFT, 0_800, token).ConfigureAwait(false);
-                await Click(Y, 0_500, token).ConfigureAwait(false);
-                for (int i = 0; i < 2; i++)
-                    await Click(B, 1_500, token).ConfigureAwait(false);
-                Log("Battle PK is ready!");
-            }
 
             if (firstRun) // If it's the first run
             {
