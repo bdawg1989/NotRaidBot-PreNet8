@@ -4,6 +4,7 @@ using PKHeX.Core;
 using SysBot.Base;
 using SysBot.Pokemon.Discord.Helpers;
 using System;
+using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -376,6 +377,12 @@ namespace SysBot.Pokemon.Discord
             if (SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters.Any(r => r.RequestedByUserID == userId))
             {
                 await ReplyAsync("You already have an existing raid request in the queue.").ConfigureAwait(false);
+                return;
+            }
+            // Validate the seed
+            if (!Regex.IsMatch(seed, "^[a-zA-Z0-9]{8}$"))
+            {
+                await ReplyAsync("Invalid seed format. Please enter a valid seed.").ConfigureAwait(false);
                 return;
             }
 
