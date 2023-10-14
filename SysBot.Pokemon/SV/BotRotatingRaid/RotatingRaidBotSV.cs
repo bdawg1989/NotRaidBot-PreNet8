@@ -1158,7 +1158,7 @@ namespace SysBot.Pokemon
             if (Settings.TakeScreenshot && !upnext)
                 bytes = await SwitchConnection.PixelPeek(token).ConfigureAwait(false) ?? Array.Empty<byte>();
 
-            string disclaimer = Settings.RaidEmbedParameters.Count > 1 ? "NotRaidBot v2.9a by Gengar & Kai\nhttps://notpaldea.net" : "";
+            string disclaimer = Settings.RaidEmbedParameters.Count > 1 ? "NotRaidBot v3.1a by Gengar & Kai\nhttps://notpaldea.net" : "";
 
             var turl = string.Empty;
             var form = string.Empty;

@@ -19,13 +19,13 @@ namespace SysBot.Pokemon
     {
         SkipRaid,
         OpenLobby,
-        ContinueRaid,
+        ContinueRaid
     }
 
     public enum RaidAction
     {
         AFK,
-        MashA,
+        MashA
     }
 
     public class BanList
