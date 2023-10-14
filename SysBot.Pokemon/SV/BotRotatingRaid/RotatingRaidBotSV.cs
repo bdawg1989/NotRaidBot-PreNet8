@@ -1533,7 +1533,19 @@ namespace SysBot.Pokemon
                     if (done is true)
                         break;
 
-                    var set = uint.Parse(Settings.RaidEmbedParameters[a].Seed, NumberStyles.AllowHexSpecifier);
+                    uint set;
+                    try
+                    {
+                        set = uint.Parse(Settings.RaidEmbedParameters[a].Seed, NumberStyles.AllowHexSpecifier);
+                    }
+                    catch (FormatException)
+                    {
+                        Log($"Invalid seed format detected. Removing {Settings.RaidEmbedParameters[a].Seed} from list.");
+                        Settings.RaidEmbedParameters.RemoveAt(a);
+                        a--;  // Decrement the index so that it does not skip the next element.
+                        continue;  // Skip to the next iteration.
+                    }
+
                     if (seed == set)
                     {
                         var res = GetSpecialRewards(container.Rewards[i]);

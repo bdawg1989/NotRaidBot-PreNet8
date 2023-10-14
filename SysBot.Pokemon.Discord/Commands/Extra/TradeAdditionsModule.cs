@@ -379,13 +379,13 @@ namespace SysBot.Pokemon.Discord
                 await ReplyAsync("You already have an existing raid request in the queue.").ConfigureAwait(false);
                 return;
             }
-            // Validate the seed
-            if (!Regex.IsMatch(seed, "^[a-zA-Z0-9]{8}$"))
+
+            // Validate the seed for hexadecimal format
+            if (!Regex.IsMatch(seed, "^[a-fA-F0-9]{8}$"))
             {
                 await ReplyAsync("Invalid seed format. Please enter a valid seed.").ConfigureAwait(false);
                 return;
             }
-
             if (level < 1 || level > 8)
             {
                 await ReplyAsync("Invalid raid level. Please enter a level between 1 and 8.").ConfigureAwait(false);
