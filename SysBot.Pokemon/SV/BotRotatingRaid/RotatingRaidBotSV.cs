@@ -1226,16 +1226,23 @@ namespace SysBot.Pokemon
             if (!disband && !upnext && !raidstart && Settings.EmbedToggles.IncludeMoves)
             {
                 embed.AddField("**Moves:**", string.IsNullOrEmpty($"{RaidEmbedInfo.ExtraMoves}") ? string.IsNullOrEmpty($"{RaidEmbedInfo.Moves}") ? "No Moves To Display" : $"{RaidEmbedInfo.Moves}" : $"{RaidEmbedInfo.Moves}\n**Extra Moves:**\n{RaidEmbedInfo.ExtraMoves}", true);
+                embed.AddField("\u200b", "\u200b", true);
             }
 
-            if (!disband && !upnext && !raidstart)
+            if (!disband && !upnext && !raidstart && !Settings.EmbedToggles.IncludeMoves)
             {
-                embed.AddField(" **Special Rewards:**", string.IsNullOrEmpty($"{RaidEmbedInfo.SpecialRewards}") ? "No Rewards To Display" : $"{RaidEmbedInfo.SpecialRewards}", Settings.EmbedToggles.IncludeMoves ? false : true);
+                embed.AddField(" **Special Rewards:**", string.IsNullOrEmpty($"{RaidEmbedInfo.SpecialRewards}") ? "No Rewards To Display" : $"{RaidEmbedInfo.SpecialRewards}", true);
+                embed.AddField("\u200b", "\u200b", true);
             }
 
             if (!disband && names is null && !upnext)
             {
-                embed.AddField(Settings.IncludeCountdown ? $"**Raid Starting: <t:{DateTimeOffset.Now.ToUnixTimeSeconds() + Settings.TimeToWait}:R>**" : $"**Waiting in lobby!**", $"Raid Code: {code}");
+                embed.AddField(Settings.IncludeCountdown ? $"**Raid Starting:\n<t:{DateTimeOffset.Now.ToUnixTimeSeconds() + Settings.TimeToWait}:R>**" : $"**Waiting in lobby!**", $"Raid Code: {code}", true);
+            }
+
+            if (!disband && !upnext && !raidstart && Settings.EmbedToggles.IncludeMoves)
+            {
+                embed.AddField(" **Special Rewards:**", string.IsNullOrEmpty($"{RaidEmbedInfo.SpecialRewards}") ? "No Rewards To Display" : $"{RaidEmbedInfo.SpecialRewards}", true);
             }
 
             if (!disband && names is not null && !upnext)
