@@ -30,7 +30,7 @@ namespace SysBot.Pokemon
             Settings = hub.Config.RotatingRaidSV;
         }
 
-        private int lobbyError;
+        private int LobbyError;
         private int RaidsAtStart;
         private int RaidCount;
         private int WinCount;
@@ -237,19 +237,19 @@ namespace SysBot.Pokemon
                     await GrabGlobalBanlist(token).ConfigureAwait(false);
 
                 var currentSeed = BitConverter.ToUInt64(await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP, 8, token).ConfigureAwait(false), 0);
-                if (TodaySeed != currentSeed || lobbyError >= 3)
+                if (TodaySeed != currentSeed || LobbyError >= 3)
                 {
                     var msg = "";
                     if (TodaySeed != currentSeed)
                         msg = $"Current Today Seed {currentSeed:X8} does not match Starting Today Seed: {TodaySeed:X8}.\n ";
 
-                    if (lobbyError >= 3)
+                    if (LobbyError >= 3)
                     {
-                        msg = $"Failed to create a lobby {lobbyError} times.\n ";
+                        msg = $"Failed to create a lobby {LobbyError} times.\n ";
                         dayRoll++;
                     }
 
-                    if (dayRoll != 0)
+                    if (dayRoll != 0 && SeedIndexToReplace != 0 && RaidCount != 0)
                     {
                         Log(msg + "Raid Lost initiating recovery sequence.");
                         bool denFound = false;
@@ -276,7 +276,7 @@ namespace SysBot.Pokemon
                             {
                                 Log("Den Found, continuing routine!");
                                 TodaySeed = BitConverter.ToUInt64(await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP, 8, token).ConfigureAwait(false), 0);
-                                lobbyError = 0;
+                                LobbyError = 0;
                                 denFound = true;
                                 await Click(B, 1_000, token).ConfigureAwait(false);
                                 await Task.Delay(2_000, token).ConfigureAwait(false);
@@ -292,6 +292,8 @@ namespace SysBot.Pokemon
                         if (denFound)
                         {
                             await SVSaveGameOverworld(token).ConfigureAwait(false);
+                            await Task.Delay(0_500, token).ConfigureAwait(false);
+                            await Click(B, 1_000, token).ConfigureAwait(false);
                             continue;
                         }
                     }
@@ -606,23 +608,20 @@ namespace SysBot.Pokemon
                     countK++;
             }
 
-            Log($"Total raids in Paldea: {countP}");
-            Log($"Total raids in Kitakami: {countK}");
-
             if (trainers is not null)
             {
                 Log("Back in the overworld, checking if we won or lost.");
 
                 if ((countP <= 68 && countK == 26) || (countP == 69 && countK <= 25))
                 {
-                    Log("We defeated the raid boss!");
+                    Log("Yay!  We defeated {Settings.RaidEmbedParameters[RotationCount].Species}");
                     WinCount++;
                     if (trainers.Count > 0)
                         ApplyPenalty(trainers);
                 }
                 else
                 {
-                    Log("We lost the raid...");
+                    Log("Dang, we lost the raid.");
                     LossCount++;
                 }
             }
@@ -632,7 +631,7 @@ namespace SysBot.Pokemon
         {
             var todayoverride = BitConverter.GetBytes(TodaySeed);
             List<long> ptr = new(Offsets.RaidBlockPointerP);
-            ptr[2] += 0x8;
+            ptr[3] += 0x8;
             await SwitchConnection.PointerPoke(todayoverride, ptr, token).ConfigureAwait(false);
         }
 
@@ -669,6 +668,32 @@ namespace SysBot.Pokemon
 
         }
 
+        // Asynchronously checks whether the den at the given index is active or inactive.
+        // Returns true if the den is active, false otherwise.
+
+        private async Task<bool> DenStatus(int index, CancellationToken token)
+        {
+            List<long> ptr;
+            if (index < 69)
+            {
+                ptr = new(Offsets.RaidBlockPointerP)
+                {
+                    [3] = 0x40 + (index + 1) * 0x20 - 0x10
+                };
+            }
+            else
+            {
+                ptr = new(Offsets.RaidBlockPointerK)
+                {
+                    [3] = 0xCE8 + (index - 69) * 0x20 - 0x10
+                };
+            }
+            var data = await SwitchConnection.PointerPeek(2, ptr, token).ConfigureAwait(false);
+            var status = BitConverter.ToUInt16(data);
+            var msg = status == 1 ? "active" : "inactive"; // 1 = Den Found
+            Log($"Den is {msg}.");
+            return status == 1;
+        }
         private async Task SanitizeRotationCount(CancellationToken token)
         {
             await Task.Delay(0_050, token).ConfigureAwait(false);
@@ -825,15 +850,13 @@ namespace SysBot.Pokemon
                 x++;
                 if (x == 15 && recovery)
                 {
-                    Log("Failed to connect to lobby, restarting game incase we were in battle/bad connection.");
-                    await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
-                    Log("Attempting to restart routine!");
+                    Log("No den here! Rolling again.");
                     return false;
                 }
                 if (x == 45)
                 {
                     Log("Failed to connect to lobby, restarting game incase we were in battle/bad connection.");
-                    lobbyError++;
+                    LobbyError++;
                     await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
                     Log("Attempting to restart routine!");
                     return false;
