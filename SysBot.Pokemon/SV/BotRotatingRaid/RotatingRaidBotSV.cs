@@ -502,7 +502,6 @@ namespace SysBot.Pokemon
                     {
                         case RaidAction.AFK: await Task.Delay(3_000, token).ConfigureAwait(false); break;
                         case RaidAction.MashA: await Click(A, 3_500, token).ConfigureAwait(false); break;
-                        case RaidAction.TurboA: await Click(A, 1_500, token).ConfigureAwait(false); break;
                     }
                     if (b % 10 == 0)
                         Log("Still in battle...");
