@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using PKHeX.Core;
 using PKHeX.Core.AutoMod;
@@ -521,6 +523,52 @@ namespace SysBot.Pokemon
 
             bool different = criteriaList.Skip(1).Any(x => x.Species != criteriaList.First().Species);
             return different;
+        }
+
+        public static (int R, int G, int B) GetDominantColor(string imageUrl)
+        {
+            using var httpClient = new HttpClient();
+            using var response = httpClient.GetAsync(imageUrl).Result;
+            using var stream = response.Content.ReadAsStreamAsync().Result;
+            using var image = new Bitmap(stream);
+
+            var colorCount = new Dictionary<System.Drawing.Color, int>();
+
+            for (int y = 0; y < image.Height; y++)
+            {
+                for (int x = 0; x < image.Width; x++)
+                {
+                    var pixelColor = image.GetPixel(x, y);
+
+                    // If the pixel is mostly transparent or very light, skip it
+                    if (pixelColor.A < 128 || pixelColor.GetBrightness() > 0.9) continue;
+
+                    var brightnessFactor = (int)(pixelColor.GetBrightness() * 100);
+                    var saturationFactor = (int)(pixelColor.GetSaturation() * 100);
+                    var combinedFactor = brightnessFactor + saturationFactor; // Combine both brightness and saturation for weight
+
+                    var quantizedColor = System.Drawing.Color.FromArgb(
+                        pixelColor.R / 10 * 10,
+                        pixelColor.G / 10 * 10,
+                        pixelColor.B / 10 * 10
+                    );
+
+                    if (colorCount.ContainsKey(quantizedColor))
+                    {
+                        colorCount[quantizedColor] += combinedFactor;
+                    }
+                    else
+                    {
+                        colorCount[quantizedColor] = combinedFactor;
+                    }
+                }
+            }
+
+            if (colorCount.Count == 0)
+                return (255, 255, 255);  // Return white if no suitable pixels found
+
+            var dominantColor = colorCount.Aggregate((a, b) => a.Value > b.Value ? a : b).Key;
+            return (dominantColor.R, dominantColor.G, dominantColor.B);
         }
 
         public static PK8 SWSHTrade = new();

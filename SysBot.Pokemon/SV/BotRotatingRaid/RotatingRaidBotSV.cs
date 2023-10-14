@@ -14,9 +14,6 @@ using RaidCrawler.Core.Structures;
 using Newtonsoft.Json;
 using static SysBot.Base.SwitchButton;
 using System.Net.Http;
-using System.Drawing;
-using System.ComponentModel;
-using System.Runtime.InteropServices;
 
 namespace SysBot.Pokemon
 {
@@ -1180,7 +1177,7 @@ namespace SysBot.Pokemon
                 turl = "https://i.imgur.com/uHSaGGJ.png";
 
             // Fetch the dominant color from the image only AFTER turl is assigned
-            (int R, int G, int B) dominantColor = GetDominantColor(turl);
+            (int R, int G, int B) dominantColor = TradeExtensions<PK9>.GetDominantColor(turl);
 
             // Use the dominant color, unless it's a disband or hatTrick situation
             var embedColor = disband ? Discord.Color.Red : hatTrick ? Discord.Color.Purple : new Discord.Color(dominantColor.R, dominantColor.G, dominantColor.B);
@@ -1279,52 +1276,6 @@ namespace SysBot.Pokemon
             embed.ThumbnailUrl = turl;
             embed.WithImageUrl($"attachment://{fileName}");
             EchoUtil.RaidEmbed(bytes, fileName, embed);
-        }
-
-        public (int R, int G, int B) GetDominantColor(string imageUrl)
-        {
-            using var httpClient = new HttpClient();
-            using var response = httpClient.GetAsync(imageUrl).Result;
-            using var stream = response.Content.ReadAsStreamAsync().Result;
-            using var image = new Bitmap(stream);
-
-            var colorCount = new Dictionary<System.Drawing.Color, int>();
-
-            for (int y = 0; y < image.Height; y++)
-            {
-                for (int x = 0; x < image.Width; x++)
-                {
-                    var pixelColor = image.GetPixel(x, y);
-
-                    // If the pixel is mostly transparent or very light, skip it
-                    if (pixelColor.A < 128 || pixelColor.GetBrightness() > 0.9) continue;
-
-                    var brightnessFactor = (int)(pixelColor.GetBrightness() * 100);
-                    var saturationFactor = (int)(pixelColor.GetSaturation() * 100);
-                    var combinedFactor = brightnessFactor + saturationFactor; // Combine both brightness and saturation for weight
-
-                    var quantizedColor = System.Drawing.Color.FromArgb(
-                        pixelColor.R / 10 * 10,
-                        pixelColor.G / 10 * 10,
-                        pixelColor.B / 10 * 10
-                    );
-
-                    if (colorCount.ContainsKey(quantizedColor))
-                    {
-                        colorCount[quantizedColor] += combinedFactor;
-                    }
-                    else
-                    {
-                        colorCount[quantizedColor] = combinedFactor;
-                    }
-                }
-            }
-
-            if (colorCount.Count == 0)
-                return (255, 255, 255);  // Return white if no suitable pixels found
-
-            var dominantColor = colorCount.Aggregate((a, b) => a.Value > b.Value ? a : b).Key;
-            return (dominantColor.R, dominantColor.G, dominantColor.B);
         }
 
         // From PokeTradeBotSV, modified.

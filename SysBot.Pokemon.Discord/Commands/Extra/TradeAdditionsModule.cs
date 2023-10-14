@@ -2,6 +2,7 @@
 using Discord.Commands;
 using PKHeX.Core;
 using SysBot.Base;
+using SysBot.Pokemon.Discord.Helpers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -486,8 +487,8 @@ namespace SysBot.Pokemon.Discord
                 {
                     raidToUpdate.PartyPK = partyPK;
                     await Context.Message.DeleteAsync().ConfigureAwait(false);
-                    var msg = "Updated your raid's Pokémon!";
-                    await ReplyAsync(msg).ConfigureAwait(false);
+                    var embed = RPEmbed.PokeEmbed(pkm, Context.User.Username);
+                    await ReplyAsync(embed: embed).ConfigureAwait(false);
                 }
                 else
                 {
