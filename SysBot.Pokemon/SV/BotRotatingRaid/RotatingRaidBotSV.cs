@@ -1108,10 +1108,6 @@ namespace SysBot.Pokemon
             {
                 await Task.Delay(15000).ConfigureAwait(false);  // Delay for 15 seconds
             }
-            // Title can only be up to 256 characters.
-            var title = hatTrick && names is not null ? $"**🪄🎩✨ {names[0]} with the Hat Trick! ✨🎩🪄**" : Settings.RaidEmbedParameters[RotationCount].Title.Length > 0 ? RaidEmbedInfo.RaidEmbedTitle : "Tera Raid Notification";
-            if (title.Length > 256)
-                title = title[..256];
 
             // Description can only be up to 4096 characters.
             //var description = Settings.RaidEmbedParameters[RotationCount].Description.Length > 0 ? string.Join("\n", Settings.RaidEmbedParameters[RotationCount].Description) : "";
@@ -1200,27 +1196,44 @@ namespace SysBot.Pokemon
             // Create the future time message using Discord's timestamp formatting
             string futureTimeMessage = $"**Raid Posting: <t:{futureUnixTime}:R>**";
 
+            // Initialize the EmbedBuilder object
             var embed = new EmbedBuilder()
             {
-                Title = disband ? $"**Raid canceled: [{TeraRaidCode}]**" : upnext && Settings.TotalRaidsToHost != 0 ? $"Raid Ended - Preparing Next Raid!" : upnext && Settings.TotalRaidsToHost == 0 ? $"Raid Ended - Preparing Next Raid!" : title,
+                Title = disband ? $"**Raid canceled: [{TeraRaidCode}]**" : upnext && Settings.TotalRaidsToHost != 0 ? $"Raid Ended - Preparing Next Raid!" : upnext && Settings.TotalRaidsToHost == 0 ? $"Raid Ended - Preparing Next Raid!" : "",
                 Color = embedColor,
-                Description = disband ? message : upnext ? $"# {Settings.RaidEmbedParameters[RotationCount].Title}\n\n{futureTimeMessage}" : raidstart ? "" : description,
+                Description = disband ? message : upnext ? (Settings.TotalRaidsToHost == 0 ? $"# {Settings.RaidEmbedParameters[RotationCount].Title}\n\n{futureTimeMessage}" : $"# {Settings.RaidEmbedParameters[RotationCount].Title}\n\n{futureTimeMessage}") : raidstart ? "" : description,
                 ImageUrl = bytes.Length > 0 ? "attachment://zap.jpg" : default,
             };
 
             // Only include footer if not posting 'upnext' embed with the 'Preparing Raid' title
             if (!(upnext && Settings.TotalRaidsToHost == 0))
             {
+                string programIconUrl = $"https://genpkm.com/images/icon4.png";
+
                 embed.WithFooter(new EmbedFooterBuilder()
                 {
-                    Text = $"Host: {HostSAV.OT} | Uptime: {StartTime - DateTime.Now:d\\.hh\\:mm\\:ss}\n" +
-                           $"Raids: {RaidCount} | Wins: {WinCount} | Losses: {LossCount}\n" + disclaimer
+                    Text = $"Raids: {RaidCount} | Wins: {WinCount} | Losses: {LossCount}\n" + disclaimer,
+                    IconUrl = programIconUrl
                 });
             }
 
+            // Prepare the tera icon URL
+            string teraType = RaidEmbedInfo.RaidSpeciesTeraType.ToLower();
+            string teraIconUrl = $"https://mewtwoscloning.com/tera_icons/{teraType}.png";
+
+            // Only include author (header) if not posting 'upnext' embed with the 'Preparing Raid' title
+            if (!(upnext && Settings.TotalRaidsToHost == 0))
+            {
+                // Set the author (header) of the embed with the tera icon
+                embed.WithAuthor(new EmbedAuthorBuilder()
+                {
+                    Name = RaidEmbedInfo.RaidEmbedTitle,
+                    IconUrl = teraIconUrl
+                });
+            }
             if (!disband && !upnext && !raidstart)
             {
-                embed.AddField("**Stats:**", $"**Tera Type:** {RaidEmbedInfo.RaidSpeciesTeraType}\n**Gender**: {RaidEmbedInfo.RaidSpeciesGender}\n**Nature:** {RaidEmbedInfo.RaidSpeciesNature}\n**Ability:** {RaidEmbedInfo.RaidSpeciesAbility}\n**IVs:** {RaidEmbedInfo.RaidSpeciesIVs}\n**Scale:** {RaidEmbedInfo.ScaleText}({RaidEmbedInfo.ScaleNumber})\n**Seed:** `{Settings.RaidEmbedParameters[RotationCount].Seed}`", true);
+                embed.AddField("**Stats:**", $"**Gender**: {RaidEmbedInfo.RaidSpeciesGender}\n**Nature:** {RaidEmbedInfo.RaidSpeciesNature}\n**Ability:** {RaidEmbedInfo.RaidSpeciesAbility}\n**IVs:** {RaidEmbedInfo.RaidSpeciesIVs}\n**Scale:** {RaidEmbedInfo.ScaleText}({RaidEmbedInfo.ScaleNumber})\n**Seed:** `{Settings.RaidEmbedParameters[RotationCount].Seed}`", true);
             }
 
             if (!disband && !upnext && !raidstart && Settings.EmbedToggles.IncludeMoves)
@@ -1560,13 +1573,13 @@ namespace SysBot.Pokemon
                         string starcount = string.Empty;
                         switch (stars)
                         {
-                            case 1: starcount = "1 ☆"; break;
-                            case 2: starcount = "2 ☆"; break;
-                            case 3: starcount = "3 ☆"; break;
-                            case 4: starcount = "4 ☆"; break;
-                            case 5: starcount = "5 ☆"; break;
-                            case 6: starcount = "6 ☆"; break;
-                            case 7: starcount = "7 ☆"; break;
+                            case 1: starcount = "1 ★"; break;
+                            case 2: starcount = "2 ★"; break;
+                            case 3: starcount = "3 ★"; break;
+                            case 4: starcount = "4 ★"; break;
+                            case 5: starcount = "5 ★"; break;
+                            case 6: starcount = "6 ★"; break;
+                            case 7: starcount = "7 ★"; break;
                         }
                         Settings.RaidEmbedParameters[a].IsShiny = container.Raids[i].IsShiny;
                         Settings.RaidEmbedParameters[a].CrystalType = container.Raids[i].IsBlack ? TeraCrystalType.Black : container.Raids[i].IsEvent && stars == 7 ? TeraCrystalType.Might : container.Raids[i].IsEvent ? TeraCrystalType.Distribution : TeraCrystalType.Base;
@@ -1585,7 +1598,7 @@ namespace SysBot.Pokemon
                         }
                         var titlePrefix = container.Raids[i].IsShiny ? "Shiny" : "";
                         RaidEmbedInfo.RaidSpecies = (Species)container.Encounters[i].Species;
-                        RaidEmbedInfo.RaidEmbedTitle = $"**{starcount} {titlePrefix} {(Species)container.Encounters[i].Species}**{pkinfo}";
+                        RaidEmbedInfo.RaidEmbedTitle = $"{starcount} {titlePrefix} {(Species)container.Encounters[i].Species}{pkinfo}";
                         RaidEmbedInfo.RaidSpeciesGender = $"{(pk.Gender == 0 ? "Male" : pk.Gender == 1 ? "Female" : "")}";
                         RaidEmbedInfo.RaidSpeciesNature = GameInfo.Strings.Natures[pk.Nature];
                         RaidEmbedInfo.RaidSpeciesAbility = $"{(Ability)pk.Ability}";
