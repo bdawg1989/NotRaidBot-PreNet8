@@ -381,9 +381,9 @@ namespace SysBot.Pokemon.Discord
             }
 
             // Validate the seed for hexadecimal format
-            if (!Regex.IsMatch(seed, "^[a-fA-F0-9]{8}$"))
+            if (seed.Length != 8 || !seed.All(c => "0123456789abcdefABCDEF".Contains(c)))
             {
-                await ReplyAsync("Invalid seed format. Please enter a valid seed.").ConfigureAwait(false);
+                await ReplyAsync("Invalid seed format. Please enter a seed consisting of exactly 8 hexadecimal digits.").ConfigureAwait(false);
                 return;
             }
             if (level < 1 || level > 8)
