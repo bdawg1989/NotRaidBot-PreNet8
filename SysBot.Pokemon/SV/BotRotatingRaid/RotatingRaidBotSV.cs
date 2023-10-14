@@ -750,6 +750,31 @@ namespace SysBot.Pokemon
 
         private async Task<bool> PrepareForRaid(bool recovery, CancellationToken token)
         {
+            Log("Preparing lobby...");
+            // Make sure we're connected.
+            while (!await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false))
+            {
+                Log("Connecting...");
+                await RecoverToOverworld(token).ConfigureAwait(false);
+                if (!await ConnectToOnline(Hub.Config, token).ConfigureAwait(false))
+                    return false;
+            }
+            if (recovery)
+                return true;
+
+            for (int i = 0; i < 6; i++)
+                await Click(B, 0_500, token).ConfigureAwait(false);
+
+            await Task.Delay(1_500, token).ConfigureAwait(false);
+
+            // If not in the overworld, we've been attacked so quit earlier.
+            if (!await IsOnOverworld(OverworldOffset, token).ConfigureAwait(false))
+                return false;
+
+            await Click(A, 3_000, token).ConfigureAwait(false);
+            await Click(A, 3_000, token).ConfigureAwait(false);
+
+            // Inject PartyPK after we save the game, zyro.
             var len = string.Empty;
             foreach (var l in Settings.RaidEmbedParameters[RotationCount].PartyPK)
                 len += l;
@@ -778,30 +803,6 @@ namespace SysBot.Pokemon
                     await Click(B, 1_500, token).ConfigureAwait(false);
                 Log("Battle PK is ready!");
             }
-
-            Log("Preparing lobby...");
-            // Make sure we're connected.
-            while (!await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false))
-            {
-                Log("Connecting...");
-                await RecoverToOverworld(token).ConfigureAwait(false);
-                if (!await ConnectToOnline(Hub.Config, token).ConfigureAwait(false))
-                    return false;
-            }
-            if (recovery)
-                return true;
-
-            for (int i = 0; i < 6; i++)
-                await Click(B, 0_500, token).ConfigureAwait(false);
-
-            await Task.Delay(1_500, token).ConfigureAwait(false);
-
-            // If not in the overworld, we've been attacked so quit earlier.
-            if (!await IsOnOverworld(OverworldOffset, token).ConfigureAwait(false))
-                return false;
-
-            await Click(A, 3_000, token).ConfigureAwait(false);
-            await Click(A, 3_000, token).ConfigureAwait(false);
 
             if (firstRun) // If it's the first run
             {
