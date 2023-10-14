@@ -1566,13 +1566,13 @@ namespace SysBot.Pokemon
                         string starcount = string.Empty;
                         switch (stars)
                         {
-                            case 1: starcount = "1 ☆"; break;
-                            case 2: starcount = "2 ☆"; break;
-                            case 3: starcount = "3 ☆"; break;
-                            case 4: starcount = "4 ☆"; break;
-                            case 5: starcount = "5 ☆"; break;
-                            case 6: starcount = "6 ☆"; break;
-                            case 7: starcount = "7 ☆"; break;
+                            case 1: starcount = "1 ★"; break;
+                            case 2: starcount = "2 ★"; break;
+                            case 3: starcount = "3 ★"; break;
+                            case 4: starcount = "4 ★"; break;
+                            case 5: starcount = "5 ★"; break;
+                            case 6: starcount = "6 ★"; break;
+                            case 7: starcount = "7 ★"; break;
                         }
                         Settings.RaidEmbedParameters[a].IsShiny = container.Raids[i].IsShiny;
                         Settings.RaidEmbedParameters[a].CrystalType = container.Raids[i].IsBlack ? TeraCrystalType.Black : container.Raids[i].IsEvent && stars == 7 ? TeraCrystalType.Might : container.Raids[i].IsEvent ? TeraCrystalType.Distribution : TeraCrystalType.Base;
@@ -1591,7 +1591,7 @@ namespace SysBot.Pokemon
                         }
                         var titlePrefix = container.Raids[i].IsShiny ? "Shiny" : "";
                         RaidEmbedInfo.RaidSpecies = (Species)container.Encounters[i].Species;
-                        RaidEmbedInfo.RaidEmbedTitle = $"{starcount} {titlePrefix} {(Species)container.Encounters[i].Species} {pkinfo}";
+                        RaidEmbedInfo.RaidEmbedTitle = $"{starcount} {titlePrefix} {(Species)container.Encounters[i].Species}{pkinfo}";
                         RaidEmbedInfo.RaidSpeciesGender = $"{(pk.Gender == 0 ? "Male" : pk.Gender == 1 ? "Female" : "")}";
                         RaidEmbedInfo.RaidSpeciesNature = GameInfo.Strings.Natures[pk.Nature];
                         RaidEmbedInfo.RaidSpeciesAbility = $"{(Ability)pk.Ability}";
