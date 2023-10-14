@@ -14,6 +14,11 @@ namespace SysBot.Pokemon
         private const string Hosting = nameof(Hosting);
         private const string Counts = nameof(Counts);
         private const string FeatureToggle = nameof(FeatureToggle);
+        public enum TeraIconType
+        {
+            Icon1, // Use special set
+            Icon2 // Use boring set
+        }
         public override string ToString() => "RotatingRaidSV Settings";
         public int RotationCount { get; set; } // Ensure it's publicly accessible
         [Browsable(false)]
@@ -28,6 +33,8 @@ namespace SysBot.Pokemon
 
         [Category(Hosting), Description("When enabled, the bot will attempt to auto-generate Raid Parameters from the \"raidsv.txt\" file on botstart.")]
         public bool GenerateParametersFromFile { get; set; } = true;
+        [Category(FeatureToggle), Description("Choose the TeraType Icon set to use in the author area of the embed.  Icon1 are custom, Icon2 is not.")]
+        public TeraIconType SelectedTeraIconType { get; set; } = TeraIconType.Icon1;
 
         [Category(Hosting), Description("Set to \"true\" when events are active to properly process level 7 (event) and level 8 (distribution) raids.")]
         public bool EventActive { get; set; } = false;

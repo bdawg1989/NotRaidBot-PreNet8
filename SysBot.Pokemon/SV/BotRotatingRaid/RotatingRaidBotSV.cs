@@ -14,6 +14,7 @@ using RaidCrawler.Core.Structures;
 using Newtonsoft.Json;
 using static SysBot.Base.SwitchButton;
 using System.Net.Http;
+using static SysBot.Pokemon.RotatingRaidSettingsSV;
 
 namespace SysBot.Pokemon
 {
@@ -614,7 +615,7 @@ namespace SysBot.Pokemon
 
                 if ((countP <= 68 && countK == 26) || (countP == 69 && countK <= 25))
                 {
-                    Log("Yay!  We defeated {Settings.RaidEmbedParameters[RotationCount].Species}");
+                    Log("Yay!  We defeated the raid!");
                     WinCount++;
                     if (trainers.Count > 0)
                         ApplyPenalty(trainers);
@@ -1238,7 +1239,8 @@ namespace SysBot.Pokemon
 
             // Prepare the tera icon URL
             string teraType = RaidEmbedInfo.RaidSpeciesTeraType.ToLower();
-            string teraIconUrl = $"https://mewtwoscloning.com/tera_icons/{teraType}.png";
+            string folderName = Settings.SelectedTeraIconType == TeraIconType.Icon1 ? "icon1" : "icon2"; // Add more conditions for more icon types
+            string teraIconUrl = $"https://genpkm.com/images/teraicons/{folderName}/{teraType}.png";
 
             // Only include author (header) if not posting 'upnext' embed with the 'Preparing Raid' title
             if (!(upnext && Settings.TotalRaidsToHost == 0))
