@@ -1257,37 +1257,37 @@ namespace SysBot.Pokemon
             }
             if (!disband && !upnext && !raidstart)
             {
-                embed.AddField("**Stats:**", $"**Gender**: {RaidEmbedInfo.RaidSpeciesGender}\n**Nature:** {RaidEmbedInfo.RaidSpeciesNature}\n**Ability:** {RaidEmbedInfo.RaidSpeciesAbility}\n**IVs:** {RaidEmbedInfo.RaidSpeciesIVs}\n**Scale:** {RaidEmbedInfo.ScaleText}({RaidEmbedInfo.ScaleNumber})\n**Seed:** `{Settings.RaidEmbedParameters[RotationCount].Seed}`", true);
+                embed.AddField("**__Stats__**", $"**Gender**: {RaidEmbedInfo.RaidSpeciesGender}\n**Nature:** {RaidEmbedInfo.RaidSpeciesNature}\n**Ability:** {RaidEmbedInfo.RaidSpeciesAbility}\n**IVs:** {RaidEmbedInfo.RaidSpeciesIVs}\n**Scale:** {RaidEmbedInfo.ScaleText}({RaidEmbedInfo.ScaleNumber})\n**Seed:** `{Settings.RaidEmbedParameters[RotationCount].Seed}`", true);
                 embed.AddField("\u200b", "\u200b", true);
             }
 
             if (!disband && !upnext && !raidstart && Settings.EmbedToggles.IncludeMoves)
             {
-                embed.AddField("**Moves:**", string.IsNullOrEmpty($"{RaidEmbedInfo.ExtraMoves}") ? string.IsNullOrEmpty($"{RaidEmbedInfo.Moves}") ? "No Moves To Display" : $"{RaidEmbedInfo.Moves}" : $"{RaidEmbedInfo.Moves}\n**Extra Moves:**\n{RaidEmbedInfo.ExtraMoves}", true);
+                embed.AddField("**__Moves__**", string.IsNullOrEmpty($"{RaidEmbedInfo.ExtraMoves}") ? string.IsNullOrEmpty($"{RaidEmbedInfo.Moves}") ? "No Moves To Display" : $"{RaidEmbedInfo.Moves}" : $"{RaidEmbedInfo.Moves}\n**Extra Moves:**\n{RaidEmbedInfo.ExtraMoves}", true);
 
             }
 
             if (!disband && !upnext && !raidstart && !Settings.EmbedToggles.IncludeMoves)
             {
-                embed.AddField(" **Special Rewards:**", string.IsNullOrEmpty($"{RaidEmbedInfo.SpecialRewards}") ? "No Rewards To Display" : $"{RaidEmbedInfo.SpecialRewards}", true);
+                embed.AddField(" **__Special Rewards__**", string.IsNullOrEmpty($"{RaidEmbedInfo.SpecialRewards}") ? "No Rewards To Display" : $"{RaidEmbedInfo.SpecialRewards}", true);
                 embed.AddField("\u200b", "\u200b", true);
             }
 
             if (!disband && names is null && !upnext)
             {
-                embed.AddField(Settings.IncludeCountdown ? $"**Raid Starting:\n<t:{DateTimeOffset.Now.ToUnixTimeSeconds() + Settings.TimeToWait}:R>**" : $"**Waiting in lobby!**", $"Raid Code: {code}", true);
+                embed.AddField(Settings.IncludeCountdown ? $"**__Raid Starting__**:\n**<t:{DateTimeOffset.Now.ToUnixTimeSeconds() + Settings.TimeToWait}:R>**" : $"**Waiting in lobby!**", $"Raid Code: {code}", true);
             }
 
             if (!disband && !upnext && !raidstart && Settings.EmbedToggles.IncludeMoves)
             {
-                embed.AddField(" **Special Rewards:**", string.IsNullOrEmpty($"{RaidEmbedInfo.SpecialRewards}") ? "No Rewards To Display" : $"{RaidEmbedInfo.SpecialRewards}", true);
+                embed.AddField(" **__Special Rewards__**", string.IsNullOrEmpty($"{RaidEmbedInfo.SpecialRewards}") ? "No Rewards To Display" : $"{RaidEmbedInfo.SpecialRewards}", true);
             }
 
             if (!disband && names is not null && !upnext)
             {
                 var players = string.Empty;
                 if (names.Count == 0)
-                    players = "Though our party did not make it :(";
+                    players = "Our party dipped on us :/";
                 else
                 {
                     int i = 2;
