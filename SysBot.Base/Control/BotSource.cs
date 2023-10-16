@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SysBot.Base
@@ -14,7 +15,10 @@ namespace SysBot.Base
         public bool IsPaused { get; private set; }
 
         private bool IsStopping { get; set; }
-
+        // Retry connection if bot crashes
+        private int retryCount = 0;
+        private DateTime firstFailureTime;
+        private bool isFirstFailure = true;
         public void Stop()
         {
             if (!IsRunning || IsStopping)
@@ -57,6 +61,12 @@ namespace SysBot.Base
 
         private void ReportFailure(Task finishedTask)
         {
+            // Initialize firstFailureTime during the first failure
+            if (isFirstFailure)
+            {
+                firstFailureTime = DateTime.Now;
+                isFirstFailure = false;
+            }
             var ident = Bot.Connection.Name;
             var ae = finishedTask.Exception;
             if (ae == null)
@@ -80,9 +90,31 @@ namespace SysBot.Base
                     LogUtil.LogError("Inner message: " + e.Message, ident);
                 LogUtil.LogError("Inner stacktrace: " + e.StackTrace, ident);
             }
-        }
+            // Check if 10 minutes have passed since the first failure
+            if ((DateTime.Now - firstFailureTime).TotalMinutes >= 10)
+            {
+                retryCount = 0;
+                firstFailureTime = DateTime.Now;
+            }
 
-        public void Resume()
+            // Check if the number of retry attempts is less than 5
+            if (retryCount < 5)
+            {
+                // Increment the retry count
+                retryCount++;
+
+                // Restart the bot
+                Start();
+            }
+            else
+            {
+                LogUtil.LogError("Maximum number of retry attempts reached. Not restarting.", Bot.Connection.Name);
+            }
+        }
+    
+
+
+public void Resume()
         {
             Start();
         }
