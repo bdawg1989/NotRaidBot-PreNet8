@@ -36,7 +36,7 @@ namespace SysBot.Pokemon
         private int RaidCount;
         private int WinCount;
         private int LossCount;
-        private int SeedIndexToReplace;
+        private int SeedIndexToReplace = -1;
         private int StoryProgress;
         private int EventProgress;
         private int EmptyRaid = 0;
@@ -224,12 +224,14 @@ namespace SysBot.Pokemon
                 {
                     TodaySeed = BitConverter.ToUInt64(await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP, 8, token).ConfigureAwait(false), 0);
                     Log($"Today Seed: {TodaySeed:X8}");
+                    Log($"Preparing to store index for {Settings.RaidEmbedParameters[RotationCount].Species}");
+                    await ReadRaids(true, token).ConfigureAwait(false);
                 }
 
                 if (!Settings.RaidEmbedParameters[RotationCount].IsSet)
                 {
                     Log($"Preparing parameter for {Settings.RaidEmbedParameters[RotationCount].Species}");
-                    await ReadRaids(token).ConfigureAwait(false);
+                    await ReadRaids(false, token).ConfigureAwait(false);
                 }
                 else
                     Log($"Parameter for {Settings.RaidEmbedParameters[RotationCount].Species} has been set previously, skipping raid reads.");
@@ -250,7 +252,7 @@ namespace SysBot.Pokemon
                         dayRoll++;
                     }
 
-                    if (dayRoll != 0 && SeedIndexToReplace != 0 && RaidCount != 0)
+                    if (dayRoll != 0 && SeedIndexToReplace != -1 && RaidCount != 0)
                     {
                         Log(msg + "Raid Lost initiating recovery sequence.");
                         bool denFound = false;
@@ -264,11 +266,18 @@ namespace SysBot.Pokemon
                             await Click(A, 1_500, token).ConfigureAwait(false);
                             Log("Back in the game!");
 
-                            // Connect online and enter den.
-                            if (!await PrepareForRaid(true, token).ConfigureAwait(false))
-                                continue;
+                            while (!await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false))
+                            {
+                                Log("Connecting...");
+                                if (!await ConnectToOnline(Hub.Config, token).ConfigureAwait(false))
+                                    continue;
 
-                            // Wait until we're in lobby.
+                                await RecoverToOverworld(token).ConfigureAwait(false);
+                            }
+
+                            await RecoverToOverworld(token).ConfigureAwait(false);
+
+                            // Check if there's a lobby.
                             if (!await GetLobbyReady(true, token).ConfigureAwait(false))
                             {
                                 continue;
@@ -313,7 +322,7 @@ namespace SysBot.Pokemon
                 await SwitchConnection.WriteBytesAbsoluteAsync(new byte[32], TeraNIDOffsets[0], token).ConfigureAwait(false);
 
                 // Connect online and enter den.
-                if (!await PrepareForRaid(false, token).ConfigureAwait(false))
+                if (!await PrepareForRaid(token).ConfigureAwait(false))
                 {
                     Log("Failed to prepare the raid, rebooting the game.");
                     await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
@@ -638,6 +647,8 @@ namespace SysBot.Pokemon
 
         private async Task OverrideSeedIndex(int index, CancellationToken token)
         {
+            if (index == -1)
+                return;
             List<long> ptr;
             if (index < 69)
             {
@@ -674,6 +685,8 @@ namespace SysBot.Pokemon
 
         private async Task<bool> DenStatus(int index, CancellationToken token)
         {
+            if (index == -1)
+                return false;
             List<long> ptr;
             if (index < 69)
             {
@@ -748,7 +761,7 @@ namespace SysBot.Pokemon
             await SwitchConnection.WriteBytesAbsoluteAsync(pk.EncryptedBoxData, offset, token).ConfigureAwait(false);
         }
 
-        private async Task<bool> PrepareForRaid(bool recovery, CancellationToken token)
+        private async Task<bool> PrepareForRaid(CancellationToken token)
         {
             Log("Preparing lobby...");
             // Make sure we're connected.
@@ -759,8 +772,6 @@ namespace SysBot.Pokemon
                 if (!await ConnectToOnline(Hub.Config, token).ConfigureAwait(false))
                     return false;
             }
-            if (recovery)
-                return true;
 
             await Task.Delay(2_500, token).ConfigureAwait(false);
             await Click(B, 0_500, token).ConfigureAwait(false);
@@ -769,7 +780,7 @@ namespace SysBot.Pokemon
             var len = string.Empty;
             foreach (var l in Settings.RaidEmbedParameters[RotationCount].PartyPK)
                 len += l;
-            if (len.Length > 1 && EmptyRaid == 0 && !recovery)
+            if (len.Length > 1 && EmptyRaid == 0)
             {
                 Log("Preparing PartyPK. Sit tight.");
                 await SetCurrentBox(0, token).ConfigureAwait(false);
@@ -794,7 +805,7 @@ namespace SysBot.Pokemon
             }
 
             for (int i = 0; i < 4; i++)
-                await Click(B, 0_500, token).ConfigureAwait(false);
+                await Click(B, 1_000, token).ConfigureAwait(false);
 
             await Task.Delay(1_500, token).ConfigureAwait(false);
 
@@ -1465,14 +1476,30 @@ namespace SysBot.Pokemon
 
         #region RaidCrawler
         // via RaidCrawler modified for this proj
-        private async Task ReadRaids(CancellationToken token)
+        private async Task ReadRaids(bool init, CancellationToken token)
         {
             Log("Starting raid reads..");
-            if (RaidBlockPointerP == 0)
-                RaidBlockPointerP = await SwitchConnection.PointerAll(Offsets.RaidBlockPointerP, token).ConfigureAwait(false);
+            if (init)
+            {
+                if (RaidBlockPointerP == 0)
+                    RaidBlockPointerP = await SwitchConnection.PointerAll(Offsets.RaidBlockPointerP, token).ConfigureAwait(false);
 
-            if (RaidBlockPointerK == 0)
-                RaidBlockPointerK = await SwitchConnection.PointerAll(Offsets.RaidBlockPointerK, token).ConfigureAwait(false);
+                if (RaidBlockPointerK == 0)
+                    RaidBlockPointerK = await SwitchConnection.PointerAll(Offsets.RaidBlockPointerK, token).ConfigureAwait(false);
+            }
+            else
+            {
+                if (SeedIndexToReplace >= 0 && SeedIndexToReplace <= 69)
+                {
+                    if (RaidBlockPointerP == 0)
+                        RaidBlockPointerP = await SwitchConnection.PointerAll(Offsets.RaidBlockPointerP, token).ConfigureAwait(false);
+                }
+                else
+                {
+                    if (RaidBlockPointerK == 0)
+                        RaidBlockPointerK = await SwitchConnection.PointerAll(Offsets.RaidBlockPointerK, token).ConfigureAwait(false);
+                }
+            }
 
             string id = await SwitchConnection.GetTitleID(token).ConfigureAwait(false);
             var game = id switch
@@ -1491,14 +1518,30 @@ namespace SysBot.Pokemon
 
             await ReadEventRaids(BaseBlockKeyPointer, container, token).ConfigureAwait(false);
 
-            var data = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP + RaidBlock.HEADER_SIZE, (int)RaidBlock.SIZE_BASE, token).ConfigureAwait(false);
+            var dataP = Array.Empty<byte>();
+            var dataK = Array.Empty<byte>();
+            int delivery;
+            int enc;
 
-            (int delivery, int enc) = container.ReadAllRaids(data, StoryProgress, EventProgress, 0, TeraRaidMapParent.Paldea);
-            if (enc > 0)
-                Log($"Failed to find encounters for {enc} raid(s).");
+            if (init || (SeedIndexToReplace >= 0 && SeedIndexToReplace <= 69))
+            {
+                dataP = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP + RaidBlock.HEADER_SIZE, (int)RaidBlock.SIZE_BASE, token).ConfigureAwait(false);
+            }
+            if (init || (SeedIndexToReplace >= 70))
+            {
+                dataK = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerK, (int)RaidBlock.SIZE_KITAKAMI, token).ConfigureAwait(false);
+            }
 
-            if (delivery > 0)
-                Log($"Invalid delivery group ID for {delivery} raid(s). Try deleting the \"cache\" folder.");
+            if (init || (SeedIndexToReplace >= 0 && SeedIndexToReplace <= 69))
+            {
+                (delivery, enc) = container.ReadAllRaids(dataP, StoryProgress, EventProgress, 0, TeraRaidMapParent.Paldea);
+
+                if (enc > 0)
+                    Log($"Failed to find encounters for {enc} raid(s).");
+
+                if (delivery > 0)
+                    Log($"Invalid delivery group ID for {delivery} raid(s). Try deleting the \"cache\" folder.");
+            }
 
             var raids = container.Raids;
             var encounters = container.Encounters;
@@ -1507,15 +1550,16 @@ namespace SysBot.Pokemon
             container.ClearEncounters();
             container.ClearRewards();
 
-            data = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerK, (int)RaidBlock.SIZE_KITAKAMI, token).ConfigureAwait(false);
+            if (init || (SeedIndexToReplace >= 70 && SeedIndexToReplace <= 94))
+            {
+                (delivery, enc) = container.ReadAllRaids(dataK, StoryProgress, EventProgress, 0, TeraRaidMapParent.Kitakami);
 
-            (delivery, enc) = container.ReadAllRaids(data, StoryProgress, EventProgress, 0, TeraRaidMapParent.Kitakami);
+                if (enc > 0)
+                    Log($"Failed to find encounters for {enc} raid(s).");
 
-            if (enc > 0)
-                Log($"Failed to find encounters for {enc} raid(s).");
-
-            if (delivery > 0)
-                Log($"Invalid delivery group ID for {delivery} raid(s). Try deleting the \"cache\" folder.");
+                if (delivery > 0)
+                    Log($"Invalid delivery group ID for {delivery} raid(s). Try deleting the \"cache\" folder.");
+            }
 
             var allRaids = raids.Concat(container.Raids).ToList().AsReadOnly();
             var allEncounters = encounters.Concat(container.Encounters).ToList().AsReadOnly();
@@ -1524,7 +1568,25 @@ namespace SysBot.Pokemon
             container.SetRaids(allRaids);
             container.SetEncounters(allEncounters);
             container.SetRewards(allRewards);
+            if (init)
+            {
+                for (int rc = 0; rc < Settings.RaidEmbedParameters.Count; rc++)
+                {
+                    uint targetSeed = uint.Parse(Settings.RaidEmbedParameters[rc].Seed, NumberStyles.AllowHexSpecifier);
 
+                    for (int i = 0; i < container.Raids.Count; i++)
+                    {
+                        if (container.Raids[i].Seed == targetSeed)
+                        {
+                            SeedIndexToReplace = i;
+                            RotationCount = rc;
+                            Log($"Den ID: {SeedIndexToReplace} stored.");
+                            Log($"Rotation Count set to {RotationCount}");
+                            return;
+                        }
+                    }
+                }
+            }
             bool done = false;
             for (int i = 0; i < container.Raids.Count; i++)
             {
@@ -1651,26 +1713,9 @@ namespace SysBot.Pokemon
                         {
                             Settings.RaidEmbedParameters[a].Description = new[] { "\n**Raid Info:**", pkinfo, "\n**Moveset:**", movestr, extramoves, BaseDescription, res };
                             Settings.RaidEmbedParameters[a].Title = $"{(Species)container.Encounters[i].Species} {starcount} - {(MoveType)container.Raids[i].TeraType}";
-                        }
+                        } */
                         
-                        Settings.RaidEmbedParameters[a].IsSet = true;*/
-                        if (RaidCount == 0)
-                        {
-                            RotatingRaidSettingsSV.RotatingRaidParameters param = new();
-                            param = Settings.RaidEmbedParameters[a];
-                            foreach (var p in Settings.RaidEmbedParameters.ToList())
-                            {
-                                if (p.Seed == param.Seed)
-                                    break;
-                                RotationCount++;
-
-                                if (RotationCount >= Settings.RaidEmbedParameters.Count)
-                                {
-                                    RotationCount = 0;
-                                }
-                            }
-                        }
-                        SeedIndexToReplace = i;
+                        Settings.RaidEmbedParameters[a].IsSet = false; // we don't use zyro's preset.txt file, ew.
                         done = true;
                     }
                 }
