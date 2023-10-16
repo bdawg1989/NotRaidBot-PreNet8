@@ -1807,7 +1807,7 @@ namespace SysBot.Pokemon
             embed.WithAuthor(auth =>
             {
                 auth.Name = authorName;
-                auth.Url = teraIconUrl;
+                auth.IconUrl = teraIconUrl;
             });
 
             return embed.Build();
