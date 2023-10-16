@@ -32,12 +32,11 @@ namespace SysBot.Pokemon
         }
 
         private int LobbyError;
-        private int RaidsAtStart;
         private int RaidCount;
         private int WinCount;
         private int LossCount;
         private int SeedIndexToReplace = -1;
-        private int StoryProgress;
+        public static int StoryProgress;
         private int EventProgress;
         private int EmptyRaid = 0;
         private int LostRaid = 0;
@@ -58,7 +57,7 @@ namespace SysBot.Pokemon
         private List<BanList> GlobalBanList = new();
         private SAV9SV HostSAV = new();
         private DateTime StartTime = DateTime.Now;
-        private RaidContainer? container;
+        public static RaidContainer? container;
 
         public override async Task MainLoop(CancellationToken token)
         {
@@ -1722,6 +1721,75 @@ namespace SysBot.Pokemon
             }
         }
         #endregion
+        // Add this method in the relevant class where commands are handled
+        public static async Task<string> RaidInfoCommand(string seedValue)
+        {
+            StringBuilder logInfo = new StringBuilder();
+
+            uint seed;
+            try
+            {
+                seed = uint.Parse(seedValue, NumberStyles.AllowHexSpecifier);
+            }
+            catch (FormatException)
+            {
+                return "Invalid seed format. Please enter a valid seed.";
+            }
+
+
+            byte[] enabled = StringToByteArray("00000001");
+            byte[] area = StringToByteArray("00000001");
+            byte[] displaytype = StringToByteArray("00000001");
+            byte[] spawnpoint = StringToByteArray("00000001");
+            byte[] thisseed = StringToByteArray(seedValue);
+            byte[] unused = StringToByteArray("00000000");
+            byte[] content = StringToByteArray("00000000"); // change this to 1 for 6-Star, 2 for 1-6 Star Events, 3 for Mighty 7-Star Raids
+            byte[] leaguepoints = StringToByteArray("00000000");
+            byte[] raidbyte = enabled.Concat(area).ToArray().Concat(displaytype).ToArray().Concat(spawnpoint).ToArray().Concat(thisseed).ToArray().Concat(unused).ToArray().Concat(content).ToArray().Concat(leaguepoints).ToArray();
+
+            var raid = new Raid(raidbyte, TeraRaidMapParent.Paldea); // map is -> TeraRaidMapParent.Paldea or .Kitakami
+            var progress = StoryProgress;
+            var raid_delivery_group_id = -1;
+            var encounter = raid.GetTeraEncounter(container, progress, raid_delivery_group_id);
+            var reward = encounter.GetRewards(container, raid, 0);
+
+
+            logInfo.AppendLine($"Seed: {raid.Seed:X8}");
+            logInfo.AppendLine($"Species: {(Species)encounter.Species}");
+            logInfo.AppendLine($"Is Shiny: {raid.IsShiny}");
+            // Include TeraType
+            logInfo.AppendLine($"TeraType: {RaidEmbedInfo.RaidSpeciesTeraType}");
+
+            // Include star count
+            var stars = raid.IsEvent ? encounter.Stars : RaidExtensions.GetStarCount(raid, raid.Difficulty, StoryProgress, raid.IsBlack);
+            logInfo.AppendLine($"Star Count: {stars} ★");
+
+            // Include moves
+            var strings = GameInfo.GetStrings(1);
+            var moves = new ushort[4] { encounter.Move1, encounter.Move2, encounter.Move3, encounter.Move4 };
+            var movestr = string.Join('\n', moves.Where(z => z != 0).Select(z => $"{strings.Move[z]}"));
+            logInfo.AppendLine($"Moves: {movestr}");
+
+            // Output other data like container info
+            var specialRewards = GetSpecialRewards(reward);
+            logInfo.AppendLine($"Special Rewards: {specialRewards}");
+
+            return logInfo.ToString();
+
+
+            return $"Seed {seed:X8} not found.";
+        }
+
+        public static byte[] StringToByteArray(string hex)
+        {
+            int NumberChars = hex.Length;
+            byte[] bytes = new byte[NumberChars / 2];
+            for (int i = 0; i < NumberChars; i += 2)
+                bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+            Array.Reverse(bytes);
+            return bytes;
+        }
+
 
         private async Task<bool> PrepareForDayroll(CancellationToken token)
         {

@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static SysBot.Pokemon.RotatingRaidSettingsSV;
 
 namespace SysBot.Pokemon.Discord
 {
@@ -20,7 +21,65 @@ namespace SysBot.Pokemon.Discord
         private static TradeQueueInfo<T> Info => SysCord<T>.Runner.Hub.Queues.Info;
         private readonly PokeTradeHub<T> Hub = SysCord<T>.Runner.Hub;
         private readonly ExtraCommandUtil<T> Util = new();
-        
+        [Command("raidinfo")]
+        public async Task RaidInfoAsync(string seedValue)
+        {
+            string replyMessage = await RotatingRaidBotSV.RaidInfoCommand(seedValue);
+
+            // Check for an error message before attempting to parse
+            if (replyMessage.StartsWith("Invalid seed format"))
+            {
+                await ReplyAsync(replyMessage);
+                return;
+            }
+
+            var lines = replyMessage.Split(Environment.NewLine);
+            var seed = lines.FirstOrDefault(l => l.StartsWith("Seed: "))?.Replace("Seed: ", "") ?? "Unknown";
+            var species = lines.FirstOrDefault(l => l.StartsWith("Species: "))?.Replace("Species: ", "") ?? "Unknown";
+            var isShiny = lines.FirstOrDefault(l => l.StartsWith("Is Shiny: "))?.Replace("Is Shiny: ", "") ?? "Unknown";
+            var starCount = lines.FirstOrDefault(l => l.StartsWith("Star Count: "))?.Replace("Star Count: ", "") ?? "Unknown";
+            var moves = lines.FirstOrDefault(l => l.StartsWith("Moves: "))?.Replace("Moves: ", "") ?? "Unknown";
+            var specialRewards = lines.FirstOrDefault(l => l.StartsWith("Special Rewards: "))?.Replace("Special Rewards: ", "") ?? "Unknown";
+            var teraType = lines.FirstOrDefault(l => l.StartsWith("TeraType: "))?.Replace("TeraType: ", "") ?? "Unknown";
+            // Determine title prefix
+            string titlePrefix = (isShiny == "True") ? "Shiny" : "";  // If "Is Shiny" is true, then the titlePrefix is "Shiny"
+
+            // Prepare the tera icon URL
+            string teraTypeLower = teraType.ToLower();
+            string teraIconUrl = $"https://genpkm.com/images/teraicons/icon1/{teraTypeLower}.png";
+            // Generate the Author Name
+            string authorName = $"{starCount} {titlePrefix} {species}".Trim();
+            // Create an Embed
+            var embed = new EmbedBuilder()
+            {
+                Title = $"",
+                Color = Color.Green,  // You can set this to whatever you want
+                Description = $"Seed: `{seed}`\nSpecies: {species}\nIs Shiny: {isShiny}\nStar Count: {starCount}"
+            }
+            .AddField("**__Moves__**", string.IsNullOrEmpty(moves) ? "No Moves To Display" : moves, true)
+            .AddField("**__Special Rewards__**", string.IsNullOrEmpty(specialRewards) ? "No Rewards To Display" : specialRewards, true);
+
+            // Additional Footer and Author can also be set
+            string disclaimer ="NotRaidBot v3.1a by Gengar & Kai\nhttps://notpaldea.net";
+
+            // Footer
+            string programIconUrl = "https://genpkm.com/images/icon4.png";
+            embed.WithFooter(new EmbedFooterBuilder()
+            {
+                Text = $"" + disclaimer,
+                IconUrl = programIconUrl
+            });
+
+            embed.WithAuthor(new EmbedAuthorBuilder()
+            {
+                Name = authorName, 
+                IconUrl = teraIconUrl  
+            });
+
+            await ReplyAsync(embed: embed.Build());
+        }
+
+
         [Command("giveawayqueue")]
         [Alias("gaq")]
         [Summary("Prints the users in the giveway queues.")]
