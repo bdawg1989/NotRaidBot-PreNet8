@@ -1760,7 +1760,7 @@ namespace SysBot.Pokemon
             {
                 if (pk.Moves[i] != 0)
                 {
-                    movesList += $"\\- {GameInfo.GetStrings(1).Move[pk.Moves[i]]}\n";
+                    movesList += $"\\- {strings.Move[pk.Moves[i]]}\n";
                 }
             }
             var extraMoves = "";
@@ -1768,12 +1768,12 @@ namespace SysBot.Pokemon
             {
                 if (encounter.ExtraMoves[i] != 0)
                 {
-                    extraMoves += $"\\- {GameInfo.GetStrings(1).Move[encounter.ExtraMoves[i]]}\n";
+                    extraMoves += $"\\- {strings.Move[encounter.ExtraMoves[i]]}\n";
                 }
             }
             if(!string.IsNullOrEmpty(extraMoves)) movesList += $"**Extra Moves:**\n{extraMoves}";
             var specialRewards = GetSpecialRewards(reward);
-            var teraTypeLower = GameInfo.GetStrings(1).Types[teraType].ToLower();
+            var teraTypeLower = strings.Types[teraType].ToLower();
             var teraIconUrl = $"https://genpkm.com/images/teraicons/icon1/{teraTypeLower}.png";
             var disclaimer = "NotRaidBot v3.1a by Gengar & Kai\nhttps://notpaldea.net";
             var titlePrefix = raid.IsShiny ? "Shiny" : "";
@@ -1790,7 +1790,7 @@ namespace SysBot.Pokemon
             embed.AddField(x =>
             {
                 x.Name = "**__Stats__**";
-                x.Value = $"{Format.Bold($"TeraType:")} {GameInfo.GetStrings(1).Types[teraType]} \n{Format.Bold($"Ability:")} {GameInfo.GetStrings(1).Ability[pk.Ability]}\n{Format.Bold("Nature:")} {(Nature)pk.Nature}\n{Format.Bold("IVs:")} {pk.IV_HP}/{pk.IV_ATK}/{pk.IV_DEF}/{pk.IV_SPA}/{pk.IV_SPD}/{pk.IV_SPE}\n{Format.Bold($"Scale:")} {PokeSizeDetailedUtil.GetSizeRating(pk.Scale)}";
+                x.Value = $"{Format.Bold($"TeraType:")} {strings.Types[teraType]} \n{Format.Bold($"Ability:")} {strings.Ability[pk.Ability]}\n{Format.Bold("Nature:")} {(Nature)pk.Nature}\n{Format.Bold("IVs:")} {pk.IV_HP}/{pk.IV_ATK}/{pk.IV_DEF}/{pk.IV_SPA}/{pk.IV_SPD}/{pk.IV_SPE}\n{Format.Bold($"Scale:")} {PokeSizeDetailedUtil.GetSizeRating(pk.Scale)}";
                 x.IsInline = true;
             });
 
