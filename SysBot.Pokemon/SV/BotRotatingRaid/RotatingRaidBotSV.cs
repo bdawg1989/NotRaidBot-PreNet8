@@ -1721,22 +1721,10 @@ namespace SysBot.Pokemon
             }
         }
         #endregion
+
         // Add this method in the relevant class where commands are handled
-        public static async Task<string> RaidInfoCommand(string seedValue)
+        public static Embed RaidInfoCommand(string seedValue, TeraRaidMapParent map)
         {
-            StringBuilder logInfo = new StringBuilder();
-
-            uint seed;
-            try
-            {
-                seed = uint.Parse(seedValue, NumberStyles.AllowHexSpecifier);
-            }
-            catch (FormatException)
-            {
-                return "Invalid seed format. Please enter a valid seed.";
-            }
-
-
             byte[] enabled = StringToByteArray("00000001");
             byte[] area = StringToByteArray("00000001");
             byte[] displaytype = StringToByteArray("00000001");
@@ -1747,37 +1735,82 @@ namespace SysBot.Pokemon
             byte[] leaguepoints = StringToByteArray("00000000");
             byte[] raidbyte = enabled.Concat(area).ToArray().Concat(displaytype).ToArray().Concat(spawnpoint).ToArray().Concat(thisseed).ToArray().Concat(unused).ToArray().Concat(content).ToArray().Concat(leaguepoints).ToArray();
 
-            var raid = new Raid(raidbyte, TeraRaidMapParent.Paldea); // map is -> TeraRaidMapParent.Paldea or .Kitakami
+            var raid = new Raid(raidbyte, map); // map is -> TeraRaidMapParent.Paldea or .Kitakami
             var progress = StoryProgress;
             var raid_delivery_group_id = -1;
             var encounter = raid.GetTeraEncounter(container, progress, raid_delivery_group_id);
             var reward = encounter.GetRewards(container, raid, 0);
-
-
-            logInfo.AppendLine($"Seed: {raid.Seed:X8}");
-            logInfo.AppendLine($"Species: {(Species)encounter.Species}");
-            logInfo.AppendLine($"Is Shiny: {raid.IsShiny}");
-            // Include TeraType
-            logInfo.AppendLine($"TeraType: {RaidEmbedInfo.RaidSpeciesTeraType}");
-
-            // Include star count
             var stars = raid.IsEvent ? encounter.Stars : RaidExtensions.GetStarCount(raid, raid.Difficulty, StoryProgress, raid.IsBlack);
-            logInfo.AppendLine($"Star Count: {stars} ★");
+            var teraType = raid.GetTeraType(encounter);
 
-            // Include moves
+            var param = encounter.GetParam();
+            var pk = new PK9
+            {
+                Species = encounter.Species,
+                Form = encounter.Form,
+                Move1 = encounter.Move1,
+                Move2 = encounter.Move2,
+                Move3 = encounter.Move3,
+                Move4 = encounter.Move4,
+            };
+            Encounter9RNG.GenerateData(pk, param, EncounterCriteria.Unrestricted, raid.Seed);
             var strings = GameInfo.GetStrings(1);
-            var moves = new ushort[4] { encounter.Move1, encounter.Move2, encounter.Move3, encounter.Move4 };
-            var movestr = string.Join('\n', moves.Where(z => z != 0).Select(z => $"{strings.Move[z]}"));
-            logInfo.AppendLine($"Moves: {movestr}");
-
-            // Output other data like container info
+            var movesList = "";
+            for (int i = 0; i < pk.Moves.Length; i++)
+            {
+                if (pk.Moves[i] != 0)
+                {
+                    movesList += $"\\- {GameInfo.GetStrings(1).Move[pk.Moves[i]]}\n";
+                }
+            }
+            var extraMoves = "";
+            for (int i = 0; i < encounter.ExtraMoves.Length; i++)
+            {
+                if (encounter.ExtraMoves[i] != 0)
+                {
+                    extraMoves += $"\\- {GameInfo.GetStrings(1).Move[encounter.ExtraMoves[i]]}\n";
+                }
+            }
+            if(!string.IsNullOrEmpty(extraMoves)) movesList += $"**Extra Moves:**\n{extraMoves}";
             var specialRewards = GetSpecialRewards(reward);
-            logInfo.AppendLine($"Special Rewards: {specialRewards}");
+            var teraTypeLower = GameInfo.GetStrings(1).Types[teraType].ToLower();
+            var teraIconUrl = $"https://genpkm.com/images/teraicons/icon1/{teraTypeLower}.png";
+            var disclaimer = "NotRaidBot v3.1a by Gengar & Kai\nhttps://notpaldea.net";
+            var titlePrefix = raid.IsShiny ? "Shiny" : "";
+            var authorName = $"{stars} ★ {titlePrefix} {(Species)encounter.Species}";
 
-            return logInfo.ToString();
+            (int R, int G, int B) = TradeExtensions<PK9>.GetDominantColor(TradeExtensions<PK9>.PokeImg(pk, false, false));
+            var embedColor = new Color(R, G, B);
 
+            var embed = new EmbedBuilder
+            {
+                Color = embedColor,
+                ThumbnailUrl = TradeExtensions<PK9>.PokeImg(pk, false, false),
+            };
+            embed.AddField(x =>
+            {
+                x.Name = "**__Stats__**";
+                x.Value = $"{Format.Bold($"TeraType:")} {GameInfo.GetStrings(1).Types[teraType]} \n{Format.Bold($"Ability:")} {GameInfo.GetStrings(1).Ability[pk.Ability]}\n{Format.Bold("Nature:")} {(Nature)pk.Nature}\n{Format.Bold("IVs:")} {pk.IV_HP}/{pk.IV_ATK}/{pk.IV_DEF}/{pk.IV_SPA}/{pk.IV_SPD}/{pk.IV_SPE}\n{Format.Bold($"Scale:")} {PokeSizeDetailedUtil.GetSizeRating(pk.Scale)}";
+                x.IsInline = true;
+            });
 
-            return $"Seed {seed:X8} not found.";
+            embed.AddField("**__Moves__**", movesList, true);
+            embed.AddField("**__Special Rewards__**", string.IsNullOrEmpty(specialRewards) ? "No Rewards To Display" : specialRewards, true);
+
+            var programIconUrl = "https://genpkm.com/images/icon4.png";
+            embed.WithFooter(new EmbedFooterBuilder()
+            {
+                Text = $"" + disclaimer,
+                IconUrl = programIconUrl
+            });
+
+            embed.WithAuthor(auth =>
+            {
+                auth.Name = authorName;
+                auth.Url = teraIconUrl;
+            });
+
+            return embed.Build();
         }
 
         public static byte[] StringToByteArray(string hex)

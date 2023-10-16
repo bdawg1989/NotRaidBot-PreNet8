@@ -11,7 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using static SysBot.Pokemon.RotatingRaidSettingsSV;
+using System.Globalization;
 
 namespace SysBot.Pokemon.Discord
 {
@@ -21,64 +21,33 @@ namespace SysBot.Pokemon.Discord
         private static TradeQueueInfo<T> Info => SysCord<T>.Runner.Hub.Queues.Info;
         private readonly PokeTradeHub<T> Hub = SysCord<T>.Runner.Hub;
         private readonly ExtraCommandUtil<T> Util = new();
-        [Command("raidinfo")]
-        public async Task RaidInfoAsync(string seedValue)
-        {
-            string replyMessage = await RotatingRaidBotSV.RaidInfoCommand(seedValue);
 
-            // Check for an error message before attempting to parse
-            if (replyMessage.StartsWith("Invalid seed format"))
+        [Command("raidinfo")]
+        [Alias("ri", "rv")]
+        [Summary("Displays basic Raid Info of the provided seed.")]
+        public async Task RaidSeedInfoAsync(string seedValue, string dlc = "p")
+        {
+            uint seed;
+            try
             {
-                await ReplyAsync(replyMessage);
+                seed = uint.Parse(seedValue, NumberStyles.AllowHexSpecifier);
+            }
+            catch (FormatException)
+            {
+               await ReplyAsync("Invalid seed format. Please enter a valid seed.");
                 return;
             }
 
-            var lines = replyMessage.Split(Environment.NewLine);
-            var seed = lines.FirstOrDefault(l => l.StartsWith("Seed: "))?.Replace("Seed: ", "") ?? "Unknown";
-            var species = lines.FirstOrDefault(l => l.StartsWith("Species: "))?.Replace("Species: ", "") ?? "Unknown";
-            var isShiny = lines.FirstOrDefault(l => l.StartsWith("Is Shiny: "))?.Replace("Is Shiny: ", "") ?? "Unknown";
-            var starCount = lines.FirstOrDefault(l => l.StartsWith("Star Count: "))?.Replace("Star Count: ", "") ?? "Unknown";
-            var moves = lines.FirstOrDefault(l => l.StartsWith("Moves: "))?.Replace("Moves: ", "") ?? "Unknown";
-            var specialRewards = lines.FirstOrDefault(l => l.StartsWith("Special Rewards: "))?.Replace("Special Rewards: ", "") ?? "Unknown";
-            var teraType = lines.FirstOrDefault(l => l.StartsWith("TeraType: "))?.Replace("TeraType: ", "") ?? "Unknown";
-            // Determine title prefix
-            string titlePrefix = (isShiny == "True") ? "Shiny" : "";  // If "Is Shiny" is true, then the titlePrefix is "Shiny"
-
-            // Prepare the tera icon URL
-            string teraTypeLower = teraType.ToLower();
-            string teraIconUrl = $"https://genpkm.com/images/teraicons/icon1/{teraTypeLower}.png";
-            // Generate the Author Name
-            string authorName = $"{starCount} {titlePrefix} {species}".Trim();
-            // Create an Embed
-            var embed = new EmbedBuilder()
+            try
             {
-                Title = $"",
-                Color = Color.Green,  // You can set this to whatever you want
-                Description = $"Seed: `{seed}`\nSpecies: {species}\nIs Shiny: {isShiny}\nStar Count: {starCount}"
+                var embed = RotatingRaidBotSV.RaidInfoCommand(seedValue, dlc != "p" ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea);
+                await ReplyAsync(embed: embed);
             }
-            .AddField("**__Moves__**", string.IsNullOrEmpty(moves) ? "No Moves To Display" : moves, true)
-            .AddField("**__Special Rewards__**", string.IsNullOrEmpty(specialRewards) ? "No Rewards To Display" : specialRewards, true);
-
-            // Additional Footer and Author can also be set
-            string disclaimer ="NotRaidBot v3.1a by Gengar & Kai\nhttps://notpaldea.net";
-
-            // Footer
-            string programIconUrl = "https://genpkm.com/images/icon4.png";
-            embed.WithFooter(new EmbedFooterBuilder()
+            catch(Exception ex)
             {
-                Text = $"" + disclaimer,
-                IconUrl = programIconUrl
-            });
-
-            embed.WithAuthor(new EmbedAuthorBuilder()
-            {
-                Name = authorName, 
-                IconUrl = teraIconUrl  
-            });
-
-            await ReplyAsync(embed: embed.Build());
+                await ReplyAsync(ex.Message);
+            }
         }
-
 
         [Command("giveawayqueue")]
         [Alias("gaq")]
