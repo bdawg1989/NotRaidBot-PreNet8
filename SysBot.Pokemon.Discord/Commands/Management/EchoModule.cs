@@ -85,10 +85,30 @@ namespace SysBot.Pokemon.Discord
             await ReplyAsync("Added Raid Embed output to this channel!").ConfigureAwait(false);
         }
 
-        private static void AddEchoChannel(ISocketMessageChannel c, ulong cid)
+        private static async Task<bool> SendMessageWithRetry(ISocketMessageChannel c, string message, int maxRetries = 3)
         {
-            void Echo(string msg) => c.SendMessageAsync(msg);            
-            async Task RaidEmbedAsync(byte[] bytes, string fileName, EmbedBuilder embed)
+            int retryCount = 0;
+            while (retryCount < maxRetries)
+            {
+                try
+                {
+                    await c.SendMessageAsync(message).ConfigureAwait(false);
+                    return true; // Successfully sent the message, exit the loop.
+                }
+                catch (Exception ex)
+                {
+                    LogUtil.LogError($"Failed to send message to channel '{c.Name}' (Attempt {retryCount + 1}): {ex.Message}", nameof(AddEchoChannel));
+                    retryCount++;
+                    await Task.Delay(TimeSpan.FromSeconds(5)).ConfigureAwait(false); // Wait for 5 seconds before retrying.
+                }
+            }
+            return false; // Reached max number of retries without success.
+        }
+
+        private static async Task<bool> RaidEmbedAsync(ISocketMessageChannel c, byte[] bytes, string fileName, EmbedBuilder embed, int maxRetries = 3)
+        {
+            int retryCount = 0;
+            while (retryCount < maxRetries)
             {
                 try
                 {
@@ -100,20 +120,30 @@ namespace SysBot.Pokemon.Discord
                     {
                         await c.SendMessageAsync("", false, embed.Build()).ConfigureAwait(false);
                     }
+                    return true; // Successfully sent the message, exit the loop.
                 }
                 catch (Exception ex)
                 {
-                    LogUtil.LogError($"Failed to send embed to channel '{c.Name}': {ex.Message}", nameof(AddEchoChannel));
-                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    LogUtil.LogError($"Failed to send embed to channel '{c.Name}' (Attempt {retryCount + 1}): {ex.Message}", nameof(AddEchoChannel));
+                    retryCount++;
+                    await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false); // Wait for a second before retrying.
                 }
             }
-            Action<byte[], string, EmbedBuilder> rb = async (bytes, fileName, embed) => await RaidEmbedAsync(bytes, fileName, embed).ConfigureAwait(false);
-            Action<string> l = Echo;
+            return false; // Reached max number of retries without success.
+        }
+
+        private static void AddEchoChannel(ISocketMessageChannel c, ulong cid)
+        {
+            Action<string> l = async (msg) => await SendMessageWithRetry(c, msg).ConfigureAwait(false);
+            Action<byte[], string, EmbedBuilder> rb = async (bytes, fileName, embed) => await RaidEmbedAsync(c, bytes, fileName, embed).ConfigureAwait(false);
+
             EchoUtil.Forwarders.Add(l);
             EchoUtil.RaidForwarders.Add(rb);
             var entry = new EchoChannel(cid, c.Name, l, rb);
             Channels.Add(cid, entry);
         }
+
+
 
         [Command("embedHere")]
         [Summary("Makes the bot echo special Encounter messages to the channel.")]
