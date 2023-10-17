@@ -407,19 +407,13 @@ namespace SysBot.Pokemon.Discord
 
         [Command("ra")]
         [Summary("Adds new raid parameter next in the queue.")]
-        public async Task AddNewRaidParamNext([Summary("Seed")] string seed, [Summary("Difficulty Level (1-8)")] int level, [Summary("Map (P for Paldea, K for Kitakami)")] string map = "P")
+        public async Task AddNewRaidParamNext([Summary("Seed")] string seed, [Summary("Difficulty Level (1-8)")] int level)
         {
             // Check if the user already has a request
             var userId = Context.User.Id;
             if (SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters.Any(r => r.RequestedByUserID == userId))
             {
                 await ReplyAsync("You already have an existing raid request in the queue.").ConfigureAwait(false);
-                return;
-            }
-            // Validate the map parameter
-            if (map.ToLower() != "p" && map.ToLower() != "k")
-            {
-                await ReplyAsync("Invalid map. Please enter either 'P' for Paldea or 'K' for Kitakami.").ConfigureAwait(false);
                 return;
             }
             // Validate the seed for hexadecimal format
@@ -451,8 +445,7 @@ namespace SysBot.Pokemon.Discord
             };
 
             // Determine the correct map
-            var selectedMap = map.ToLower() == "p" ? TeraRaidMapParent.Paldea : TeraRaidMapParent.Kitakami;
-
+            var selectedMap = RotatingRaidBotSV.IsKitakami ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea;
             var raidEmbed = RotatingRaidBotSV.RaidInfoCommand(seed, (int)crystalType, selectedMap);  // Adjusted to use the selected map
             var species = raidEmbed.Author.Value.Name.Split(" ").Last(); // Extract the species name from the embed author field
 

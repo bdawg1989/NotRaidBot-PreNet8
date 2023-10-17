@@ -58,6 +58,7 @@ namespace SysBot.Pokemon
         private SAV9SV HostSAV = new();
         private DateTime StartTime = DateTime.Now;
         public static RaidContainer? container;
+        public static bool IsKitakami = false;
 
         public override async Task MainLoop(CancellationToken token)
         {
@@ -441,6 +442,7 @@ namespace SysBot.Pokemon
                 {
                     SeedIndexToReplace = i;
                     Log($"Index located at {i}");
+                    IsKitakami = true;
                     return;
                 }
             }
