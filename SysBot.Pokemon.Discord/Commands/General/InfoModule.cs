@@ -18,7 +18,7 @@ namespace SysBot.Pokemon.Discord
     {
         private const string detail = "I am a custom Raid Bot made by Gengar and Kai that accepts raid requests, and much more.";
         public const string version = SharedConstants.Version;
-        private const string support = "https://notpaldea.com";
+        private const string support = "https://notpaldea.net";
 
         [Command("info")]
         [Alias("about", "whoami", "owner")]
@@ -50,7 +50,7 @@ namespace SysBot.Pokemon.Discord
                 $"- {Format.Bold("Guilds")}: {Context.Client.Guilds.Count}\n" +
                 $"- {Format.Bold("Channels")}: {Context.Client.Guilds.Sum(g => g.Channels.Count)}\n" +
                 $"- {Format.Bold("Users")}: {Context.Client.Guilds.Sum(g => g.MemberCount)}\n" +
-                $"{Format.Bold("\nVisit [NotPaldea.com](https://notpaldea.com) for more information.")}\n"
+                $"{Format.Bold("\nVisit [NotPaldea.net](https://notpaldea.net) for more information.")}\n"
                 );
 
             await ReplyAsync("Here's a bit about me!", embed: builder.Build()).ConfigureAwait(false);
