@@ -641,11 +641,16 @@ namespace SysBot.Pokemon
 
         private async Task OverrideTodaySeed(CancellationToken token)
         {
+            Log("Attempting to override Today Seed...");
+
             var todayoverride = BitConverter.GetBytes(TodaySeed);
             List<long> ptr = new(Offsets.RaidBlockPointerP);
             ptr[3] += 0x8;
             await SwitchConnection.PointerPoke(todayoverride, ptr, token).ConfigureAwait(false);
+
+            Log("Today Seed override complete.");
         }
+
 
         private async Task OverrideSeedIndex(int index, CancellationToken token)
         {
@@ -1495,6 +1500,7 @@ namespace SysBot.Pokemon
         // via RaidCrawler modified for this proj
         private async Task ReadRaids(bool init, CancellationToken token)
         {
+
             Log("Starting raid reads..");
             if (init)
             {
@@ -1558,6 +1564,16 @@ namespace SysBot.Pokemon
 
                 if (delivery > 0)
                     Log($"Invalid delivery group ID for {delivery} raid(s). Try deleting the \"cache\" folder.");
+
+                // Check the raids to see if any are event raids for Paldea
+                foreach (var raid in container.Raids)
+                {
+                    if (raid.IsEvent)
+                    {
+                        Settings.EventActive = true;
+                        break; // Exit loop if an event raid is found
+                    }
+                }
             }
 
             var raids = container.Raids;
@@ -1576,6 +1592,16 @@ namespace SysBot.Pokemon
 
                 if (delivery > 0)
                     Log($"Invalid delivery group ID for {delivery} raid(s). Try deleting the \"cache\" folder.");
+
+                // Check the raids to see if any are event raids for Kitakami
+                foreach (var raid in container.Raids)
+                {
+                    if (raid.IsEvent)
+                    {
+                        Settings.EventActive = true;
+                        break; // Exit loop if an event raid is found
+                    }
+                }
             }
 
             var allRaids = raids.Concat(container.Raids).ToList().AsReadOnly();
