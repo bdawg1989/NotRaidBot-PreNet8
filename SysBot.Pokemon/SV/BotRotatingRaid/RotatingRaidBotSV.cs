@@ -1744,6 +1744,7 @@ namespace SysBot.Pokemon
             var reward = encounter.GetRewards(container, raid, 0);
             var stars = raid.IsEvent ? encounter.Stars : RaidExtensions.GetStarCount(raid, raid.Difficulty, StoryProgress, raid.IsBlack);
             var teraType = raid.GetTeraType(encounter);
+            var form = encounter.Form;
 
             var param = encounter.GetParam();
             var pk = new PK9
@@ -1792,9 +1793,15 @@ namespace SysBot.Pokemon
             embed.AddField(x =>
             {
                 x.Name = "**__Stats__**";
-                x.Value = $"{Format.Bold($"TeraType:")} {strings.Types[teraType]} \n{Format.Bold($"Ability:")} {strings.Ability[pk.Ability]}\n{Format.Bold("Nature:")} {(Nature)pk.Nature}\n{Format.Bold("IVs:")} {pk.IV_HP}/{pk.IV_ATK}/{pk.IV_DEF}/{pk.IV_SPA}/{pk.IV_SPD}/{pk.IV_SPE}\n{Format.Bold($"Scale:")} {PokeSizeDetailedUtil.GetSizeRating(pk.Scale)}";
+                x.Value = $"{Format.Bold($"Form:")} {form} \n" +
+                          $"{Format.Bold($"TeraType:")} {strings.Types[teraType]} \n" +
+                          $"{Format.Bold($"Ability:")} {strings.Ability[pk.Ability]}\n" +
+                          $"{Format.Bold("Nature:")} {(Nature)pk.Nature}\n" +
+                          $"{Format.Bold("IVs:")} {pk.IV_HP}/{pk.IV_ATK}/{pk.IV_DEF}/{pk.IV_SPA}/{pk.IV_SPD}/{pk.IV_SPE}\n" +
+                          $"{Format.Bold($"Scale:")} {PokeSizeDetailedUtil.GetSizeRating(pk.Scale)}";
                 x.IsInline = true;
             });
+
 
             embed.AddField("**__Moves__**", movesList, true);
             embed.AddField("**__Special Rewards__**", string.IsNullOrEmpty(specialRewards) ? "No Rewards To Display" : specialRewards, true);

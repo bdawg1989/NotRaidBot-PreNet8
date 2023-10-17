@@ -448,7 +448,24 @@ namespace SysBot.Pokemon.Discord
             var selectedMap = RotatingRaidBotSV.IsKitakami ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea;
             var raidEmbed = RotatingRaidBotSV.RaidInfoCommand(seed, (int)crystalType, selectedMap);  // Adjusted to use the selected map
             var species = raidEmbed.Author.Value.Name.Split(" ").Last(); // Extract the species name from the embed author field
-
+            bool isShiny = raidEmbed.Author.Value.Name.Contains("Shiny");
+            // New code to extract Form
+            int form = 0; // Initialize to a default value
+            var statsField = raidEmbed.Fields.FirstOrDefault(x => x.Name == "**__Stats__**");
+            if (statsField != null)
+            {
+                var formLine = statsField.Value.Split('\n').FirstOrDefault(line => line.Contains("Form:"));
+                if (formLine != null)
+                {
+                    var formString = formLine.Split(':').Last().Trim();
+                    // Extract digits from the string
+                    var formDigits = Regex.Match(formString, @"\d+").Value;
+                    if (int.TryParse(formDigits, out int formValue))
+                    {
+                        form = formValue;
+                    }
+                }
+            }
 
             var description = string.Empty;
             var prevpath = "bodyparam.txt";
@@ -474,9 +491,10 @@ namespace SysBot.Pokemon.Discord
                 Description = new[] { description },
                 PartyPK = new[] { "" },
                 Species = (Species)Enum.Parse(typeof(Species), species),
-                SpeciesForm = 0,
+                SpeciesForm = form,
                 Seed = seed,
                 IsCoded = true,
+                IsShiny = isShiny,
                 AddedByRACommand = true,
                 RequestedByUserID = Context.User.Id,
                 Title = $"{Context.User.Username}'s Requested Raid",
