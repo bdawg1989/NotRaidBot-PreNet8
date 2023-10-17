@@ -1,4 +1,5 @@
 ﻿using PKHeX.Core;
+using SharedUtils;
 using SysBot.Base;
 using System;
 using System.Collections.Generic;
@@ -8,6 +9,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using SharedUtils;
 
 namespace SysBot.Pokemon.WinForms
 {
@@ -43,7 +45,7 @@ namespace SysBot.Pokemon.WinForms
             }
 
             LoadControls();
-            Text = $"{(string.IsNullOrEmpty(Config.Hub.BotName) ? "NOT RaidBot" : Config.Hub.BotName)} ({Config.Mode})"; ;
+            Text = $"{(string.IsNullOrEmpty(Config.Hub.BotName) ? "NOT RaidBot" : Config.Hub.BotName)} {SharedConstants.Version} ({Config.Mode})";
             Task.Run(BotMonitor);
             InitUtil.InitializeStubs(Config.Mode);
         }
