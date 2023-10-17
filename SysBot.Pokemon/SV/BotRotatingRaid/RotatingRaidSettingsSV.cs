@@ -54,6 +54,9 @@ namespace SysBot.Pokemon
         [Category(Hosting), Description("Minimum amount of seconds to wait before starting a raid.")]
         public int TimeToWait { get; set; } = 90;
 
+        [Category(Hosting), Description("Amount of time (in seconds) to post a requested raid embed.")]
+        public int RequestEmbedTime { get; set; } = 30;
+
         [Category(FeatureToggle), Description("When enabled, the embed will countdown the amount of seconds in \"TimeToWait\" until starting the raid.")]
         public bool IncludeCountdown { get; set; } = false;
 

@@ -1141,7 +1141,7 @@ namespace SysBot.Pokemon
             }
             if (Settings.RaidEmbedParameters[RotationCount].AddedByRACommand)
             {
-                await Task.Delay(15000).ConfigureAwait(false);  // Delay for 15 seconds
+                await Task.Delay(Settings.RequestEmbedTime * 1000).ConfigureAwait(false);  // Delay for RequestEmbedTime seconds
             }
 
             // Description can only be up to 4096 characters.
