@@ -25,7 +25,7 @@ namespace SysBot.Pokemon.Discord
         [Command("raidinfo")]
         [Alias("ri", "rv")]
         [Summary("Displays basic Raid Info of the provided seed.")]
-        public async Task RaidSeedInfoAsync(string seedValue, string dlc = "p")
+        public async Task RaidSeedInfoAsync(string seedValue, int level, string dlc = "p")
         {
             uint seed;
             try
@@ -38,9 +38,18 @@ namespace SysBot.Pokemon.Discord
                 return;
             }
 
+            var crystalType = level switch
+            {
+                >= 1 and <= 5 => (TeraCrystalType)0,
+                6 => (TeraCrystalType)1,
+                7 => (TeraCrystalType)3,
+                8 => (TeraCrystalType)2,
+                _ => throw new ArgumentException("Invalid difficulty level.")
+            };
+
             try
             {
-                var embed = RotatingRaidBotSV.RaidInfoCommand(seedValue, dlc != "p" ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea);
+                var embed = RotatingRaidBotSV.RaidInfoCommand(seedValue, (int)crystalType, dlc != "p" ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea);
                 await ReplyAsync(embed: embed);
             }
             catch(Exception ex)
@@ -398,7 +407,7 @@ namespace SysBot.Pokemon.Discord
 
         [Command("ra")]
         [Summary("Adds new raid parameter next in the queue.")]
-        public async Task AddNewRaidParamNext([Summary("Seed")] string seed, [Summary("Difficulty Level (1-7)")] int level)
+        public async Task AddNewRaidParamNext([Summary("Seed")] string seed, [Summary("Difficulty Level (1-8)")] int level, [Summary("Map (P for Paldea, K for Kitakami)")] string map = "P")
         {
             // Check if the user already has a request
             var userId = Context.User.Id;
@@ -407,7 +416,12 @@ namespace SysBot.Pokemon.Discord
                 await ReplyAsync("You already have an existing raid request in the queue.").ConfigureAwait(false);
                 return;
             }
-
+            // Validate the map parameter
+            if (map.ToLower() != "p" && map.ToLower() != "k")
+            {
+                await ReplyAsync("Invalid map. Please enter either 'P' for Paldea or 'K' for Kitakami.").ConfigureAwait(false);
+                return;
+            }
             // Validate the seed for hexadecimal format
             if (seed.Length != 8 || !seed.All(c => "0123456789abcdefABCDEF".Contains(c)))
             {
@@ -424,7 +438,7 @@ namespace SysBot.Pokemon.Discord
             {
                 await ReplyAsync("Invalid Raid level. No active Events.").ConfigureAwait(false);
                 return;
-            }          
+            }
 
             // Determine the CrystalType based on the given difficulty level
             var crystalType = level switch
@@ -435,6 +449,13 @@ namespace SysBot.Pokemon.Discord
                 8 => (TeraCrystalType)2,
                 _ => throw new ArgumentException("Invalid difficulty level.")
             };
+
+            // Determine the correct map
+            var selectedMap = map.ToLower() == "p" ? TeraRaidMapParent.Paldea : TeraRaidMapParent.Kitakami;
+
+            var raidEmbed = RotatingRaidBotSV.RaidInfoCommand(seed, (int)crystalType, selectedMap);  // Adjusted to use the selected map
+            var species = raidEmbed.Author.Value.Name.Split(" ").Last(); // Extract the species name from the embed author field
+
 
             var description = string.Empty;
             var prevpath = "bodyparam.txt";
@@ -459,7 +480,7 @@ namespace SysBot.Pokemon.Discord
                 CrystalType = crystalType,
                 Description = new[] { description },
                 PartyPK = new[] { "" },
-                Species = Species.None,
+                Species = (Species)Enum.Parse(typeof(Species), species),
                 SpeciesForm = 0,
                 Seed = seed,
                 IsCoded = true,

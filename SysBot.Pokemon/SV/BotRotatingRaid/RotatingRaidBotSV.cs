@@ -1723,7 +1723,7 @@ namespace SysBot.Pokemon
         #endregion
 
         // Add this method in the relevant class where commands are handled
-        public static Embed RaidInfoCommand(string seedValue, TeraRaidMapParent map)
+        public static Embed RaidInfoCommand(string seedValue, int contentType,  TeraRaidMapParent map)
         {
             byte[] enabled = StringToByteArray("00000001");
             byte[] area = StringToByteArray("00000001");
@@ -1731,7 +1731,7 @@ namespace SysBot.Pokemon
             byte[] spawnpoint = StringToByteArray("00000001");
             byte[] thisseed = StringToByteArray(seedValue);
             byte[] unused = StringToByteArray("00000000");
-            byte[] content = StringToByteArray("00000000"); // change this to 1 for 6-Star, 2 for 1-6 Star Events, 3 for Mighty 7-Star Raids
+            byte[] content = StringToByteArray($"0000000{contentType}"); // change this to 1 for 6-Star, 2 for 1-6 Star Events, 3 for Mighty 7-Star Raids
             byte[] leaguepoints = StringToByteArray("00000000");
             byte[] raidbyte = enabled.Concat(area).ToArray().Concat(displaytype).ToArray().Concat(spawnpoint).ToArray().Concat(thisseed).ToArray().Concat(unused).ToArray().Concat(content).ToArray().Concat(leaguepoints).ToArray();
 
