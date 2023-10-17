@@ -1303,12 +1303,13 @@ namespace SysBot.Pokemon
             if (!disband && !upnext && !raidstart && !Settings.EmbedToggles.IncludeMoves)
             {
                 embed.AddField(" **__Special Rewards__**", string.IsNullOrEmpty($"{RaidEmbedInfo.SpecialRewards}") ? "No Rewards To Display" : $"{RaidEmbedInfo.SpecialRewards}", true);
-                embed.AddField("\u200b", "\u200b", true);
+            
             }
 
             if (!disband && names is null && !upnext)
             {
                 embed.AddField(Settings.IncludeCountdown ? $"**__Raid Starting__**:\n**<t:{DateTimeOffset.Now.ToUnixTimeSeconds() + Settings.TimeToWait}:R>**" : $"**Waiting in lobby!**", $"Raid Code: {code}", true);
+                embed.AddField("\u200b", "\u200b", true);
             }
 
             if (!disband && !upnext && !raidstart && Settings.EmbedToggles.IncludeMoves)
