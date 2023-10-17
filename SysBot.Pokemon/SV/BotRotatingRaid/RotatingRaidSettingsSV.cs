@@ -56,7 +56,8 @@ namespace SysBot.Pokemon
 
         [Category(Hosting), Description("Amount of time (in seconds) to post a requested raid embed.")]
         public int RequestEmbedTime { get; set; } = 30;
-
+        [Category(Hosting), Description("When true, the embed will display current seed.")]
+        public bool IncludeSeed { get; set; } = true;
         [Category(FeatureToggle), Description("When enabled, the embed will countdown the amount of seconds in \"TimeToWait\" until starting the raid.")]
         public bool IncludeCountdown { get; set; } = false;
 
@@ -71,10 +72,9 @@ namespace SysBot.Pokemon
 
         [Category(Hosting), Description("Users NIDs here are banned raiders.")]
         public RemoteControlAccessList RaiderBanList { get; set; } = new() { AllowIfEmpty = false };
-
+        [Browsable(false)]
         [Category(Hosting), Description("When enabled, the bot will inject the current day seed to tomorrow's day seed.")]
         public bool KeepDaySeed { get; set; } = true;
-
         [Category(FeatureToggle), Description("Set your Switch Date/Time format in the Date/Time settings. The day will automatically rollback by 1 if the Date changes.")]
         public DTFormat DateTimeFormat { get; set; } = DTFormat.MMDDYY;
 

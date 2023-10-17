@@ -1269,7 +1269,19 @@ namespace SysBot.Pokemon
             }
             if (!disband && !upnext && !raidstart)
             {
-                embed.AddField("**__Stats__**", $"**Gender**: {RaidEmbedInfo.RaidSpeciesGender}\n**Nature:** {RaidEmbedInfo.RaidSpeciesNature}\n**Ability:** {RaidEmbedInfo.RaidSpeciesAbility}\n**IVs:** {RaidEmbedInfo.RaidSpeciesIVs}\n**Scale:** {RaidEmbedInfo.ScaleText}({RaidEmbedInfo.ScaleNumber})\n**Seed:** `{Settings.RaidEmbedParameters[RotationCount].Seed}`", true);
+                StringBuilder statsField = new StringBuilder();
+                statsField.AppendLine($"**Gender**: {RaidEmbedInfo.RaidSpeciesGender}");
+                statsField.AppendLine($"**Nature**: {RaidEmbedInfo.RaidSpeciesNature}");
+                statsField.AppendLine($"**Ability**: {RaidEmbedInfo.RaidSpeciesAbility}");
+                statsField.AppendLine($"**IVs**: {RaidEmbedInfo.RaidSpeciesIVs}");
+                statsField.AppendLine($"**Scale**: {RaidEmbedInfo.ScaleText}({RaidEmbedInfo.ScaleNumber})");
+
+                if (Settings.IncludeSeed)
+                {
+                    statsField.AppendLine($"**Seed**: `{Settings.RaidEmbedParameters[RotationCount].Seed}`");
+                }
+
+                embed.AddField("**__Stats__**", statsField.ToString(), true);
                 embed.AddField("\u200b", "\u200b", true);
             }
 
