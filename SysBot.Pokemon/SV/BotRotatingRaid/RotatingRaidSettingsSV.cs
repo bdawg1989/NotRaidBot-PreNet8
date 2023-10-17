@@ -72,7 +72,7 @@ namespace SysBot.Pokemon
 
         [Category(Hosting), Description("Users NIDs here are banned raiders.")]
         public RemoteControlAccessList RaiderBanList { get; set; } = new() { AllowIfEmpty = false };
-        [Browsable(false)]
+
         [Category(Hosting), Description("When enabled, the bot will inject the current day seed to tomorrow's day seed.")]
         public bool KeepDaySeed { get; set; } = true;
         [Category(FeatureToggle), Description("Set your Switch Date/Time format in the Date/Time settings. The day will automatically rollback by 1 if the Date changes.")]
