@@ -18,6 +18,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SysBot.Pokemon.Twitch", "Sy
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SysBot.Pokemon.ConsoleApp", "SysBot.Pokemon.ConsoleApp\SysBot.Pokemon.ConsoleApp.csproj", "{C0525606-4ED4-4998-9AF3-31E2DE65717A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedUtils", "SharedUtils\SharedUtils.csproj", "{0209857B-137D-4D5C-87A3-70E287F87BC5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -157,6 +159,24 @@ Global
 		{C0525606-4ED4-4998-9AF3-31E2DE65717A}.sysbottest|x64.Build.0 = sysbottest|x64
 		{C0525606-4ED4-4998-9AF3-31E2DE65717A}.sysbottest|x86.ActiveCfg = sysbottest|x64
 		{C0525606-4ED4-4998-9AF3-31E2DE65717A}.sysbottest|x86.Build.0 = sysbottest|x64
+		{0209857B-137D-4D5C-87A3-70E287F87BC5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0209857B-137D-4D5C-87A3-70E287F87BC5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0209857B-137D-4D5C-87A3-70E287F87BC5}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0209857B-137D-4D5C-87A3-70E287F87BC5}.Debug|x64.Build.0 = Debug|Any CPU
+		{0209857B-137D-4D5C-87A3-70E287F87BC5}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0209857B-137D-4D5C-87A3-70E287F87BC5}.Debug|x86.Build.0 = Debug|Any CPU
+		{0209857B-137D-4D5C-87A3-70E287F87BC5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0209857B-137D-4D5C-87A3-70E287F87BC5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0209857B-137D-4D5C-87A3-70E287F87BC5}.Release|x64.ActiveCfg = Release|Any CPU
+		{0209857B-137D-4D5C-87A3-70E287F87BC5}.Release|x64.Build.0 = Release|Any CPU
+		{0209857B-137D-4D5C-87A3-70E287F87BC5}.Release|x86.ActiveCfg = Release|Any CPU
+		{0209857B-137D-4D5C-87A3-70E287F87BC5}.Release|x86.Build.0 = Release|Any CPU
+		{0209857B-137D-4D5C-87A3-70E287F87BC5}.sysbottest|Any CPU.ActiveCfg = Debug|Any CPU
+		{0209857B-137D-4D5C-87A3-70E287F87BC5}.sysbottest|Any CPU.Build.0 = Debug|Any CPU
+		{0209857B-137D-4D5C-87A3-70E287F87BC5}.sysbottest|x64.ActiveCfg = Debug|Any CPU
+		{0209857B-137D-4D5C-87A3-70E287F87BC5}.sysbottest|x64.Build.0 = Debug|Any CPU
+		{0209857B-137D-4D5C-87A3-70E287F87BC5}.sysbottest|x86.ActiveCfg = Debug|Any CPU
+		{0209857B-137D-4D5C-87A3-70E287F87BC5}.sysbottest|x86.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

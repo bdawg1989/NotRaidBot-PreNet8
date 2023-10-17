@@ -15,6 +15,7 @@ using Newtonsoft.Json;
 using static SysBot.Base.SwitchButton;
 using System.Net.Http;
 using static SysBot.Pokemon.RotatingRaidSettingsSV;
+using SharedUtils;
 
 namespace SysBot.Pokemon
 {
@@ -1172,7 +1173,10 @@ namespace SysBot.Pokemon
             if (Settings.TakeScreenshot && !upnext)
                 bytes = await SwitchConnection.PixelPeek(token).ConfigureAwait(false) ?? Array.Empty<byte>();
 
-            string disclaimer = Settings.RaidEmbedParameters.Count > 1 ? "NotRaidBot v4.0 by Gengar & Kai\nhttps://notpaldea.net" : "";
+            string disclaimer = Settings.RaidEmbedParameters.Count > 1
+                                ? $"NotRaidBot {SharedConstants.Version} by Gengar & Kai\nhttps://notpaldea.net"
+                                : "";
+
 
             var turl = string.Empty;
             var form = string.Empty;
@@ -1790,7 +1794,7 @@ namespace SysBot.Pokemon
             var specialRewards = GetSpecialRewards(reward);
             var teraTypeLower = strings.Types[teraType].ToLower();
             var teraIconUrl = $"https://genpkm.com/images/teraicons/icon1/{teraTypeLower}.png";
-            var disclaimer = "NotRaidBot v4.0 by Gengar & Kai\nhttps://notpaldea.net";
+            var disclaimer = $"NotRaidBot {SharedConstants.Version} by Gengar & Kai\nhttps://notpaldea.net";
             var titlePrefix = raid.IsShiny ? "Shiny" : "";
             var authorName = $"{stars} ★ {titlePrefix} {(Species)encounter.Species}";
 
