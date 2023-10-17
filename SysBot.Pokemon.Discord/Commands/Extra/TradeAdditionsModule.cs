@@ -493,8 +493,8 @@ namespace SysBot.Pokemon.Discord
             SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters.Insert(insertPosition, newparam);
 
             await Context.Message.DeleteAsync().ConfigureAwait(false);
-            var msg = $"{Context.User.Mention}, a new raid for seed {newparam.Seed} and level {level} has been scheduled!  You will be DM'd when it's about to start.";
-            await ReplyAsync(msg).ConfigureAwait(false);
+            var msg = $"{Context.User.Mention}, added your raid to the queue! I'll DM you when it's about to start.";
+            await ReplyAsync(msg, embed: raidEmbed).ConfigureAwait(false);
         }
 
         [Command("rp")]
