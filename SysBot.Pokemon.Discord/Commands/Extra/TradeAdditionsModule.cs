@@ -359,9 +359,58 @@ namespace SysBot.Pokemon.Discord
         [Alias("arp")]
         [Summary("Adds new raid parameter.")]
         [RequireSudo]
-        public async Task AddNewRaidParam([Summary("Seed")] string seed, [Summary("Species Type")] string species, [Summary("Content Type")] string content)
+        public async Task AddNewRaidParam([Summary("Seed")] string seed, [Summary("Difficulty Level (1-8)")] int level)
         {
-            int type = int.Parse(content);
+            // Validate the seed for hexadecimal format
+            if (seed.Length != 8 || !seed.All(c => "0123456789abcdefABCDEF".Contains(c)))
+            {
+                await ReplyAsync("Invalid seed format. Please enter a seed consisting of exactly 8 hexadecimal digits.").ConfigureAwait(false);
+                return;
+            }
+            if (level < 1 || level > 8)
+            {
+                await ReplyAsync("Invalid raid level. Please enter a level between 1 and 8.").ConfigureAwait(false);
+                return;
+            }
+
+            if (!Hub.Config.RotatingRaidSV.EventActive && (level == 7 || level == 8))
+            {
+                await ReplyAsync("Invalid Raid level. No active Events.").ConfigureAwait(false);
+                return;
+            }
+
+            // Determine the CrystalType based on the given difficulty level
+            var crystalType = level switch
+            {
+                >= 1 and <= 5 => (TeraCrystalType)0,
+                6 => (TeraCrystalType)1,
+                7 => (TeraCrystalType)3,
+                8 => (TeraCrystalType)2,
+                _ => throw new ArgumentException("Invalid difficulty level.")
+            };
+
+            // Determine the correct map
+            var selectedMap = RotatingRaidBotSV.IsKitakami ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea;
+            var raidEmbed = RotatingRaidBotSV.RaidInfoCommand(seed, (int)crystalType, selectedMap);  // Adjusted to use the selected map
+            var species = raidEmbed.Author.Value.Name.Split(" ").Last(); // Extract the species name from the embed author field
+            bool isShiny = raidEmbed.Author.Value.Name.Contains("Shiny");
+            // New code to extract Form
+            int form = 0; // Initialize to a default value
+            var statsField = raidEmbed.Fields.FirstOrDefault(x => x.Name == "**__Stats__**");
+            if (statsField != null)
+            {
+                var formLine = statsField.Value.Split('\n').FirstOrDefault(line => line.Contains("Form:"));
+                if (formLine != null)
+                {
+                    var formString = formLine.Split(':').Last().Trim();
+                    // Extract digits from the string
+                    var formDigits = Regex.Match(formString, @"\d+").Value;
+                    if (int.TryParse(formDigits, out int formValue))
+                    {
+                        form = formValue;
+                    }
+                }
+            }
 
             var description = string.Empty;
             var prevpath = "bodyparam.txt";
@@ -381,28 +430,23 @@ namespace SysBot.Pokemon.Discord
             if (File.Exists(pkpath))
                 data = File.ReadAllText(pkpath);
 
-            var parse = TradeExtensions<T>.EnumParse<Species>(species);
-            if (parse == default)
-            {
-                await ReplyAsync($"{species} is not a valid Species.").ConfigureAwait(false);
-                return;
-            }
-
             RotatingRaidSettingsSV.RotatingRaidParameters newparam = new()
             {
-                CrystalType = (TeraCrystalType)type,
+                CrystalType = crystalType,
                 Description = new[] { description },
-                PartyPK = new[] { data },
-                Species = parse,
-                SpeciesForm = 0,
+                PartyPK = new[] { "" },
+                Species = (Species)Enum.Parse(typeof(Species), species),
+                SpeciesForm = form,
                 Seed = seed,
                 IsCoded = true,
-                Title = $"{parse} ☆ - {(TeraCrystalType)type}",
+                IsShiny = isShiny,
+                AddedByRACommand = false,
+                Title = $"{species}",
             };
-
             SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters.Add(newparam);
-            var msg = $"A new raid for {newparam.Species} has been added!";
-            await ReplyAsync(msg).ConfigureAwait(false);
+            await Context.Message.DeleteAsync().ConfigureAwait(false);
+            var msg = $"Your new raid has been added.";
+            await ReplyAsync(msg, embed: raidEmbed).ConfigureAwait(false);
         }
 
         [Command("ra")]
