@@ -121,7 +121,7 @@ namespace SysBot.Pokemon
             await HardStop().ConfigureAwait(false);
         }
 
-        private void LoadDefaultFile()
+        /* private void LoadDefaultFile()
         {
             var folder = "raidfilessv";
             if (!Directory.Exists(folder))
@@ -182,7 +182,7 @@ namespace SysBot.Pokemon
                 data = File.ReadAllText(pkpath);
 
             DirectorySearch(rotationpath, data);
-        }
+        } */
 
         private void DirectorySearch(string sDir, string data)
         {

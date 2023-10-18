@@ -30,7 +30,7 @@ namespace SysBot.Pokemon
         [Browsable(false)]
         [Category(Hosting), Description("Amount of raids before updating the ban list. If you want the global ban list off, set this to -1.")]
         public int RaidsBetweenUpdate { get; set; } = -1;
-
+        [Browsable(false)]
         [Category(Hosting), Description("When enabled, the bot will attempt to auto-generate Raid Parameters from the \"raidsv.txt\" file on botstart.")]
         public bool GenerateParametersFromFile { get; set; } = false;
 
