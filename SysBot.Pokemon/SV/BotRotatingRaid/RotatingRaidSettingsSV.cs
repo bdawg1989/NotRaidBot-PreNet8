@@ -33,6 +33,7 @@ namespace SysBot.Pokemon
 
         [Category(Hosting), Description("When enabled, the bot will attempt to auto-generate Raid Parameters from the \"raidsv.txt\" file on botstart.")]
         public bool GenerateParametersFromFile { get; set; } = false;
+
         [Category(FeatureToggle), Description("Choose the TeraType Icon set to use in the author area of the embed.  Icon1 are custom, Icon2 is not.")]
         public TeraIconType SelectedTeraIconType { get; set; } = TeraIconType.Icon1;
 

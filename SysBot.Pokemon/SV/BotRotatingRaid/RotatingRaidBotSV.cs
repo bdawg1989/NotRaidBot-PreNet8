@@ -63,12 +63,17 @@ namespace SysBot.Pokemon
 
         public override async Task MainLoop(CancellationToken token)
         {
+            // Comment out or remove this block to prevent GenerateSeedsFromFile() from being called
+            /*
             if (Settings.GenerateParametersFromFile)
             {
                 GenerateSeedsFromFile();
                 Log("Done.");
             }
+            */
 
+            // Optionally, set GenerateParametersFromFile to false if you wish to record that the setting is now disabled
+            Settings.GenerateParametersFromFile = false;
             /*if (Settings.PresetFilters.UsePresetFile)
             {
                 LoadDefaultFile();
