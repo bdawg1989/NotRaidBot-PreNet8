@@ -2,7 +2,7 @@
 {
     public static class SharedConstants
     {
-        public const string Version = "v4.1";
+        public const string Version = "v4.2";
 
     }
 }
