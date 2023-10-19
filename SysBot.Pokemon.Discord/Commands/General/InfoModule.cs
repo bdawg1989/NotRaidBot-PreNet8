@@ -18,7 +18,7 @@ namespace SysBot.Pokemon.Discord
     {
         private const string detail = "I am a custom Raid Bot made by Gengar and Kai that accepts raid requests, and much more.";
         public const string version = NotRaidBot.Version;
-        private const string support = "https://notpaldea.net";
+        private const string support = NotRaidBot.Attribution;
 
         [Command("info")]
         [Alias("about", "whoami", "owner")]
@@ -37,11 +37,7 @@ namespace SysBot.Pokemon.Discord
                 $"- **Version**: {version}\n" +
                 $"- [Download NotRaidBot]({support})\n" +
                 $"- {Format.Bold("Owner")}: {app.Owner} ({app.Owner.Id})\n" +
-                $"- {Format.Bold("Library")}: Discord.Net ({DiscordConfig.Version})\n" +
                 $"- {Format.Bold("Uptime")}: {GetUptime()}\n" +
-                $"- {Format.Bold("Runtime")}: {RuntimeInformation.FrameworkDescription} {RuntimeInformation.ProcessArchitecture} " +
-                $"({RuntimeInformation.OSDescription} {RuntimeInformation.OSArchitecture})\n" +
-                $"- {Format.Bold("Buildtime")}: {GetVersionInfo("SysBot.Base", false)}\n" +
                 $"- {Format.Bold("Core Version")}: {GetVersionInfo("PKHeX.Core")}\n" +
                 $"- {Format.Bold("AutoLegality Version")}: {GetVersionInfo("PKHeX.Core.AutoMod")}\n"
                 );
@@ -50,14 +46,15 @@ namespace SysBot.Pokemon.Discord
                 $"- {Format.Bold("Guilds")}: {Context.Client.Guilds.Count}\n" +
                 $"- {Format.Bold("Channels")}: {Context.Client.Guilds.Sum(g => g.Channels.Count)}\n" +
                 $"- {Format.Bold("Users")}: {Context.Client.Guilds.Sum(g => g.MemberCount)}\n" +
-                $"{Format.Bold("\nVisit [NotPaldea.net](https://notpaldea.net) for more information.")}\n"
+                $"{Format.Bold($"\nVisit [NotPaldea.net]({support}) for more information.")}\n"
                 );
 
             await ReplyAsync("Here's a bit about me!", embed: builder.Build()).ConfigureAwait(false);
         }
 
         private static string GetUptime() => (DateTime.Now - Process.GetCurrentProcess().StartTime).ToString(@"dd\.hh\:mm\:ss");
-        private static string GetVersionInfo(string assemblyName, bool inclVersion = true)
+
+        private static string GetVersionInfo(string assemblyName)
         {
             const string _default = "Unknown";
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
@@ -73,11 +70,14 @@ namespace SysBot.Pokemon.Discord
             var split = info.Split('+');
             if (split.Length >= 2)
             {
-                var version = split[0];
-                var revision = split[1];
-                if (DateTime.TryParseExact(revision, "yyMMddHHmmss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var buildTime))
-                    return inclVersion ? $"{version} ({buildTime:yy-MM-dd\\.hh\\:mm})" : buildTime.ToString(@"yy-MM-dd\.hh\:mm");
-                return inclVersion ? version : _default;
+                var versionParts = split[0].Split('.');
+                if (versionParts.Length == 3)
+                {
+                    var major = versionParts[0].PadLeft(2, '0');
+                    var minor = versionParts[1].PadLeft(2, '0');
+                    var patch = versionParts[2].PadLeft(2, '0');
+                    return $"{major}.{minor}.{patch}";
+                }
             }
             return _default;
         }
