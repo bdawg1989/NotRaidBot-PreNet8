@@ -24,7 +24,7 @@ namespace SysBot.Pokemon
         public int RaidsBetweenUpdate { get; set; } = 3;
 
         [Category(Hosting), Description("When enabled, the bot will attempt to auto-generate Raid Parameters from the \"raidsv.txt\" file on botstart.")]
-        public bool GenerateParametersFromFile { get; set; } = true;
+        public bool GenerateRaidsFromFile { get; set; } = true;
 
         [Category(Hosting), Description("When enabled, the bot will attempt to auto-generate Raid Embeds based on the\"preset.txt\" file.")]
         public bool UsePresetFile { get; set; } = true;

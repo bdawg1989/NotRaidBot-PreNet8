@@ -30,9 +30,9 @@ namespace SysBot.Pokemon
         [Browsable(false)]
         [Category(Hosting), Description("Amount of raids before updating the ban list. If you want the global ban list off, set this to -1.")]
         public int RaidsBetweenUpdate { get; set; } = -1;
-        [Browsable(false)]
-        [Category(Hosting), Description("When enabled, the bot will attempt to auto-generate Raid Parameters from the \"raidsv.txt\" file on botstart.")]
-        public bool GenerateParametersFromFile { get; set; } = false;
+
+        [Category(Hosting), Description("When enabled, the bot will attempt to auto-generate your raids from the \"raidsv.txt\" file on botstart.")]
+        public bool GenerateRaidsFromFile { get; set; } = false;
 
         [Category(FeatureToggle), Description("Choose the TeraType Icon set to use in the author area of the embed.  Icon1 are custom, Icon2 is not.")]
         public TeraIconType SelectedTeraIconType { get; set; } = TeraIconType.Icon1;
@@ -43,8 +43,8 @@ namespace SysBot.Pokemon
         [Category(Hosting), Description("RotatingRaid Preset Filters"), DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         public RotatingRaidPresetFiltersCategory EmbedToggles { get; set; } = new();
 
-        [Category(Hosting), Description("Raid embed parameters.")]
-        public List<RotatingRaidParameters> RaidEmbedParameters { get; set; } = new();
+        [Category(Hosting), Description("Your Active Raid List lives here.")]
+        public List<RotatingRaidParameters> ActiveRaids { get; set; } = new();
 
         [Category(Hosting), Description("Enter the total number of raids to host before the bot automatically stops. Default is 0 to ignore this setting.")]
         public int TotalRaidsToHost { get; set; } = 0;

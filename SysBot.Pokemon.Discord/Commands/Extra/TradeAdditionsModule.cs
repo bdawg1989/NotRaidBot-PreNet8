@@ -443,7 +443,7 @@ namespace SysBot.Pokemon.Discord
                 AddedByRACommand = false,
                 Title = $"{species}",
             };
-            SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters.Add(newparam);
+            SysCord<T>.Runner.Hub.Config.RotatingRaidSV.ActiveRaids.Add(newparam);
             await Context.Message.DeleteAsync().ConfigureAwait(false);
             var msg = $"Your new raid has been added.";
             await ReplyAsync(msg, embed: raidEmbed).ConfigureAwait(false);
@@ -455,7 +455,7 @@ namespace SysBot.Pokemon.Discord
         {
             // Check if the user already has a request
             var userId = Context.User.Id;
-            if (SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters.Any(r => r.RequestedByUserID == userId))
+            if (SysCord<T>.Runner.Hub.Config.RotatingRaidSV.ActiveRaids.Any(r => r.RequestedByUserID == userId))
             {
                 await ReplyAsync("You already have an existing raid request in the queue.").ConfigureAwait(false);
                 return;
@@ -547,12 +547,12 @@ namespace SysBot.Pokemon.Discord
 
             // Determine the correct position to insert the new raid after the current rotation
             int insertPosition = RotatingRaidBotSV.RotationCount + 1;
-            while (insertPosition < SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters.Count && SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters[insertPosition].AddedByRACommand)
+            while (insertPosition < SysCord<T>.Runner.Hub.Config.RotatingRaidSV.ActiveRaids.Count && SysCord<T>.Runner.Hub.Config.RotatingRaidSV.ActiveRaids[insertPosition].AddedByRACommand)
             {
                 insertPosition++;
             }
 
-            SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters.Insert(insertPosition, newparam);
+            SysCord<T>.Runner.Hub.Config.RotatingRaidSV.ActiveRaids.Insert(insertPosition, newparam);
 
             await Context.Message.DeleteAsync().ConfigureAwait(false);
             var msg = $"{Context.User.Mention}, added your raid to the queue! I'll DM you when it's about to start.";
@@ -591,7 +591,7 @@ namespace SysBot.Pokemon.Discord
                 }
 
                 var userId = Context.User.Id;
-                var raidParameters = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters;
+                var raidParameters = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.ActiveRaids;
                 var raidToUpdate = raidParameters.FirstOrDefault(r => r.RequestedByUserID == userId);
                 string[] partyPK = content.Split('\n', StringSplitOptions.RemoveEmptyEntries); // Remove empty lines
                 if (raidToUpdate != null)
@@ -625,7 +625,7 @@ namespace SysBot.Pokemon.Discord
             int currentPosition = RotatingRaidBotSV.RotationCount;
 
             // Find the index of the user's request in the queue
-            var userRequestIndex = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters.FindIndex(r => r.RequestedByUserID == userId);
+            var userRequestIndex = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.ActiveRaids.FindIndex(r => r.RequestedByUserID == userId);
 
             EmbedBuilder embed = new EmbedBuilder();
 
@@ -667,7 +667,7 @@ namespace SysBot.Pokemon.Discord
         public async Task RemoveOwnRaidParam()
         {
             var userId = Context.User.Id;
-            var list = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters;
+            var list = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.ActiveRaids;
 
             var raid = list.FirstOrDefault(r => r.RequestedByUserID == userId && r.AddedByRACommand);
             if (raid == null)
@@ -688,7 +688,7 @@ namespace SysBot.Pokemon.Discord
         [RequireSudo]
         public async Task RemoveRaidParam([Summary("Seed Index")] int index)
         {
-            var list = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters;
+            var list = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.ActiveRaids;
             if (index >= 0 && index < list.Count)
             {
                 var raid = list[index];
@@ -706,7 +706,7 @@ namespace SysBot.Pokemon.Discord
         [RequireSudo]
         public async Task ToggleRaidParam([Summary("Seed Index")] int index)
         {
-            var list = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters;
+            var list = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.ActiveRaids;
             if (index >= 0 && index < list.Count)
             {
                 var raid = list[index];
@@ -725,7 +725,7 @@ namespace SysBot.Pokemon.Discord
         [RequireSudo]
         public async Task ToggleCodeRaidParam([Summary("Seed Index")] int index)
         {
-            var list = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters;
+            var list = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.ActiveRaids;
             if (index >= 0 && index < list.Count)
             {
                 var raid = list[index];
@@ -744,7 +744,7 @@ namespace SysBot.Pokemon.Discord
         [RequireSudo]
         public async Task ChangeRaidParamTitle([Summary("Seed Index")] int index, [Summary("Title")] string title)
         {
-            var list = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters;
+            var list = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.ActiveRaids;
             if (index >= 0 && index < list.Count)
             {
                 var raid = list[index];
@@ -761,7 +761,7 @@ namespace SysBot.Pokemon.Discord
         [Summary("Prints the raids in the current collection.")]
         public async Task GetRaidListAsync()
         {
-            var list = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters;
+            var list = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.ActiveRaids;
             int count = list.Count;
             int fields = (int)Math.Ceiling((double)count / 15);
             var embed = new EmbedBuilder
@@ -790,7 +790,7 @@ namespace SysBot.Pokemon.Discord
         [RequireSudo]
         public async Task ToggleRaidParamPK([Summary("Seed Index")] int index, [Summary("Showdown Set")][Remainder] string content)
         {
-            var list = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters;
+            var list = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.ActiveRaids;
             if (index >= 0 && index < list.Count)
             {
                 var raid = list[index];

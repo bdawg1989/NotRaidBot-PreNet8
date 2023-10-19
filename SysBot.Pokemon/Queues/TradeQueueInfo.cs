@@ -217,7 +217,7 @@ namespace SysBot.Pokemon
         {
             lock (_sync)
             {
-                return Hub.Config.RotatingRaidSV.RaidEmbedParameters.Select(z => string.Format(fmt, z.Title, z.Species));
+                return Hub.Config.RotatingRaidSV.ActiveRaids.Select(z => string.Format(fmt, z.Title, z.Species));
             }
         }
     }

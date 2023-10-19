@@ -55,7 +55,7 @@ namespace SysBot.Pokemon
 
         public override async Task MainLoop(CancellationToken token)
         {
-            if (Settings.GenerateParametersFromFile)
+            if (Settings.GenerateRaidsFromFile)
             {
                 GenerateSeedsFromFile();
                 Log("Done.");

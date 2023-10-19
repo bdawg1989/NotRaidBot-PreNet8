@@ -165,7 +165,7 @@ namespace SysBot.Pokemon.Twitch
 
         public static string GetRaidList()
         {
-            var list = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.RaidEmbedParameters;
+            var list = SysCord<T>.Runner.Hub.Config.RotatingRaidSV.ActiveRaids;
             var rotationCount = RotatingRaidBotSV.RotationCount;
 
             int startIndex = rotationCount % list.Count;

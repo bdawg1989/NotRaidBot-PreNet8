@@ -375,7 +375,7 @@ namespace SysBot.Pokemon
             switch (type)
             {
                 case 0: title = hub.Config.RaidSV.RaidEmbedFilters.Title; info = hub.Config.RaidSV.RaidEmbedFilters.Description[1]; description = hub.Config.RaidSV.RaidEmbedFilters.Description; break;
-                case 1: title = hub.Config.RotatingRaidSV.RaidEmbedParameters[i].Title; info = hub.Config.RotatingRaidSV.RaidEmbedParameters[i].Description[1]; description = hub.Config.RotatingRaidSV.RaidEmbedParameters[i].Description; break;
+                case 1: title = hub.Config.RotatingRaidSV.ActiveRaids[i].Title; info = hub.Config.RotatingRaidSV.ActiveRaids[i].Description[1]; description = hub.Config.RotatingRaidSV.ActiveRaids[i].Description; break;
             }
             var titleval = string.Format(RaidInfoFormat, title);
             if (!string.IsNullOrEmpty(titleval))
