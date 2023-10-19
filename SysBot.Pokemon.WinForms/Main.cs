@@ -24,8 +24,6 @@ namespace SysBot.Pokemon.WinForms
         public Main()
         {
             InitializeComponent();
-            this.TC_Main.DrawMode = TabDrawMode.OwnerDrawFixed;
-            this.TC_Main.DrawItem += new DrawItemEventHandler(TC_Main_DrawItem);
 
             if (File.Exists(Program.ConfigPath))
             {
@@ -53,48 +51,6 @@ namespace SysBot.Pokemon.WinForms
             Task.Run(BotMonitor);
             InitUtil.InitializeStubs(Config.Mode);
         }
-        private void TC_Main_DrawItem(object sender, DrawItemEventArgs e)
-        {
-            // Calculate the bounds for all tabs to be the same as the selected tab
-            Rectangle tabBounds = TC_Main.GetTabRect(e.Index);
-            tabBounds = new Rectangle(tabBounds.X, tabBounds.Y, tabBounds.Width, tabBounds.Height);
-
-            // Create the linear gradient brush for background
-            LinearGradientBrush gradientBrush = new LinearGradientBrush(
-                tabBounds,
-                Color.FromArgb(30, 30, 30), // Start color (Dark gray)
-                Color.FromArgb(70, 70, 70), // End color (Lighter gray)
-                LinearGradientMode.Vertical // Direction of gradient
-            );
-
-            // Fill the entire background with the gradient
-            e.Graphics.FillRectangle(gradientBrush, tabBounds);
-
-            // Get the current tab
-            TabPage currentTab = TC_Main.TabPages[e.Index];
-
-            // Set the text color based on if the tab is selected or not
-            Brush textBrush = new SolidBrush(currentTab == TC_Main.SelectedTab ? Color.Red : Color.White);
-
-            // Draw the tab header text
-            StringFormat stringFormat = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-            e.Graphics.DrawString(currentTab.Text, e.Font, textBrush, tabBounds, stringFormat);
-
-            // Draw red underline for the selected tab
-            if (currentTab == TC_Main.SelectedTab)
-            {
-                Pen redPen = new Pen(Color.Red);
-                redPen.Width = 3;  // Set the thickness of the red border
-                e.Graphics.DrawLine(redPen, tabBounds.Left, tabBounds.Bottom - 2, tabBounds.Right, tabBounds.Bottom - 2);
-            }
-            else // Erase the border for inactive tabs
-            {
-                Pen erasePen = new Pen(TC_Main.BackColor);
-                e.Graphics.DrawRectangle(erasePen, tabBounds);
-            }
-        }
-
-
 
         private static IPokeBotRunner GetRunner(ProgramConfig cfg) => cfg.Mode switch
         {
@@ -139,10 +95,11 @@ namespace SysBot.Pokemon.WinForms
             CB_Protocol.ValueMember = nameof(ComboItem.Value);
             CB_Protocol.DataSource = listP;
             CB_Protocol.SelectedIndex = (int)SwitchProtocol.WiFi; // default option
-
+            comboBox1.Items.Add("Light Mode");
+            comboBox1.Items.Add("Dark Mode");
+            comboBox1.SelectedIndex = 0;  // Set default selection to Light Mode
             LogUtil.Forwarders.Add(AppendLog);
         }
-
         private void AppendLog(string message, string identity)
         {
             var line = $"[{DateTime.Now:HH:mm:ss}] - {identity}: {message}{Environment.NewLine}";
@@ -343,6 +300,146 @@ namespace SysBot.Pokemon.WinForms
         private void FLP_Bots_Paint(object sender, PaintEventArgs e)
         {
 
+        }
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            var comboBox = sender as ComboBox;
+            if (comboBox.SelectedItem.ToString() == "Light Mode")
+                ApplyLightTheme();
+            else if (comboBox.SelectedItem.ToString() == "Dark Mode")
+                ApplyDarkTheme();
+        }
+
+        private void ApplyLightTheme()
+        {
+            // Define the color palette
+            Color SoftBlue = Color.FromArgb(235, 245, 251);
+            Color GentleGrey = Color.FromArgb(245, 245, 245);
+            Color DarkBlue = Color.FromArgb(26, 13, 171);
+
+            // Set the background color of the form
+            this.BackColor = GentleGrey;
+
+            // Set the foreground color of the form (text color)
+            this.ForeColor = DarkBlue;
+
+            // Set the background color of the tab control
+            TC_Main.BackColor = SoftBlue;
+
+            // Set the background color of each tab page
+            foreach (TabPage page in TC_Main.TabPages)
+            {
+                page.BackColor = GentleGrey;
+            }
+
+            // Set the background color of the property grid
+            PG_Hub.BackColor = GentleGrey;
+            PG_Hub.LineColor = SoftBlue;
+            PG_Hub.CategoryForeColor = DarkBlue;
+            PG_Hub.CategorySplitterColor = SoftBlue;
+            PG_Hub.HelpBackColor = GentleGrey;
+            PG_Hub.HelpForeColor = DarkBlue;
+            PG_Hub.ViewBackColor = GentleGrey;
+            PG_Hub.ViewForeColor = DarkBlue;
+
+            // Set the background color of the rich text box
+            RTB_Logs.BackColor = Color.White;
+            RTB_Logs.ForeColor = DarkBlue;
+
+            // Set colors for other controls
+            TB_IP.BackColor = Color.White;
+            TB_IP.ForeColor = DarkBlue;
+
+            CB_Routine.BackColor = Color.White;
+            CB_Routine.ForeColor = DarkBlue;
+
+            NUD_Port.BackColor = Color.White;
+            NUD_Port.ForeColor = DarkBlue;
+
+            B_New.BackColor = SoftBlue;
+            B_New.ForeColor = DarkBlue;
+
+            FLP_Bots.BackColor = GentleGrey;
+
+            CB_Protocol.BackColor = Color.White;
+            CB_Protocol.ForeColor = DarkBlue;
+
+            comboBox1.BackColor = Color.White;
+            comboBox1.ForeColor = DarkBlue;
+
+            B_Stop.BackColor = SoftBlue;
+            B_Stop.ForeColor = DarkBlue;
+
+            B_Start.BackColor = SoftBlue;
+            B_Start.ForeColor = DarkBlue;
+        }
+
+
+
+        private void ApplyDarkTheme()
+        {
+            // Define the dark theme colors
+            Color DarkRed = Color.FromArgb(90, 0, 0);
+            Color DarkGrey = Color.FromArgb(30, 30, 30);
+            Color LightGrey = Color.FromArgb(60, 60, 60);
+            Color SoftWhite = Color.FromArgb(245, 245, 245);
+
+            // Set the background color of the form
+            this.BackColor = DarkGrey;
+
+            // Set the foreground color of the form (text color)
+            this.ForeColor = SoftWhite;
+
+            // Set the background color of the tab control
+            TC_Main.BackColor = LightGrey;
+
+            // Set the background color of each tab page
+            foreach (TabPage page in TC_Main.TabPages)
+            {
+                page.BackColor = DarkGrey;
+            }
+
+            // Set the background color of the property grid
+            PG_Hub.BackColor = DarkGrey;
+            PG_Hub.LineColor = LightGrey;
+            PG_Hub.CategoryForeColor = SoftWhite;
+            PG_Hub.CategorySplitterColor = LightGrey;
+            PG_Hub.HelpBackColor = DarkGrey;
+            PG_Hub.HelpForeColor = SoftWhite;
+            PG_Hub.ViewBackColor = DarkGrey;
+            PG_Hub.ViewForeColor = SoftWhite;
+
+            // Set the background color of the rich text box
+            RTB_Logs.BackColor = DarkGrey;
+            RTB_Logs.ForeColor = SoftWhite;
+
+            // Set colors for other controls
+            TB_IP.BackColor = LightGrey;
+            TB_IP.ForeColor = SoftWhite;
+
+            CB_Routine.BackColor = LightGrey;
+            CB_Routine.ForeColor = SoftWhite;
+
+            NUD_Port.BackColor = LightGrey;
+            NUD_Port.ForeColor = SoftWhite;
+
+            B_New.BackColor = DarkRed;
+            B_New.ForeColor = SoftWhite;
+
+            FLP_Bots.BackColor = DarkGrey;
+
+            CB_Protocol.BackColor = LightGrey;
+            CB_Protocol.ForeColor = SoftWhite;
+
+            comboBox1.BackColor = LightGrey;
+            comboBox1.ForeColor = SoftWhite;
+
+            B_Stop.BackColor = DarkRed;
+            B_Stop.ForeColor = SoftWhite;
+
+            B_Start.BackColor = DarkRed;
+            B_Start.ForeColor = SoftWhite;
         }
     }
 }
