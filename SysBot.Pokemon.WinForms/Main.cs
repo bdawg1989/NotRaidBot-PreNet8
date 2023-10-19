@@ -9,6 +9,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Drawing;
+using System.Drawing.Drawing2D;
 
 namespace SysBot.Pokemon.WinForms
 {
@@ -22,6 +24,9 @@ namespace SysBot.Pokemon.WinForms
         public Main()
         {
             InitializeComponent();
+            this.TC_Main.DrawMode = TabDrawMode.OwnerDrawFixed;
+            this.TC_Main.DrawItem += new DrawItemEventHandler(TC_Main_DrawItem);
+
             if (File.Exists(Program.ConfigPath))
             {
                 var lines = File.ReadAllText(Program.ConfigPath);
@@ -48,6 +53,48 @@ namespace SysBot.Pokemon.WinForms
             Task.Run(BotMonitor);
             InitUtil.InitializeStubs(Config.Mode);
         }
+        private void TC_Main_DrawItem(object sender, DrawItemEventArgs e)
+        {
+            // Calculate the bounds for all tabs to be the same as the selected tab
+            Rectangle tabBounds = TC_Main.GetTabRect(e.Index);
+            tabBounds = new Rectangle(tabBounds.X, tabBounds.Y, tabBounds.Width, tabBounds.Height);
+
+            // Create the linear gradient brush for background
+            LinearGradientBrush gradientBrush = new LinearGradientBrush(
+                tabBounds,
+                Color.FromArgb(30, 30, 30), // Start color (Dark gray)
+                Color.FromArgb(70, 70, 70), // End color (Lighter gray)
+                LinearGradientMode.Vertical // Direction of gradient
+            );
+
+            // Fill the entire background with the gradient
+            e.Graphics.FillRectangle(gradientBrush, tabBounds);
+
+            // Get the current tab
+            TabPage currentTab = TC_Main.TabPages[e.Index];
+
+            // Set the text color based on if the tab is selected or not
+            Brush textBrush = new SolidBrush(currentTab == TC_Main.SelectedTab ? Color.Red : Color.White);
+
+            // Draw the tab header text
+            StringFormat stringFormat = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+            e.Graphics.DrawString(currentTab.Text, e.Font, textBrush, tabBounds, stringFormat);
+
+            // Draw red underline for the selected tab
+            if (currentTab == TC_Main.SelectedTab)
+            {
+                Pen redPen = new Pen(Color.Red);
+                redPen.Width = 3;  // Set the thickness of the red border
+                e.Graphics.DrawLine(redPen, tabBounds.Left, tabBounds.Bottom - 2, tabBounds.Right, tabBounds.Bottom - 2);
+            }
+            else // Erase the border for inactive tabs
+            {
+                Pen erasePen = new Pen(TC_Main.BackColor);
+                e.Graphics.DrawRectangle(erasePen, tabBounds);
+            }
+        }
+
+
 
         private static IPokeBotRunner GetRunner(ProgramConfig cfg) => cfg.Mode switch
         {
@@ -291,6 +338,11 @@ namespace SysBot.Pokemon.WinForms
         private void CB_Protocol_SelectedIndexChanged(object sender, EventArgs e)
         {
             TB_IP.Visible = CB_Protocol.SelectedIndex == 0;
+        }
+
+        private void FLP_Bots_Paint(object sender, PaintEventArgs e)
+        {
+
         }
     }
 }
