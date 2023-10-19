@@ -7,7 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using SharedUtils;
+using SysBot.Pokemon.SV.BotRaid.Helpers;
 
 namespace SysBot.Pokemon.Discord
 {
@@ -17,7 +17,7 @@ namespace SysBot.Pokemon.Discord
     public class InfoModule : ModuleBase<SocketCommandContext>
     {
         private const string detail = "I am a custom Raid Bot made by Gengar and Kai that accepts raid requests, and much more.";
-        public const string version = SharedConstants.Version;
+        public const string version = NotRaidBot.Version;
         private const string support = "https://notpaldea.net";
 
         [Command("info")]

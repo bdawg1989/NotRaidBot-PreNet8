@@ -1,5 +1,5 @@
 ﻿using PKHeX.Core;
-using SharedUtils;
+using SysBot.Pokemon.SV.BotRaid.Helpers;
 using SysBot.Base;
 using System;
 using System.Collections.Generic;
@@ -44,7 +44,7 @@ namespace SysBot.Pokemon.WinForms
             }
 
             LoadControls();
-            Text = $"{(string.IsNullOrEmpty(Config.Hub.BotName) ? "NOT RaidBot" : Config.Hub.BotName)} {SharedConstants.Version} ({Config.Mode})";
+            Text = $"{(string.IsNullOrEmpty(Config.Hub.BotName) ? "NOT RaidBot" : Config.Hub.BotName)} {NotRaidBot.Version} ({Config.Mode})";
             Task.Run(BotMonitor);
             InitUtil.InitializeStubs(Config.Mode);
         }
