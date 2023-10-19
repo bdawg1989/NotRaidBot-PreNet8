@@ -34,6 +34,9 @@ namespace SysBot.Pokemon
         [Category(Hosting), Description("When enabled, the bot will attempt to auto-generate your raids from the \"raidsv.txt\" file on botstart.")]
         public bool GenerateRaidsFromFile { get; set; } = false;
 
+        [Category(Hosting), Description("When enabled, the Active Raids will be randomized if no requests are in queue.")]
+        public bool RandomRotation { get; set; } = false;
+
         [Category(FeatureToggle), Description("Choose the TeraType Icon set to use in the author area of the embed.  Icon1 are custom, Icon2 is not.")]
         public TeraIconType SelectedTeraIconType { get; set; } = TeraIconType.Icon1;
 
