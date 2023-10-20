@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Threading;
 using Discord.WebSocket;
 
+
 namespace SysBot.Pokemon
 {
     public class RotatingRaidSettingsSV : IBotStateSettings, ICountSettings
@@ -146,6 +147,7 @@ namespace SysBot.Pokemon
             [Browsable(false)]
             public ulong RequestedByUserID { get; set; } // Add this line for User ID
             [Browsable(false)]
+            [Newtonsoft.Json.JsonIgnore]
             public SocketUser? User { get; set; }
         }
 
