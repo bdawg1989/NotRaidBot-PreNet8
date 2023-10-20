@@ -95,11 +95,27 @@ namespace SysBot.Pokemon.WinForms
             CB_Protocol.ValueMember = nameof(ComboItem.Value);
             CB_Protocol.DataSource = listP;
             CB_Protocol.SelectedIndex = (int)SwitchProtocol.WiFi; // default option
+
             comboBox1.Items.Add("Light Mode");
             comboBox1.Items.Add("Dark Mode");
-            comboBox1.SelectedIndex = 0;  // Set default selection to Light Mode
+
+            string theme = Config.Hub.ThemeOption;
+            if (string.IsNullOrEmpty(theme) || !comboBox1.Items.Contains(theme))
+            {
+                comboBox1.SelectedIndex = 0;  // Set default selection to Light Mode if ThemeOption is empty or invalid
+            }
+            else
+            {
+                comboBox1.SelectedItem = theme;  // Set the selected item in the combo box based on ThemeOption
+                if (theme == "Dark Mode")
+                    ApplyDarkTheme();
+                else if (theme == "Light Mode")
+                    ApplyLightTheme();
+            }
+
             LogUtil.Forwarders.Add(AppendLog);
         }
+
         private void AppendLog(string message, string identity)
         {
             var line = $"[{DateTime.Now:HH:mm:ss}] - {identity}: {message}{Environment.NewLine}";
@@ -148,9 +164,11 @@ namespace SysBot.Pokemon.WinForms
         private void SaveCurrentConfig()
         {
             var cfg = GetCurrentConfiguration();
+            // The ThemeOption property is part of the Config object, so it will be saved automatically
             var lines = JsonSerializer.Serialize(cfg, ProgramConfigContext.Default.ProgramConfig);
             File.WriteAllText(Program.ConfigPath, lines);
         }
+
 
         [JsonSerializable(typeof(ProgramConfig))]
         [JsonSourceGenerationOptions(WriteIndented = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
@@ -305,11 +323,16 @@ namespace SysBot.Pokemon.WinForms
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
             var comboBox = sender as ComboBox;
-            if (comboBox.SelectedItem.ToString() == "Light Mode")
+            string selectedTheme = comboBox.SelectedItem.ToString();
+            Config.Hub.ThemeOption = selectedTheme;  // Save the selected theme to the config
+            SaveCurrentConfig();  // Save the config to file
+
+            if (selectedTheme == "Light Mode")
                 ApplyLightTheme();
-            else if (comboBox.SelectedItem.ToString() == "Dark Mode")
+            else if (selectedTheme == "Dark Mode")
                 ApplyDarkTheme();
         }
+
 
         private void ApplyLightTheme()
         {

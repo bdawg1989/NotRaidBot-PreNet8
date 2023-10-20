@@ -23,7 +23,9 @@ namespace SysBot.Pokemon
 
         [Category(BotEncounter), Description("Name of the Discord Bot the Program is Running. This will Title the window for easier recognition. Requires program restart.")]
         public string BotName { get; set; } = string.Empty;
-
+        [Browsable(false)]
+        [Category(BotEncounter), Description("Users Theme Option Choice.")]
+        public string ThemeOption { get; set; } = string.Empty;
         // Trade Bots
         [Browsable(false)]
         [Category(BotTrade)]
