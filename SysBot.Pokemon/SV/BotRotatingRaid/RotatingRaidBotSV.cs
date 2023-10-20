@@ -749,6 +749,11 @@ namespace SysBot.Pokemon
                 Log($"Resetting Rotation Count to {RotationCount}");
                 firstRun = false;
             }
+            if (Settings.RandomRotation)
+            {
+                ProcessRandomRotation();
+                return;  // Exit early after processing random rotation
+            }
             if (RotationCount >= Settings.ActiveRaids.Count)
             {
                 RotationCount = 0;
@@ -769,6 +774,26 @@ namespace SysBot.Pokemon
                 }
             }
         }
+
+        private void ProcessRandomRotation()
+        {
+            // Check the remaining raids for any added by the RA command
+            for (var i = RotationCount; i < Settings.ActiveRaids.Count; i++)
+            {
+                if (Settings.ActiveRaids[i].AddedByRACommand)
+                {
+                    RotationCount = i;
+                    Log($"Setting Rotation Count to {RotationCount}");
+                    return;  // Exit method as a raid added by RA command was found
+                }
+            }
+
+            // If no raid added by RA command was found, select a random raid
+            var random = new Random();
+            RotationCount = random.Next(Settings.ActiveRaids.Count);
+            Log($"Setting Rotation Count to {RotationCount}");
+        }
+
 
         private async Task InjectPartyPk(string battlepk, CancellationToken token)
         {

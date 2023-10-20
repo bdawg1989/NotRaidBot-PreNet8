@@ -38,6 +38,9 @@ namespace SysBot.Pokemon
         [Category(Hosting), Description("When enabled, the bot will save your current ActiveRaids list to the \"savedSeeds.txt\" file on bot stop.")]
         public bool SaveSeedsToFile { get; set; } = true;
 
+        [Category(Hosting), Description("When enabled, the bot will randomly pick a Raid to run, while keeping requests prioritized.")]
+        public bool RandomRotation { get; set; } = false;
+
         [Category(FeatureToggle), Description("Choose the TeraType Icon set to use in the author area of the embed.  Icon1 are custom, Icon2 is not.")]
         public TeraIconType SelectedTeraIconType { get; set; } = TeraIconType.Icon1;
         /* Unhide if event raids ever get fixed
