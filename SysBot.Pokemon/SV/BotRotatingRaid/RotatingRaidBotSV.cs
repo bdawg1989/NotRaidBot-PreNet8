@@ -713,32 +713,7 @@ namespace SysBot.Pokemon
         private async Task SanitizeRotationCount(CancellationToken token)
         {
             await Task.Delay(0_050, token).ConfigureAwait(false);
-            // If RandomRotation is enabled, randomize the ActiveRaids list, 
-            // while keeping raids added by the RA command at the front.
-            if (Settings.RandomRotation)
-            {
-                Log("Random Rotation is enabled. Randomizing ActiveRaids list while prioritizing requested raids.");
 
-                var raidsAddedByCommand = Settings.ActiveRaids
-                    .Where(raid => raid.AddedByRACommand)
-                    .ToList();
-
-                var otherRaids = Settings.ActiveRaids
-                    .Where(raid => !raid.AddedByRACommand)
-                    .OrderBy(_ => Guid.NewGuid())
-                    .ToList();
-
-                Settings.ActiveRaids.Clear();
-                Settings.ActiveRaids.AddRange(raidsAddedByCommand);
-                Settings.ActiveRaids.AddRange(otherRaids);
-
-                Log($"{raidsAddedByCommand.Count} raid{(raidsAddedByCommand.Count == 1 ? "" : "s")} were added by RA command and remain prioritized.");
-                Log($"{otherRaids.Count} other raids were randomized.");
-            }
-            else
-            {
-                Log("Random Rotation is disabled. ActiveRaids list will proceed in order.");
-            }
             // Check if the current raid was added by the RA command, and remove it.
             if (Settings.ActiveRaids[RotationCount].AddedByRACommand)
             {
