@@ -373,12 +373,6 @@ namespace SysBot.Pokemon.Discord
                 return;
             }
 
-            if (!Hub.Config.RotatingRaidSV.EventActive && (level == 7 || level == 8))
-            {
-                await ReplyAsync("Invalid Raid level. No active Events.").ConfigureAwait(false);
-                return;
-            }
-
             // Determine the CrystalType based on the given difficulty level
             var crystalType = level switch
             {
@@ -433,6 +427,7 @@ namespace SysBot.Pokemon.Discord
             RotatingRaidSettingsSV.RotatingRaidParameters newparam = new()
             {
                 CrystalType = crystalType,
+                DifficultyLevel = level,
                 Description = new[] { description },
                 PartyPK = new[] { "" },
                 Species = (Species)Enum.Parse(typeof(Species), species),
@@ -469,12 +464,6 @@ namespace SysBot.Pokemon.Discord
             if (level < 1 || level > 8)
             {
                 await ReplyAsync("Invalid raid level. Please enter a level between 1 and 8.").ConfigureAwait(false);
-                return;
-            }
-
-            if (!Hub.Config.RotatingRaidSV.EventActive && (level == 7 || level == 8))
-            {
-                await ReplyAsync("Invalid Raid level. No active Events.").ConfigureAwait(false);
                 return;
             }
 

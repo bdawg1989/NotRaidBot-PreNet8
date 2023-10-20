@@ -68,6 +68,7 @@ namespace SysBot.Pokemon
             {
                 GenerateSeedsFromFile();
                 Log("Done.");
+                Settings.GenerateRaidsFromFile = false;
             }
 
             if (Settings.ConfigureRolloverCorrection)
@@ -106,33 +107,12 @@ namespace SysBot.Pokemon
             {
                 Log(e.Message);
             }
-
+            finally
+            {
+                SaveSeeds();
+            }
             Log($"Ending {nameof(RotatingRaidBotSV)} loop.");
             await HardStop().ConfigureAwait(false);
-        }
-
-         private void LoadDefaultFile()
-        {
-            var folder = "raidfilessv";
-            if (!Directory.Exists(folder))
-                Directory.CreateDirectory(folder);
-
-            var prevpath = "preset.txt";
-            var filepath = "raidfilessv\\preset.txt";
-            if (File.Exists(prevpath))
-                File.Move(prevpath, filepath);
-            if (!File.Exists(filepath))
-            {
-                File.WriteAllText(filepath, "{shinySymbol} - {species} - {markTitle} - {genderSymbol} - {genderText}" + Environment.NewLine + "{stars} - {difficulty} - {tera}" + Environment.NewLine +
-                    "{HP}/{ATK}/{DEF}/{SPA}/{SPD}/{SPE}\n{ability} | {nature}" + Environment.NewLine + "Scale: {scaleText} - {scaleNumber}" + Environment.NewLine + "{moveset}" + Environment.NewLine + "{extramoves}");
-            }
-            if (File.Exists(filepath))
-            {
-                PresetDescription = File.ReadAllLines(filepath);
-                ModDescription = PresetDescription;
-            }
-            else
-                PresetDescription = Array.Empty<string>();
         }
 
         private void GenerateSeedsFromFile()
@@ -147,7 +127,7 @@ namespace SysBot.Pokemon
                 File.Move(prevrotationpath, rotationpath);
             if (!File.Exists(rotationpath))
             {
-                File.WriteAllText(rotationpath, "00000000-None-5");
+                File.WriteAllText(rotationpath, "000091EC-Kricketune-3,0000717F-Seviper-3");
                 Log("Creating a default raidsv.txt file, skipping generation as file is empty.");
                 return;
             }
@@ -172,7 +152,42 @@ namespace SysBot.Pokemon
                 data = File.ReadAllText(pkpath);
 
             DirectorySearch(rotationpath, data);
-        } 
+        }
+        private void SaveSeeds()
+        {
+            if (!Settings.SaveSeedsToFile)
+                return;
+
+            var raidsToSave = Settings.ActiveRaids.Where(raid => !raid.AddedByRACommand).ToList();
+
+            if (!raidsToSave.Any())
+                return;
+
+            // Define the directory and file paths
+            var directoryPath = "raidfilessv";
+            var fileName = "savedSeeds.txt";
+            var savePath = Path.Combine(directoryPath, fileName);
+
+            // Create directory if it doesn't exist
+            if (!Directory.Exists(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+
+            StringBuilder sb = new StringBuilder();
+            foreach (var raid in raidsToSave)
+            {
+                sb.Append($"{raid.Seed}-{raid.Species}-{raid.DifficultyLevel},"); // Adjust this line based on your object's properties
+            }
+
+            // Remove the trailing comma
+            if (sb.Length > 0)
+                sb.Length--;
+
+            // Write the contents to the file
+            File.WriteAllText(savePath, sb.ToString());
+        }
+
 
         private void DirectorySearch(string sDir, string data)
         {
@@ -185,6 +200,8 @@ namespace SysBot.Pokemon
                 var monseed = div[0];
                 var montitle = div[1];
                 var montent = div[2];
+                int difficultyLevel = int.Parse(div[2]); // Parsing the DifficultyLevel
+
                 TeraCrystalType type = montent switch
                 {
                     "6" => TeraCrystalType.Black,
@@ -198,12 +215,12 @@ namespace SysBot.Pokemon
                     Species = TradeExtensions<PK9>.EnumParse<Species>(montitle),
                     CrystalType = type,
                     PartyPK = new[] { data },
+                    DifficultyLevel = difficultyLevel  // Added the DifficultyLevel
                 };
                 Settings.ActiveRaids.Add(param);
                 Log($"Parameters generated from text file for {montitle}.");
             }
         }
-
         private async Task InnerLoop(CancellationToken token)
         {
             bool partyReady;

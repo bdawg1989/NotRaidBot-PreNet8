@@ -33,7 +33,10 @@ namespace SysBot.Pokemon
         public int RaidsBetweenUpdate { get; set; } = -1;
 
         [Category(Hosting), Description("When enabled, the bot will attempt to auto-generate your raids from the \"raidsv.txt\" file on botstart.")]
-        public bool GenerateRaidsFromFile { get; set; } = false;
+        public bool GenerateRaidsFromFile { get; set; } = true;
+
+        [Category(Hosting), Description("When enabled, the bot will save your current ActiveRaids list to the \"savedSeeds.txt\" file on bot stop.")]
+        public bool SaveSeedsToFile { get; set; } = true;
 
         [Category(FeatureToggle), Description("Choose the TeraType Icon set to use in the author area of the embed.  Icon1 are custom, Icon2 is not.")]
         public TeraIconType SelectedTeraIconType { get; set; } = TeraIconType.Icon1;
@@ -121,6 +124,7 @@ namespace SysBot.Pokemon
         {
             public override string ToString() => $"{Title}";
             public bool ActiveInRotation { get; set; } = true;
+            public int DifficultyLevel { get; set; } = 0;
             public TeraCrystalType CrystalType { get; set; } = TeraCrystalType.Base;
             [Browsable(false)]
             public string[] Description { get; set; } = Array.Empty<string>();
@@ -138,7 +142,7 @@ namespace SysBot.Pokemon
             public bool AddedByRACommand { get; set; } = false;
             [Browsable(false)]
             public ulong RequestedByUserID { get; set; } // Add this line for User ID
-            [JsonIgnore]
+            [Browsable(false)]
             public SocketUser? User { get; set; }
         }
 
