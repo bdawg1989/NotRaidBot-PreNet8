@@ -20,6 +20,7 @@ namespace SysBot.Pokemon
             Icon2 // Use boring set
         }
         public override string ToString() => "RotatingRaidSV Settings";
+        [Browsable(false)]
         public int RotationCount { get; set; } // Ensure it's publicly accessible
         [Browsable(false)]
         [Category(FeatureToggle), Description("URL to Pokémon Automation's Tera Ban List json (or one matching the required structure).")]
