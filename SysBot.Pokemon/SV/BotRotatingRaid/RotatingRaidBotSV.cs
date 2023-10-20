@@ -1566,7 +1566,7 @@ namespace SysBot.Pokemon
                 {
                     if (raid.IsEvent)
                     {
-                        Settings.EventActive = true;
+                        // Settings.EventActive = true; Uncomment when raid events actually work.
                         break; // Exit loop if an event raid is found
                     }
                 }
@@ -1594,7 +1594,7 @@ namespace SysBot.Pokemon
                 {
                     if (raid.IsEvent)
                     {
-                        Settings.EventActive = true;
+                        // Settings.EventActive = true; uncomment when event raids actually work
                         break; // Exit loop if an event raid is found
                     }
                 }

@@ -37,9 +37,9 @@ namespace SysBot.Pokemon
 
         [Category(FeatureToggle), Description("Choose the TeraType Icon set to use in the author area of the embed.  Icon1 are custom, Icon2 is not.")]
         public TeraIconType SelectedTeraIconType { get; set; } = TeraIconType.Icon1;
-
+        /* Unhide if event raids ever get fixed
         [Category(Hosting), Description("Set to \"true\" when events are active to properly process level 7 (event) and level 8 (distribution) raids.")]
-        public bool EventActive { get; set; } = false;
+        public bool EventActive { get; set; } = false; */
 
         [Category(Hosting), Description("RotatingRaid Preset Filters"), DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         public RotatingRaidPresetFiltersCategory EmbedToggles { get; set; } = new();
