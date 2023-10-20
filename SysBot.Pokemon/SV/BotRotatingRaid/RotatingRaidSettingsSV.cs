@@ -1,6 +1,5 @@
 ﻿using PKHeX.Core;
 using System;
-using Newtonsoft.Json;
 using SysBot.Base;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -147,7 +146,7 @@ namespace SysBot.Pokemon
             [Browsable(false)]
             public ulong RequestedByUserID { get; set; } // Add this line for User ID
             [Browsable(false)]
-            [Newtonsoft.Json.JsonIgnore]
+            [System.Text.Json.Serialization.JsonIgnore]
             public SocketUser? User { get; set; }
         }
 
