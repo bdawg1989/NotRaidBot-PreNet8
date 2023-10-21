@@ -48,12 +48,9 @@ namespace SysBot.Pokemon
         private ulong ConnectedOffset;
         private ulong RaidBlockPointerP;
         private ulong RaidBlockPointerK;
-        private ulong TeraRaidBlockOffset;
         private readonly ulong[] TeraNIDOffsets = new ulong[3];
         private string TeraRaidCode { get; set; } = string.Empty;
         private string BaseDescription = string.Empty;
-        private string[] PresetDescription = Array.Empty<string>();
-        private string[] ModDescription = Array.Empty<string>();
         private readonly Dictionary<ulong, int> RaidTracker = new();
         private List<BanList> GlobalBanList = new();
         private SAV9SV HostSAV = new();
