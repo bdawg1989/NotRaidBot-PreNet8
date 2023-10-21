@@ -1826,7 +1826,7 @@ namespace SysBot.Pokemon
 
             var raid = new Raid(raidbyte, map); // map is -> TeraRaidMapParent.Paldea or .Kitakami
             var progress = StoryProgress;
-            var raid_delivery_group_id = 2;
+            var raid_delivery_group_id = -1;
             var encounter = raid.GetTeraEncounter(container, progress, raid_delivery_group_id);
             var reward = encounter.GetRewards(container, raid, 0);
             var stars = raid.IsEvent ? encounter.Stars : RaidExtensions.GetStarCount(raid, raid.Difficulty, StoryProgress, raid.IsBlack);
