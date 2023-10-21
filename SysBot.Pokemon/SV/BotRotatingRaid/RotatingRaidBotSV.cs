@@ -521,8 +521,18 @@ namespace SysBot.Pokemon
                     await EnqueueEmbed(names, "", hatTrick, false, false, true, token).ConfigureAwait(false);
                 }
 
+                DateTime battleStartTime = DateTime.Now;
+
                 while (await IsConnectedToLobby(token).ConfigureAwait(false))
                 {
+                    TimeSpan timeInBattle = DateTime.Now - battleStartTime;
+
+                    if (timeInBattle.TotalMinutes >= 15)
+                    {
+                        Log("Battle timed out after 15 minutes. Exiting...");
+                        break;  // Exit the loop if 15 minutes have passed and disband lobby.
+                    }
+
                     b++;
                     switch (Settings.LobbyOptions.Action)
                     {
