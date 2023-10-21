@@ -197,6 +197,7 @@ namespace SysBot.Pokemon.Discord
         }
 
         [Command("echoClear")]
+        [Alias("rec")]
         [Summary("Clears the special message echo settings in that specific channel.")]
         [RequireSudo]
         public async Task ClearEchosAsync()
@@ -215,6 +216,7 @@ namespace SysBot.Pokemon.Discord
         }
 
         [Command("echoClearAll")]
+        [Alias("raec")]
         [Summary("Clears all the special message Echo channel settings.")]
         [RequireSudo]
         public async Task ClearEchosAllAsync()
