@@ -25,6 +25,7 @@ namespace SysBot.Pokemon.WinForms
         {
             InitializeComponent();
             TC_Main.SelectedIndexChanged += TC_Main_SelectedIndexChanged;
+            RTB_Logs.TextChanged += RTB_Logs_TextChanged;
 
             if (File.Exists(Program.ConfigPath))
             {
@@ -58,6 +59,11 @@ namespace SysBot.Pokemon.WinForms
             {
                 RTB_Logs.Refresh();
             }
+        }
+        private void RTB_Logs_TextChanged(object sender, EventArgs e)
+        {
+            RTB_Logs.Invalidate();
+            RTB_Logs.Update();
         }
 
         private static IPokeBotRunner GetRunner(ProgramConfig cfg) => cfg.Mode switch
