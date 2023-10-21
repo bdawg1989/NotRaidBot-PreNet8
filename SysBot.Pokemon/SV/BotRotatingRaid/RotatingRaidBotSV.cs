@@ -16,7 +16,6 @@ using static SysBot.Base.SwitchButton;
 using System.Net.Http;
 using static SysBot.Pokemon.RotatingRaidSettingsSV;
 using SysBot.Pokemon.SV.BotRaid.Helpers;
-using TeraFinder.Core;
 
 namespace SysBot.Pokemon
 {
