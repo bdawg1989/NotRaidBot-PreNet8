@@ -24,6 +24,7 @@ namespace SysBot.Pokemon.WinForms
         public Main()
         {
             InitializeComponent();
+            TC_Main.SelectedIndexChanged += TC_Main_SelectedIndexChanged;
 
             if (File.Exists(Program.ConfigPath))
             {
@@ -50,6 +51,13 @@ namespace SysBot.Pokemon.WinForms
             Text = $"{(string.IsNullOrEmpty(Config.Hub.BotName) ? "NOT RaidBot" : Config.Hub.BotName)} {NotRaidBot.Version} ({Config.Mode})";
             Task.Run(BotMonitor);
             InitUtil.InitializeStubs(Config.Mode);
+        }
+        private void TC_Main_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (TC_Main.SelectedTab == Tab_Logs)
+            {
+                RTB_Logs.Refresh();
+            }
         }
 
         private static IPokeBotRunner GetRunner(ProgramConfig cfg) => cfg.Mode switch
