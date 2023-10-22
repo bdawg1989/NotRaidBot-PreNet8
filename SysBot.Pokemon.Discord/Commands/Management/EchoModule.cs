@@ -7,11 +7,35 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using static SysBot.Pokemon.DiscordSettings;
 
 namespace SysBot.Pokemon.Discord
 {
+    public static class EmbedColorConverter
+    {
+        public static Color ToDiscordColor(this EmbedColorOption colorOption)
+        {
+            return colorOption switch
+            {
+                EmbedColorOption.Blue => Color.Blue,
+                EmbedColorOption.Green => Color.Green,
+                EmbedColorOption.Red => Color.Red,
+                EmbedColorOption.Gold => Color.Gold,
+                EmbedColorOption.Purple => Color.Purple,
+                EmbedColorOption.Teal => Color.Teal,
+                EmbedColorOption.Orange => Color.Orange,
+                EmbedColorOption.Magenta => Color.Magenta,
+                EmbedColorOption.LightGrey => Color.LightGrey,
+                EmbedColorOption.DarkGrey => Color.DarkGrey,
+                _ => Color.Blue,  // Default to Blue if somehow an undefined enum value is used
+            };
+        }
+    }
+
     public class EchoModule : ModuleBase<SocketCommandContext>
     {
+
+        private static DiscordSettings Settings { get; set; }
         private class EchoChannel
         {
             public readonly ulong ChannelID;
@@ -49,6 +73,7 @@ namespace SysBot.Pokemon.Discord
 
         public static void RestoreChannels(DiscordSocketClient discord, DiscordSettings cfg)
         {
+            Settings = cfg;
             foreach (var ch in cfg.EchoChannels)
             {
                 if (discord.GetChannel(ch.ID) is ISocketMessageChannel c)
@@ -64,6 +89,53 @@ namespace SysBot.Pokemon.Discord
             if (SysCordSettings.Settings.EchoOnBotStart)
                 EchoUtil.Echo("Added echo notification to Discord channel(s) on Bot startup.");
         }
+
+        [Command("Announce", RunMode = RunMode.Async)]
+        [Alias("announce")]
+        [Summary("Sends an announcement to all EchoChannels added by the aec command.")]
+        [RequireSudo]
+        public async Task AnnounceAsync([Remainder] string announcement)
+        {
+            var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var formattedTimestamp = $"<t:{unixTimestamp}:F>";
+            var embedColor = Settings.AnnouncementEmbedColor.ToDiscordColor();
+            var embedDescription = $"{announcement}\n\nSent at {formattedTimestamp}";
+
+            var embed = new EmbedBuilder
+            {
+                Color = embedColor,
+                Description = embedDescription
+            }
+            .WithTitle("Important Announcement!")
+            .WithThumbnailUrl(Settings.AnnouncementThumbnailUrl)
+            .Build();
+
+            var client = Context.Client;
+            foreach (var channelEntry in Channels)
+            {
+                var channelId = channelEntry.Key;
+                var channel = client.GetChannel(channelId) as ISocketMessageChannel;
+                if (channel == null)
+                {
+                    LogUtil.LogError($"Failed to find or access channel {channelId}", nameof(AnnounceAsync));
+                    continue;
+                }
+
+                try
+                {
+                    await channel.SendMessageAsync(embed: embed).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    LogUtil.LogError($"Failed to send announcement to channel {channel.Name}: {ex.Message}", nameof(AnnounceAsync));
+                }
+            }
+            var confirmationMessage = await ReplyAsync("Announcement sent to all EchoChannels.").ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+            await confirmationMessage.DeleteAsync().ConfigureAwait(false);
+            await Context.Message.DeleteAsync().ConfigureAwait(false);
+        }
+
 
         [Command("aec")]
         [Summary("Makes the bot post raid embeds to the channel.")]
