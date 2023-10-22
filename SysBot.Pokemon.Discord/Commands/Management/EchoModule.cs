@@ -98,21 +98,10 @@ namespace SysBot.Pokemon.Discord
         {
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var formattedTimestamp = $"<t:{unixTimestamp}:F>";
-            var embedColor = Settings.AnnouncementEmbedColor.ToDiscordColor();
-            var embedDescription = $"{announcement}\n\nSent: {formattedTimestamp}";
+            var embedColor = Settings.RandomAnnouncementColor ? GetRandomColor() : Settings.AnnouncementEmbedColor.ToDiscordColor();
+            var thumbnailUrl = Settings.RandomAnnouncementThumbnail ? GetRandomThumbnail() : GetSelectedThumbnail();
 
-            var thumbnailUrl = Settings.AnnouncementThumbnailOption switch
-            {
-                ThumbnailOption.Gengar => "https://genpkm.com/images/gengarmegaphone.png",
-                ThumbnailOption.Pikachu => "https://genpkm.com/images/pikachumegaphone.png",
-                ThumbnailOption.Umbreon => "https://genpkm.com/images/umbreonmegaphone.png",
-                ThumbnailOption.Sylveon => "https://genpkm.com/images/sylveonmegaphone.png",
-                ThumbnailOption.Charmander => "https://genpkm.com/images/charmandermegaphone.png",
-                ThumbnailOption.Jigglypuff => "https://genpkm.com/images/jigglypuffmegaphone.png",
-                ThumbnailOption.Flareon => "https://genpkm.com/images/flareonmegaphone.png",
-                ThumbnailOption.Custom => Settings.CustomAnnouncementThumbnailUrl, // Use custom URL if provided
-                _ => "https://genpkm.com/images/gengarmegaphone.png", // Default to Gengar
-            };
+            var embedDescription = $"## {announcement}\n\n**Sent: {formattedTimestamp}**";
 
             var embed = new EmbedBuilder
             {
@@ -149,6 +138,42 @@ namespace SysBot.Pokemon.Discord
             await Context.Message.DeleteAsync().ConfigureAwait(false);
         }
 
+        private Color GetRandomColor()
+        {
+            // Generate a random color
+            var random = new Random();
+            var colors = Enum.GetValues(typeof(EmbedColorOption)).Cast<EmbedColorOption>().ToList();
+            return colors[random.Next(colors.Count)].ToDiscordColor();
+        }
+
+        private string GetRandomThumbnail()
+        {
+            // Define a list of available thumbnail URLs
+            var thumbnailOptions = new List<string>
+    {
+        "https://genpkm.com/images/gengarmegaphone.png",
+        "https://genpkm.com/images/pikachumegaphone.png",
+        "https://genpkm.com/images/umbreonmegaphone.png",
+        "https://genpkm.com/images/sylveonmegaphone.png",
+        "https://genpkm.com/images/charmandermegaphone.png",
+        "https://genpkm.com/images/jigglypuffmegaphone.png",
+        "https://genpkm.com/images/flareonmegaphone.png",
+    };
+
+            // Generate a random index and return the corresponding URL
+            var random = new Random();
+            return thumbnailOptions[random.Next(thumbnailOptions.Count)];
+        }
+
+        private string GetSelectedThumbnail()
+        {
+            // Use the selected thumbnail URL or custom URL if available
+            return Settings.AnnouncementThumbnailOption switch
+            {
+                ThumbnailOption.Custom => Settings.CustomAnnouncementThumbnailUrl,
+                _ => Settings.AnnouncementThumbnailOption.ToString().ToLowerInvariant(),
+            };
+        }
 
         [Command("aec")]
         [Summary("Makes the bot post raid embeds to the channel.")]

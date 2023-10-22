@@ -126,6 +126,11 @@ namespace SysBot.Pokemon
         [Category("Embed Settings"), Description("Custom thumbnail URL for announcements.")]
         public string CustomAnnouncementThumbnailUrl { get; set; } = string.Empty;
         public EmbedColorOption AnnouncementEmbedColor { get; set; } = EmbedColorOption.Blue;
+        [Category("Embed Settings"), Description("Enable random thumbnail selection for announcements.")]
+        public bool RandomAnnouncementThumbnail { get; set; } = false;
+
+        [Category("Embed Settings"), Description("Enable random color selection for announcements.")]
+        public bool RandomAnnouncementColor { get; set; } = false;
         [Browsable(false)]
         [Category(Channels), Description("Echo channels that will log special encounter messages.")]
         public RemoteControlAccessList EncounterEchoChannels { get; set; } = new();
