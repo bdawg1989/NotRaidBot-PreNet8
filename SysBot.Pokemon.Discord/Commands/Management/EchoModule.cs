@@ -99,7 +99,20 @@ namespace SysBot.Pokemon.Discord
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var formattedTimestamp = $"<t:{unixTimestamp}:F>";
             var embedColor = Settings.AnnouncementEmbedColor.ToDiscordColor();
-            var embedDescription = $"{announcement}\n\nSent at {formattedTimestamp}";
+            var embedDescription = $"{announcement}\n\nSent: {formattedTimestamp}";
+
+            var thumbnailUrl = Settings.AnnouncementThumbnailOption switch
+            {
+                ThumbnailOption.Gengar => "https://genpkm.com/images/gengarmegaphone.png",
+                ThumbnailOption.Pikachu => "https://genpkm.com/images/pikachumegaphone.png",
+                ThumbnailOption.Umbreon => "https://genpkm.com/images/umbreonmegaphone.png",
+                ThumbnailOption.Sylveon => "https://genpkm.com/images/sylveonmegaphone.png",
+                ThumbnailOption.Charmander => "https://genpkm.com/images/charmandermegaphone.png",
+                ThumbnailOption.Jigglypuff => "https://genpkm.com/images/jigglypuffmegaphone.png",
+                ThumbnailOption.Flareon => "https://genpkm.com/images/flareonmegaphone.png",
+                ThumbnailOption.Custom => Settings.CustomAnnouncementThumbnailUrl, // Use custom URL if provided
+                _ => "https://genpkm.com/images/gengarmegaphone.png", // Default to Gengar
+            };
 
             var embed = new EmbedBuilder
             {
@@ -107,7 +120,7 @@ namespace SysBot.Pokemon.Discord
                 Description = embedDescription
             }
             .WithTitle("Important Announcement!")
-            .WithThumbnailUrl(Settings.AnnouncementThumbnailUrl)
+            .WithThumbnailUrl(thumbnailUrl)
             .Build();
 
             var client = Context.Client;

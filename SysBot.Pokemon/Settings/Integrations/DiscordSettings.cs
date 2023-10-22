@@ -17,6 +17,18 @@ namespace SysBot.Pokemon
             LightGrey,
             DarkGrey
         }
+        public enum ThumbnailOption
+        {
+            Gengar,
+            Pikachu,
+            Umbreon,
+            Sylveon,
+            Charmander,
+            Jigglypuff,
+            Flareon,
+            Custom
+        }
+
         private const string Startup = nameof(Startup);
         private const string Operation = nameof(Operation);
         private const string Channels = nameof(Channels);
@@ -108,9 +120,11 @@ namespace SysBot.Pokemon
 
         [Category(Channels), Description("Raid Embed Channels.")]
         public RemoteControlAccessList EchoChannels { get; set; } = new();
-        [Category(Channels), Description("URL of the thumbnail image to be used in announcements.")]
-        public string AnnouncementThumbnailUrl { get; set; } = "https://genpkm.com/images/gengarmegaphone.png";
-        [Category("Embed Settings"), Description("Color for the embeds in announcements.")]
+        [Category("Embed Settings"), Description("Thumbnail option for announcements.")]
+        public ThumbnailOption AnnouncementThumbnailOption { get; set; } = ThumbnailOption.Gengar;
+
+        [Category("Embed Settings"), Description("Custom thumbnail URL for announcements.")]
+        public string CustomAnnouncementThumbnailUrl { get; set; } = string.Empty;
         public EmbedColorOption AnnouncementEmbedColor { get; set; } = EmbedColorOption.Blue;
         [Browsable(false)]
         [Category(Channels), Description("Echo channels that will log special encounter messages.")]
