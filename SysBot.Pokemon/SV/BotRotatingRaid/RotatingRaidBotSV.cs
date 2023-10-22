@@ -738,6 +738,13 @@ namespace SysBot.Pokemon
         {
             await Task.Delay(0_050, token).ConfigureAwait(false);
 
+            // Validate that the RotationCount is within the range of ActiveRaids.
+            if (RotationCount >= Settings.ActiveRaids.Count)
+            {
+                RotationCount = 0;
+                Log($"Resetting Rotation Count to {RotationCount}");
+            }
+
             // Check if the current raid was added by the RA command, and remove it.
             if (Settings.ActiveRaids[RotationCount].AddedByRACommand)
             {
@@ -750,17 +757,20 @@ namespace SysBot.Pokemon
                 // If the current raid wasn't added by the RA command, move to the next raid.
                 RotationCount++;
             }
+
             if (firstRun)
             {
                 RotationCount = 0; // Start back at 0 on first run.
                 Log($"Resetting Rotation Count to {RotationCount}");
                 firstRun = false;
             }
+
             if (Settings.RandomRotation)
             {
                 ProcessRandomRotation();
                 return;  // Exit early after processing random rotation
             }
+
             if (RotationCount >= Settings.ActiveRaids.Count)
             {
                 RotationCount = 0;
@@ -781,7 +791,6 @@ namespace SysBot.Pokemon
                 }
             }
         }
-
         private void ProcessRandomRotation()
         {
             // Check the remaining raids for any added by the RA command
