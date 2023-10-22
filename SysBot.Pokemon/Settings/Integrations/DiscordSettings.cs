@@ -1,4 +1,6 @@
-﻿using System.ComponentModel;
+﻿using MathNet.Numerics;
+using System.ComponentModel;
+using static SysBot.Pokemon.RotatingRaidSettingsSV;
 
 namespace SysBot.Pokemon
 {
@@ -120,17 +122,8 @@ namespace SysBot.Pokemon
 
         [Category(Channels), Description("Raid Embed Channels.")]
         public RemoteControlAccessList EchoChannels { get; set; } = new();
-        [Category("Embed Settings"), Description("Thumbnail option for announcements.")]
-        public ThumbnailOption AnnouncementThumbnailOption { get; set; } = ThumbnailOption.Gengar;
+        public AnnouncementSettingsCategory AnnouncementSettings { get; set; } = new();
 
-        [Category("Embed Settings"), Description("Custom thumbnail URL for announcements.")]
-        public string CustomAnnouncementThumbnailUrl { get; set; } = string.Empty;
-        public EmbedColorOption AnnouncementEmbedColor { get; set; } = EmbedColorOption.Blue;
-        [Category("Embed Settings"), Description("Enable random thumbnail selection for announcements.")]
-        public bool RandomAnnouncementThumbnail { get; set; } = false;
-
-        [Category("Embed Settings"), Description("Enable random color selection for announcements.")]
-        public bool RandomAnnouncementColor { get; set; } = false;
         [Browsable(false)]
         [Category(Channels), Description("Echo channels that will log special encounter messages.")]
         public RemoteControlAccessList EncounterEchoChannels { get; set; } = new();
@@ -152,5 +145,23 @@ namespace SysBot.Pokemon
         [Browsable(false)]
         [Category(Operation), Description("If set to false the bot will not echo the bot startup message.")]
         public bool EchoOnBotStart { get; set; } = false;
+
+        [Category(Operation), TypeConverter(typeof(CategoryConverter<AnnouncementSettingsCategory>))]
+        public class AnnouncementSettingsCategory
+        {
+            public override string ToString() => "Announcement Settings";
+            [Category("Embed Settings"), Description("Thumbnail option for announcements.")]
+            public ThumbnailOption AnnouncementThumbnailOption { get; set; } = ThumbnailOption.Gengar;
+
+            [Category("Embed Settings"), Description("Custom thumbnail URL for announcements.")]
+            public string CustomAnnouncementThumbnailUrl { get; set; } = string.Empty;
+            public EmbedColorOption AnnouncementEmbedColor { get; set; } = EmbedColorOption.Blue;
+            [Category("Embed Settings"), Description("Enable random thumbnail selection for announcements.")]
+            public bool RandomAnnouncementThumbnail { get; set; } = false;
+
+            [Category("Embed Settings"), Description("Enable random color selection for announcements.")]
+            public bool RandomAnnouncementColor { get; set; } = false;
+        }
+
     }
 }

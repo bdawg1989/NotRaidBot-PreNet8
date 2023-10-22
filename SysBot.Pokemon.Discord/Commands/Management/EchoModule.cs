@@ -98,8 +98,8 @@ namespace SysBot.Pokemon.Discord
         {
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var formattedTimestamp = $"<t:{unixTimestamp}:F>";
-            var embedColor = Settings.RandomAnnouncementColor ? GetRandomColor() : Settings.AnnouncementEmbedColor.ToDiscordColor();
-            var thumbnailUrl = Settings.RandomAnnouncementThumbnail ? GetRandomThumbnail() : GetSelectedThumbnail();
+            var embedColor = Settings.AnnouncementSettings.RandomAnnouncementColor ? GetRandomColor() : Settings.AnnouncementSettings.AnnouncementEmbedColor.ToDiscordColor();
+            var thumbnailUrl = Settings.AnnouncementSettings.RandomAnnouncementThumbnail ? GetRandomThumbnail() : GetSelectedThumbnail();
 
             var embedDescription = $"## {announcement}\n\n**Sent: {formattedTimestamp}**";
 
@@ -168,10 +168,10 @@ namespace SysBot.Pokemon.Discord
         private string GetSelectedThumbnail()
         {
             // Use the selected thumbnail URL or custom URL if available
-            return Settings.AnnouncementThumbnailOption switch
+            return Settings.AnnouncementSettings.AnnouncementThumbnailOption switch
             {
-                ThumbnailOption.Custom => Settings.CustomAnnouncementThumbnailUrl,
-                _ => Settings.AnnouncementThumbnailOption.ToString().ToLowerInvariant(),
+                ThumbnailOption.Custom => Settings.AnnouncementSettings.CustomAnnouncementThumbnailUrl,
+                _ => Settings.AnnouncementSettings.AnnouncementThumbnailOption.ToString().ToLowerInvariant(),
             };
         }
 
