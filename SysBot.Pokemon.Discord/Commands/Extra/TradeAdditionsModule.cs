@@ -449,6 +449,12 @@ namespace SysBot.Pokemon.Discord
         [Summary("Adds new raid parameter next in the queue.")]
         public async Task AddNewRaidParamNext([Summary("Seed")] string seed, [Summary("Difficulty Level (1-8)")] int level)
         {
+            // Check if raid requests are disabled by the host
+            if (SysCord<T>.Runner.Hub.Config.RotatingRaidSV.DisableRequests)
+            {
+                await ReplyAsync("Raid Requests are currently disabled by the host.").ConfigureAwait(false);
+                return;
+            }
             // Check if the user already has a request
             var userId = Context.User.Id;
             if (SysCord<T>.Runner.Hub.Config.RotatingRaidSV.ActiveRaids.Any(r => r.RequestedByUserID == userId))
