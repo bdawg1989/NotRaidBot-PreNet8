@@ -10,6 +10,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Drawing;
+using System.Diagnostics;
 
 namespace SysBot.Pokemon.WinForms
 {
@@ -28,7 +29,8 @@ namespace SysBot.Pokemon.WinForms
 
             TC_Main.SelectedIndexChanged += TC_Main_SelectedIndexChanged;
             RTB_Logs.TextChanged += RTB_Logs_TextChanged;
-            if (B_Start.IsHandleCreated)
+
+            if (B_Start.InvokeRequired)
             {
                 B_Start.Invoke((MethodInvoker)delegate
                 {
@@ -39,9 +41,7 @@ namespace SysBot.Pokemon.WinForms
             {
                 B_Start.Enabled = false;
             }
-
         }
-
         private async Task InitializeAsync()
         {
             if (string.IsNullOrEmpty(LicenseKeyHelper.ReadLicenseKey()))
@@ -197,8 +197,6 @@ namespace SysBot.Pokemon.WinForms
         {
             if (Config == null)
             {
-                // Handle the null case appropriately for your application.
-                // You might throw an exception, log a warning, or simply return a default value.
                 throw new InvalidOperationException("Config has not been initialized because a valid license was not entered.");
             }
             Config.Bots = Bots.ToArray();
