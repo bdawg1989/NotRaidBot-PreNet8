@@ -22,11 +22,10 @@ namespace SysBot.Pokemon.Discord
         private static TradeQueueInfo<T> Info => SysCord<T>.Runner.Hub.Queues.Info;
         private readonly PokeTradeHub<T> Hub = SysCord<T>.Runner.Hub;
         private readonly ExtraCommandUtil<T> Util = new();
-
         [Command("raidinfo")]
         [Alias("ri", "rv")]
         [Summary("Displays basic Raid Info of the provided seed.")]
-        public async Task RaidSeedInfoAsync(string seedValue, int level, int storyProgressLevel, string dlc = "p")
+        public async Task RaidSeedInfoAsync(string seedValue, int level, int storyProgressLevel = 6, string dlc = "p")
         {
             uint seed;
             try
@@ -35,7 +34,7 @@ namespace SysBot.Pokemon.Discord
             }
             catch (FormatException)
             {
-               await ReplyAsync("Invalid seed format. Please enter a valid seed.");
+                await ReplyAsync("Invalid seed format. Please enter a valid seed.");
                 return;
             }
 
@@ -50,13 +49,15 @@ namespace SysBot.Pokemon.Discord
 
             try
             {
-                var embed = RotatingRaidBotSV.RaidInfoCommand(seedValue, (int)crystalType, dlc != "p" ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea, storyProgressLevel); await ReplyAsync(embed: embed);
+                var embed = RotatingRaidBotSV.RaidInfoCommand(seedValue, (int)crystalType, dlc != "p" ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea, storyProgressLevel);
+                await ReplyAsync(embed: embed);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 await ReplyAsync(ex.Message);
             }
         }
+
 
         [Command("giveawayqueue")]
         [Alias("gaq")]
@@ -362,7 +363,7 @@ namespace SysBot.Pokemon.Discord
         public async Task AddNewRaidParam(
             [Summary("Seed")] string seed,
             [Summary("Difficulty Level (1-8)")] int level,
-            [Summary("Story Progress Level")] int storyProgressLevel)  // New parameter for StoryProgressLevel
+            [Summary("Story Progress Level")] int storyProgressLevel = 6)  // New parameter for StoryProgressLevel
         {
             // Validate the seed for hexadecimal format
             if (seed.Length != 8 || !seed.All(c => "0123456789abcdefABCDEF".Contains(c)))
@@ -462,7 +463,7 @@ namespace SysBot.Pokemon.Discord
         public async Task AddNewRaidParamNext(
             [Summary("Seed")] string seed,
             [Summary("Difficulty Level (1-8)")] int level,
-            [Summary("Story Progress Level")] int storyProgressLevel)  // New argument for StoryProgressLevel
+            [Summary("Story Progress Level")] int storyProgressLevel = 6)  // New argument for StoryProgressLevel with default value
         {
             // Check if raid requests are disabled by the host
             if (SysCord<T>.Runner.Hub.Config.RotatingRaidSV.DisableRequests)
