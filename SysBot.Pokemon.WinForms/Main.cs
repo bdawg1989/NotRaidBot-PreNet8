@@ -195,6 +195,12 @@ namespace SysBot.Pokemon.WinForms
 
         private ProgramConfig GetCurrentConfiguration()
         {
+            if (Config == null)
+            {
+                // Handle the null case appropriately for your application.
+                // You might throw an exception, log a warning, or simply return a default value.
+                throw new InvalidOperationException("Config has not been initialized because a valid license was not entered.");
+            }
             Config.Bots = Bots.ToArray();
             return Config;
         }
