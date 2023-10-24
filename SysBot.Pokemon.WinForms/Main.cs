@@ -10,31 +10,38 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Drawing;
-using System.Drawing.Drawing2D;
-using MySql.Data.MySqlClient;
-using System.Data.SqlClient;
 
 namespace SysBot.Pokemon.WinForms
 {
     public sealed partial class Main : Form
     {
         private readonly List<PokeBotState> Bots = new();
-        private readonly IPokeBotRunner RunningEnvironment;
-        private readonly ProgramConfig Config;
+        private IPokeBotRunner RunningEnvironment;
+        private ProgramConfig Config;
         public readonly ISwitchConnectionAsync? SwitchConnection;
 
         public Main()
         {
             InitializeComponent();
-            Startup();
+            this.Load += async (sender, e) => await InitializeAsync();
+
             TC_Main.SelectedIndexChanged += TC_Main_SelectedIndexChanged;
             RTB_Logs.TextChanged += RTB_Logs_TextChanged;
 
             // Initially disable B_Start button
-            B_Start.Enabled = false;  // Assuming B_Start is the name of your start button
+            B_Start.Enabled = false; // Assuming B_Start is the name of your start button
+        }
 
-            // Show the LicenseForm at the start
-            RegisterLicense();
+        private async Task InitializeAsync()
+        {
+            if (string.IsNullOrEmpty(LicenseKeyHelper.ReadLicenseKey()))
+            {
+                this.Show(); // Show the main form
+                await RegisterLicenseAsync();
+            }
+
+            await StartupAsync();
+
             if (File.Exists(Program.ConfigPath))
             {
                 var lines = File.ReadAllText(Program.ConfigPath);
@@ -61,6 +68,7 @@ namespace SysBot.Pokemon.WinForms
             Task.Run(BotMonitor);
             InitUtil.InitializeStubs(Config.Mode);
         }
+
         private void TC_Main_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (TC_Main.SelectedTab == Tab_Logs)
@@ -723,102 +731,85 @@ namespace SysBot.Pokemon.WinForms
             B_Start.ForeColor = SoftWhite;
         }
 
-        public void Startup()
+        public async Task StartupAsync()
         {
-            string existingLicenseKey = LicenseKeyHelper.ReadLicenseKey();
-            if (string.IsNullOrEmpty(existingLicenseKey))
+            try
             {
-                // No existing license found; prompt user
-                RegisterLicense();
-            }
-            else
-            {
-                // Validate the existing license
-                if (ValidateLicense(existingLicenseKey))
+                string existingLicenseKey = LicenseKeyHelper.ReadLicenseKey();
+                if (string.IsNullOrEmpty(existingLicenseKey))
                 {
-                    // Proceed with application
-                    B_Start.Enabled = true;
+                    // No existing license found; prompt user
+                    await RegisterLicenseAsync().ConfigureAwait(false);
                 }
                 else
                 {
-                    // Invalid license, maybe prompt the user to re-enter it
-                    RegisterLicense();
-                }
-            }
-        }
-        private void RegisterLicense()
-        {
-            // Check if a license key has been saved previously
-            string savedLicenseKey = LicenseKeyHelper.ReadLicenseKey();
-            if (savedLicenseKey != null)
-            {
-                // Validate the saved license key
-                if (ValidateLicense(savedLicenseKey))
-                {
-                    B_Start.Enabled = true;
-                    return;
-                }
-                else
-                {
-                    MessageBox.Show("Saved license key is no longer valid.");
-                }
-            }
-
-            // Prompt for a new license key
-            using (var licenseForm = new LicenseForm())
-            {
-                if (licenseForm.ShowDialog() == DialogResult.OK)
-                {
-                    string newLicenseKey = licenseForm.LicenseKey;
-
-                    // Validate the new license key
-                    if (ValidateLicense(newLicenseKey))
+                    // Validate the existing license
+                    if (await LicenseKeyHelper.ValidateLicenseAsync(existingLicenseKey).ConfigureAwait(false))
                     {
-                        // License key is valid and unused, proceed
+                        // Proceed with application
                         B_Start.Enabled = true;
-
-                        // Save the valid license key
-                        LicenseKeyHelper.SaveLicenseKey(newLicenseKey);
                     }
                     else
                     {
-                        // Invalid or used license key, show an error or exit the application
-                        MessageBox.Show("Invalid or Used License Key");
+                        // Invalid license, maybe prompt the user to re-enter it
+                        await RegisterLicenseAsync().ConfigureAwait(false);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred during startup: {ex.Message}");
+                Application.Exit();
+            }
+        }
+
+
+        private async Task RegisterLicenseAsync()
+        {
+            try
+            {
+                string savedLicenseKey = LicenseKeyHelper.ReadLicenseKey();
+                if (!string.IsNullOrEmpty(savedLicenseKey))
+                {
+                    if (await LicenseKeyHelper.ValidateLicenseAsync(savedLicenseKey))
+                    {
+                        B_Start.Enabled = true;
+                        return;
+                    }
+                    else
+                    {
+                        MessageBox.Show("Saved license key is no longer valid.");
+                        LicenseKeyHelper.DeleteLicenseKey();  // Clear the invalid saved key
+                    }
+                }
+
+                using (var licenseForm = new LicenseForm())
+                {
+                    if (licenseForm.ShowDialog() == DialogResult.OK)
+                    {
+                        string newLicenseKey = licenseForm.LicenseKey;
+
+                        if (await LicenseKeyHelper.ValidateLicenseAsync(newLicenseKey))
+                        {
+                            B_Start.Enabled = true;
+                            LicenseKeyHelper.SaveLicenseKey(newLicenseKey);
+                        }
+                        else
+                        {
+                            MessageBox.Show("Invalid or used license key.");
+                            Application.Exit();
+                        }
+                    }
+                    else
+                    {
                         Application.Exit();
                     }
                 }
-                else
-                {
-                    // Handle the cancel case here
-                    Application.Exit();
-                }
             }
-        }
-        // Function to validate license
-        private bool ValidateLicense(string licenseKey)
-        {
-            bool isValid = false;
-
-            string connString = "Server=104.225.128.138;Database=southern_licenses;User ID=southern_licenses;Password=Cooper6316!;CharSet=utf8mb4;";
-            using (MySqlConnection conn = new MySqlConnection(connString))
+            catch (Exception ex)
             {
-                conn.Open();
-
-                using (MySqlCommand cmd = new MySqlCommand("SELECT * FROM LicenseKeys WHERE license_key = @licenseKey AND is_valid = 1 AND used = 1", conn))
-                {
-                    cmd.Parameters.AddWithValue("@licenseKey", licenseKey);
-                    using (MySqlDataReader reader = cmd.ExecuteReader())
-                    {
-                        if (reader.HasRows)
-                        {
-                            // The key is valid and has been marked as used.
-                            isValid = true;
-                        }
-                    }
-                }
+                MessageBox.Show($"An error occurred: {ex.Message}");
             }
-
-            return isValid;
         }
 
     }
