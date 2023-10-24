@@ -12,13 +12,13 @@ public static class RPEmbed
         var items = strings.GetItemStrings(pk.Context, (GameVersion)pk.Version);
         var formName = ShowdownParsing.GetStringFromForm(pk.Form, strings, pk.Species, pk.Context);
         var itemName = items[pk.HeldItem];
-        (int R, int G, int B) = TradeExtensions<PK9>.GetDominantColor(TradeExtensions<PK9>.PokeImg(pk, false, false));
+        (int R, int G, int B) = RaidExtensions<PK9>.GetDominantColor(RaidExtensions<PK9>.PokeImg(pk, false, false));
         var embedColor = new Color(R, G, B);
 
         var embed = new EmbedBuilder
         {
             Color = embedColor,
-            ThumbnailUrl = TradeExtensions<PK9>.PokeImg(pk, false, false),
+            ThumbnailUrl = RaidExtensions<PK9>.PokeImg(pk, false, false),
         };
 
         embed.AddField(x =>

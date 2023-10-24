@@ -31,10 +31,6 @@ namespace SysBot.Pokemon.Discord
             if (mgr.CanUseSudo(roles.Select(z => z.Name)))
                 return Task.FromResult(PreconditionResult.FromSuccess());
 
-            bool canQueue = SysCordSettings.HubConfig.Queues.CanQueue;
-            if (!canQueue)
-                return Task.FromResult(PreconditionResult.FromError("Sorry, I am not currently accepting queue requests!"));
-
             if (!mgr.GetHasRoleAccess(_name, roles.Select(z => z.Name)))
                 return Task.FromResult(PreconditionResult.FromError("You do not have the required role to run this command."));
 

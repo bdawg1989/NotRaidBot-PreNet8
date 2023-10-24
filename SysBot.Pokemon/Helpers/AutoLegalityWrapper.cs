@@ -11,62 +11,27 @@ namespace SysBot.Pokemon
     {
         private static bool Initialized;
 
-        public static void EnsureInitialized(LegalitySettings cfg)
+        public static void EnsureInitialized()
         {
             if (Initialized)
                 return;
             Initialized = true;
-            InitializeAutoLegality(cfg);
+            InitializeAutoLegality();
         }
 
-        private static void InitializeAutoLegality(LegalitySettings cfg)
+        private static void InitializeAutoLegality()
         {
             InitializeCoreStrings();
-            EncounterEvent.RefreshMGDB(cfg.MGDBPath);
-            InitializeTrainerDatabase(cfg);
-            InitializeSettings(cfg);
+            InitializeTrainerDatabase();
         }
 
-        // The list of encounter types in the priority we prefer if no order is specified.
-        private static readonly EncounterTypeGroup[] EncounterPriority = { EncounterTypeGroup.Egg, EncounterTypeGroup.Slot, EncounterTypeGroup.Static, EncounterTypeGroup.Mystery, EncounterTypeGroup.Trade };
-
-        private static void InitializeSettings(LegalitySettings cfg)
-        {
-            APILegality.SetAllLegalRibbons = cfg.SetAllLegalRibbons;
-            APILegality.SetMatchingBalls = cfg.SetMatchingBalls;
-            APILegality.ForceSpecifiedBall = cfg.ForceSpecifiedBall;
-            APILegality.ForceLevel100for50 = cfg.ForceLevel100for50;
-            Legalizer.EnableEasterEggs = cfg.EnableEasterEggs;
-            APILegality.AllowTrainerOverride = cfg.AllowTrainerDataOverride;
-            APILegality.AllowBatchCommands = cfg.AllowBatchCommands;
-            APILegality.PrioritizeGame = cfg.PrioritizeGame;
-            APILegality.PrioritizeGameVersion = cfg.PrioritizeGameVersion;
-            APILegality.SetBattleVersion = cfg.SetBattleVersion;
-            APILegality.Timeout = cfg.Timeout;
-
-            if (!(APILegality.AllowHOMETransferGeneration = cfg.AllowHOMETransferGeneration))
-                typeof(ParseSettings).GetProperty(nameof(ParseSettings.Gen8TransferTrackerNotPresent))!.SetValue(null, Severity.Invalid);
-
-            // We need all the encounter types present, so add the missing ones at the end.
-            var missing = EncounterPriority.Except(cfg.PrioritizeEncounters);
-            cfg.PrioritizeEncounters.AddRange(missing);
-            cfg.PrioritizeEncounters = cfg.PrioritizeEncounters.Distinct().ToList(); // Don't allow duplicates.
-            EncounterMovesetGenerator.PriorityList = cfg.PrioritizeEncounters;
-        }
-
-        private static void InitializeTrainerDatabase(LegalitySettings cfg)
+        private static void InitializeTrainerDatabase()
         {
             // Seed the Trainer Database with enough fake save files so that we return a generation sensitive format when needed.
-            string OT = cfg.GenerateOT;
-            if (OT.Length == 0)
-                OT = "Blank"; // Will fail if actually left blank.
-            ushort TID = cfg.GenerateTID16;
-            ushort SID = cfg.GenerateSID16;
-            int lang = (int)cfg.GenerateLanguage;
-
-            var externalSource = cfg.GeneratePathTrainerInfo;
-            if (!string.IsNullOrWhiteSpace(externalSource) && Directory.Exists(externalSource))
-                TrainerSettings.LoadTrainerDatabaseFromPath(externalSource);
+            string OT = "Trainer";
+            ushort TID = 52345;
+            ushort SID = 12345;
+            int lang = (int)LanguageID.English;
 
             for (int i = 1; i < PKX.Generation + 1; i++)
             {
@@ -96,28 +61,6 @@ namespace SysBot.Pokemon
             RibbonStrings.ResetDictionary(GameInfo.Strings.ribbons);
             ParseSettings.ChangeLocalizationStrings(GameInfo.Strings.movelist, GameInfo.Strings.specieslist);
         }
-
-        public static bool CanBeTraded(this PKM pkm)
-        {
-            if (pkm.IsNicknamed && StringsUtil.IsSpammyString(pkm.Nickname))
-                return false;
-            if (StringsUtil.IsSpammyString(pkm.OT_Name) && !IsFixedOT(new LegalityAnalysis(pkm).EncounterOriginal, pkm))
-                return false;
-            return !FormInfo.IsFusedForm(pkm.Species, pkm.Form, pkm.Format);
-        }
-
-        public static bool IsFixedOT(IEncounterTemplate t, PKM pkm) => t switch
-        {
-            IFixedTrainer tr => tr.IsFixedTrainer,
-            MysteryGift g => !g.EggEncounter && g switch
-            {
-                WC8 wc8 => wc8.GetHasOT(pkm.Language),
-                WB8 wb8 => wb8.GetHasOT(pkm.Language),
-                { Generation: >= 5 } gift => gift.OT_Name.Length > 0,
-                _ => true,
-            },
-            _ => false,
-        };
 
         public static ITrainerInfo GetTrainerInfo<T>() where T : PKM, new()
         {
@@ -149,8 +92,6 @@ namespace SysBot.Pokemon
             return result.Created;
         }
 
-        public static string GetLegalizationHint(IBattleTemplate set, ITrainerInfo sav, PKM pk) => set.SetAnalysis(sav, pk);
-        public static PKM LegalizePokemon(this PKM pk) => pk.Legalize();
         public static IBattleTemplate GetTemplate(ShowdownSet set) => new RegenTemplate(set);
     }
 }

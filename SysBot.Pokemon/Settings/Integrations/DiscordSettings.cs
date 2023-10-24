@@ -47,61 +47,28 @@ namespace SysBot.Pokemon
         [Category(Startup), Description("Bot command prefix.")]
         public string CommandPrefix { get; set; } = "$";
 
-        [Category(Startup), Description("List of modules that will not be loaded when the bot is started (comma separated).")]
-        public string ModuleBlacklist { get; set; } = string.Empty;
-
         [Category(Startup), Description("Toggle to handle commands asynchronously or synchronously.")]
         public bool AsyncCommands { get; set; }
 
         [Category(Startup), Description("Custom Status for playing a game.")]
         public string BotGameStatus { get; set; } = "Hosting S/V Raids";
 
-        [Category(Startup), Description("Indicates the Discord presence status color only considering bots that are Trade-type.")]
-        public bool BotColorStatusTradeOnly { get; set; } = true;
-
         [Category(Operation), Description("Custom message the bot will reply with when a user says hello to it. Use string formatting to mention the user in the reply.")]
         public string HelloResponse { get; set; } = "Hello, {0}!  I'm online!";
 
         // Whitelists
-        [Browsable(false)]
-        [Category(Roles), Description("Users with this role are allowed to enter the Trade queue.")]
-        public RemoteControlAccessList RoleCanTrade { get; set; } = new() { AllowIfEmpty = false };
-        [Browsable(false)]
-        [Category(Roles), Description("Users with this role are allowed to enter the Seed Check queue.")]
-        public RemoteControlAccessList RoleCanSeedCheck { get; set; } = new() { AllowIfEmpty = false };
-        [Browsable(false)]
-        [Category(Roles), Description("Users with this role are allowed to enter the Clone queue.")]
-        public RemoteControlAccessList RoleCanClone { get; set; } = new() { AllowIfEmpty = false };
-        [Browsable(false)]
-        [Category(Roles), Description("Users with this role are allowed to enter the Dump queue.")]
-        public RemoteControlAccessList RoleCanDump { get; set; } = new() { AllowIfEmpty = false };
+        [Category(Roles), Description("Users with this role are allowed to enter the Raid queue.")]
+        public RemoteControlAccessList RoleRaidRequest { get; set; } = new() { AllowIfEmpty = false };
+
         [Browsable(false)]
         [Category(Roles), Description("Users with this role are allowed to remotely control the console (if running as Remote Control Bot.")]
         public RemoteControlAccessList RoleRemoteControl { get; set; } = new() { AllowIfEmpty = false };
 
         [Category(Roles), Description("Users with this role are allowed to bypass command restrictions.")]
         public RemoteControlAccessList RoleSudo { get; set; } = new() { AllowIfEmpty = false };
-        [Browsable(false)]
-        [Category(Roles), Description("Users with this role are allowed to enter the Etumrep Dump queue.")]
-        public RemoteControlAccessList RoleCanEtumrepDump { get; set; } = new() { AllowIfEmpty = false };
-        [Browsable(false)]
-        [Category(Roles), Description("Users with this role are allowed to enter the FixOT queue.")]
-        public RemoteControlAccessList RoleCanFixOT { get; set; } = new() { AllowIfEmpty = false };
-        [Browsable(false)]
-        [Category(Roles), Description("Users with this role are allowed to use SupportTrade.")]
-        public RemoteControlAccessList RoleCanSupportTrade { get; set; } = new() { AllowIfEmpty = false };
-        [Browsable(false)]
-        [Category(Roles), Description("Users with this role are allowed to use TradeCord.")]
-        public RemoteControlAccessList RoleCanTradeCord { get; set; } = new() { AllowIfEmpty = false };
-        [Browsable(false)]
-        [Category(Roles), Description("Users with this role are allowed to use Giveaway.")]
-        public RemoteControlAccessList RoleCanGiveaway { get; set; } = new() { AllowIfEmpty = false };
+
 
         // Operation
-        [Browsable(false)]
-        [Category(Roles), Description("Users with this role are allowed to join the queue with a better position.")]
-        public RemoteControlAccessList RoleFavored { get; set; } = new() { AllowIfEmpty = false };
-
         [Category(Users), Description("Users with these user IDs cannot use the bot.")]
         public RemoteControlAccessList UserBlacklist { get; set; } = new();
 
@@ -116,35 +83,11 @@ namespace SysBot.Pokemon
 
         [Category(Channels), Description("Channel IDs that will echo the log bot data.")]
         public RemoteControlAccessList LoggingChannels { get; set; } = new();
-        [Browsable(false)]
-        [Category(Channels), Description("Logger channels that will log trade start messages.")]
-        public RemoteControlAccessList TradeStartingChannels { get; set; } = new();
 
         [Category(Channels), Description("Raid Embed Channels.")]
         public RemoteControlAccessList EchoChannels { get; set; } = new();
-        public AnnouncementSettingsCategory AnnouncementSettings { get; set; } = new();
 
-        [Browsable(false)]
-        [Category(Channels), Description("Echo channels that will log special encounter messages.")]
-        public RemoteControlAccessList EncounterEchoChannels { get; set; } = new();
-        [Browsable(false)]
-        [Category(Channels), Description("Channel IDs where TradeCord commands are allowed.")]
-        public RemoteControlAccessList TradeCordChannels { get; set; } = new();
-        [Browsable(false)]
-        [Category(Operation), Description("Returns PKMs of Pokémon shown in the trade to the user.")]
-        public bool ReturnPKMs { get; set; } = true;
-        [Browsable(false)]
-        [Category(Operation), Description("Replies to users if they are not allowed to use a given command in the channel. When false, the bot will silently ignore them instead.")]
-        public bool ReplyCannotUseCommandInChannel { get; set; } = true;
-        [Browsable(false)]
-        [Category(Operation), Description("Bot listens to channel messages to reply with a ShowdownSet whenever a PKM file is attached (not with a command).")]
-        public bool ConvertPKMToShowdownSet { get; set; } = false;
-        [Browsable(false)]
-        [Category(Operation), Description("Bot can reply with a ShowdownSet in Any channel the bot can see, instead of only channels the bot has been whitelisted to run in. Only make this true if you want the bot to serve more utility in non-bot channels.")]
-        public bool ConvertPKMReplyAnyChannel { get; set; }
-        [Browsable(false)]
-        [Category(Operation), Description("If set to false the bot will not echo the bot startup message.")]
-        public bool EchoOnBotStart { get; set; } = false;
+        public AnnouncementSettingsCategory AnnouncementSettings { get; set; } = new();
 
         [Category(Operation), TypeConverter(typeof(CategoryConverter<AnnouncementSettingsCategory>))]
         public class AnnouncementSettingsCategory

@@ -1,7 +1,6 @@
 using Discord;
 using PKHeX.Core;
 using SysBot.Base;
-using SysBot.Pokemon.SV;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -11,25 +10,21 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using RaidCrawler.Core.Structures;
-using Newtonsoft.Json;
 using static SysBot.Base.SwitchButton;
 using System.Net.Http;
 using static SysBot.Pokemon.RotatingRaidSettingsSV;
 using SysBot.Pokemon.SV.BotRaid.Helpers;
-using Newtonsoft.Json.Linq;
-using SysBot.Pokemon.SV.BotRaid;
 using static SysBot.Pokemon.Blocks;
 
 namespace SysBot.Pokemon
 {
-    public class RotatingRaidBotSV : PokeRoutineExecutor9SV, ICountBot
+    public class RotatingRaidBotSV : PokeRoutineExecutor9SV
     {
-        private readonly PokeTradeHub<PK9> Hub;
+        private readonly PokeRaidHub<PK9> Hub;
         private readonly RotatingRaidSettingsSV Settings;
-        public ICountSettings Counts => Settings;
         private RemoteControlAccessList RaiderBanList => Settings.RaiderBanList;
 
-        public RotatingRaidBotSV(PokeBotState cfg, PokeTradeHub<PK9> hub) : base(cfg)
+        public RotatingRaidBotSV(PokeBotState cfg, PokeRaidHub<PK9> hub) : base(cfg)
         {
             Hub = hub;
             Settings = hub.Config.RotatingRaidSV;
@@ -211,7 +206,7 @@ namespace SysBot.Pokemon
                 {
                     Seed = monseed,
                     Title = montitle,
-                    Species = TradeExtensions<PK9>.EnumParse<Species>(montitle),
+                    Species = RaidExtensions<PK9>.EnumParse<Species>(montitle),
                     CrystalType = type,
                     PartyPK = new[] { data },
                     DifficultyLevel = difficultyLevel  // Added the DifficultyLevel
@@ -323,9 +318,6 @@ namespace SysBot.Pokemon
                     dayRoll++;
                     continue;
                 }
-
-                if (Hub.Config.Stream.CreateAssets)
-                    await GetRaidSprite(token).ConfigureAwait(false);
 
                 // Clear NIDs.
                 await SwitchConnection.WriteBytesAbsoluteAsync(new byte[32], TeraNIDOffsets[0], token).ConfigureAwait(false);
@@ -1244,20 +1236,20 @@ namespace SysBot.Pokemon
                 else
                 {
                     Settings.ActiveRaids[RotationCount].SpriteAlternateArt = false;  // Set SpriteAlternateArt to false if no img found
-                    turl = TradeExtensions<PK9>.PokeImg(pk, false, false);
+                    turl = RaidExtensions<PK9>.PokeImg(pk, false, false);
                     Log($"AltPokeImg URL was not valid. Setting SpriteAlternateArt to false.");
                 }
             }
             else
             {
-                turl = TradeExtensions<PK9>.PokeImg(pk, false, false);
+                turl = RaidExtensions<PK9>.PokeImg(pk, false, false);
             }
 
             if (Settings.ActiveRaids[RotationCount].Species is 0)
                 turl = "https://i.imgur.com/uHSaGGJ.png";
 
             // Fetch the dominant color from the image only AFTER turl is assigned
-            (int R, int G, int B) dominantColor = TradeExtensions<PK9>.GetDominantColor(turl);
+            (int R, int G, int B) dominantColor = RaidExtensions<PK9>.GetDominantColor(turl);
 
             // Use the dominant color, unless it's a disband or hatTrick situation
             var embedColor = disband ? Discord.Color.Red : hatTrick ? Discord.Color.Purple : new Discord.Color(dominantColor.R, dominantColor.G, dominantColor.B);
@@ -1588,28 +1580,6 @@ namespace SysBot.Pokemon
             return _ = $"https://raw.githubusercontent.com/zyro670/PokeTextures/main/Placeholder_Sprites/scaled_up_sprites/Shiny/AlternateArt/" + $"{pkm.Species}{pkmform}" + ".png";
         }
 
-        private async Task GetRaidSprite(CancellationToken token)
-        {
-            PK9 pk = new()
-            {
-                Species = (ushort)Settings.ActiveRaids[RotationCount].Species
-            };
-            if (Settings.ActiveRaids[RotationCount].IsShiny)
-                CommonEdits.SetIsShiny(pk, true);
-            else
-                CommonEdits.SetIsShiny(pk, false);
-            PK9 pknext = new()
-            {
-                Species = Settings.ActiveRaids.Count > 1 && RotationCount + 1 < Settings.ActiveRaids.Count ? (ushort)Settings.ActiveRaids[RotationCount + 1].Species : (ushort)Settings.ActiveRaids[0].Species,
-            };
-            if (Settings.ActiveRaids.Count > 1 && RotationCount + 1 < Settings.ActiveRaids.Count ? Settings.ActiveRaids[RotationCount + 1].IsShiny : Settings.ActiveRaids[0].IsShiny)
-                CommonEdits.SetIsShiny(pknext, true);
-            else
-                CommonEdits.SetIsShiny(pknext, false);
-
-            await Hub.Config.Stream.StartRaid(this, pk, pknext, RotationCount, Hub, 1, token).ConfigureAwait(false);
-        }
-
         #region RaidCrawler
         // via RaidCrawler modified for this proj
         private async Task ReadRaids(bool init, CancellationToken token)
@@ -1795,7 +1765,7 @@ namespace SysBot.Pokemon
                         Settings.ActiveRaids[a].CrystalType = container.Raids[i].IsBlack ? TeraCrystalType.Black : container.Raids[i].IsEvent && stars == 7 ? TeraCrystalType.Might : container.Raids[i].IsEvent ? TeraCrystalType.Distribution : TeraCrystalType.Base;
                         Settings.ActiveRaids[a].Species = (Species)container.Encounters[i].Species;
                         Settings.ActiveRaids[a].SpeciesForm = container.Encounters[i].Form;
-                        var pkinfo = Hub.Config.StopConditions.GetRaidPrintName(pk);
+                        var pkinfo = RaidExtensions<PK9>.GetRaidPrintName(pk);
                         var strings = GameInfo.GetStrings(1);
                         var moves = new ushort[4] { container.Encounters[i].Move1, container.Encounters[i].Move2, container.Encounters[i].Move3, container.Encounters[i].Move4 };
                         var movestr = string.Concat(moves.Where(z => z != 0).Select(z => $"{strings.Move[z]}ㅤ{Environment.NewLine}")).TrimEnd(Environment.NewLine.ToCharArray());
@@ -1948,13 +1918,13 @@ namespace SysBot.Pokemon
             var titlePrefix = raid.IsShiny ? "Shiny" : "";
             var authorName = $"{stars} ★ {titlePrefix} {(Species)encounter.Species}";
 
-            (int R, int G, int B) = TradeExtensions<PK9>.GetDominantColor(TradeExtensions<PK9>.PokeImg(pk, false, false));
+            (int R, int G, int B) = RaidExtensions<PK9>.GetDominantColor(RaidExtensions<PK9>.PokeImg(pk, false, false));
             var embedColor = new Color(R, G, B);
 
             var embed = new EmbedBuilder
             {
                 Color = embedColor,
-                ThumbnailUrl = TradeExtensions<PK9>.PokeImg(pk, false, false),
+                ThumbnailUrl = RaidExtensions<PK9>.PokeImg(pk, false, false),
             };
             embed.AddField(x =>
             {

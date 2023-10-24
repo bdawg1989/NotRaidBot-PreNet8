@@ -26,12 +26,12 @@ namespace SysBot.Pokemon
 
     public abstract class PokeBotRunner<T> : BotRunner<PokeBotState>, IPokeBotRunner where T : PKM, new()
     {
-        public readonly PokeTradeHub<T> Hub;
+        public readonly PokeRaidHub<T> Hub;
         private readonly BotFactory<T> Factory;
 
         public PokeTradeHubConfig Config => Hub.Config;
 
-        protected PokeBotRunner(PokeTradeHub<T> hub, BotFactory<T> factory)
+        protected PokeBotRunner(PokeRaidHub<T> hub, BotFactory<T> factory)
         {
             Hub = hub;
             Factory = factory;
@@ -40,7 +40,7 @@ namespace SysBot.Pokemon
         protected PokeBotRunner(PokeTradeHubConfig config, BotFactory<T> factory)
         {
             Factory = factory;
-            Hub = new PokeTradeHub<T>(config);
+            Hub = new PokeRaidHub<T>(config);
         }
 
         protected virtual void AddIntegrations() { }
@@ -73,10 +73,9 @@ namespace SysBot.Pokemon
             if (RunOnce)
                 return;
 
-            AutoLegalityWrapper.EnsureInitialized(Hub.Config.Legality);
+            AutoLegalityWrapper.EnsureInitialized();
 
             AddIntegrations();
-            AddTradeBotMonitors();
 
             base.InitializeStart();
         }
@@ -87,9 +86,6 @@ namespace SysBot.Pokemon
 
             // bots currently don't de-register
             Thread.Sleep(100);
-            int count = Hub.BotSync.Barrier.ParticipantCount;
-            if (count != 0)
-                Hub.BotSync.Barrier.RemoveParticipants(count);
         }
 
         public override void PauseAll()
@@ -102,19 +98,6 @@ namespace SysBot.Pokemon
         {
             if (!Hub.Config.SkipConsoleBotCreation)
                 base.ResumeAll();
-        }
-
-        private void AddTradeBotMonitors()
-        {
-            Task.Run(async () => await new QueueMonitor<T>(Hub).MonitorOpenQueue(CancellationToken.None).ConfigureAwait(false));
-
-            var path = Hub.Config.Folder.DistributeFolder;
-            if (!Directory.Exists(path))
-                LogUtil.LogError("The distribution folder was not found. Please verify that it exists!", "Hub");
-
-            var pool = Hub.Ledy.Pool;
-            if (!pool.Reload(Hub.Config.Folder.DistributeFolder))
-                LogUtil.LogError("Nothing to distribute for Empty Trade Queues!", "Hub");
         }
 
         public PokeRoutineExecutorBase CreateBotFromConfig(PokeBotState cfg) => Factory.CreateBot(Hub, cfg);

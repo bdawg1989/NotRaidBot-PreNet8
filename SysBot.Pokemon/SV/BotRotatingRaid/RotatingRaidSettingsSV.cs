@@ -9,7 +9,7 @@ using Discord.WebSocket;
 
 namespace SysBot.Pokemon
 {
-    public class RotatingRaidSettingsSV : IBotStateSettings, ICountSettings
+    public class RotatingRaidSettingsSV : IBotStateSettings
     {
         private const string Hosting = nameof(Hosting);
         private const string Counts = nameof(Counts);

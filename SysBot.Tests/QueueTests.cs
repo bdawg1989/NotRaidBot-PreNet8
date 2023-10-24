@@ -19,7 +19,7 @@ namespace SysBot.Tests
 
         private static void EnqueueTest<T>() where T : PKM, new()
         {
-            var hub = new PokeTradeHub<T>(new PokeTradeHubConfig());
+            var hub = new PokeRaidHub<T>(new PokeTradeHubConfig());
             var info = new TradeQueueInfo<T>(hub);
             var queue = info.Hub.Queues.GetQueue(PokeRoutineType.LinkTrade);
 
@@ -115,7 +115,7 @@ namespace SysBot.Tests
         private static void TestFavor<T>() where T : PKM, new()
         {
             var settings = new PokeTradeHubConfig();
-            var hub = new PokeTradeHub<T>(settings);
+            var hub = new PokeRaidHub<T>(settings);
             var info = new TradeQueueInfo<T>(hub);
             var queue = info.Hub.Queues.GetQueue(PokeRoutineType.LinkTrade);
 

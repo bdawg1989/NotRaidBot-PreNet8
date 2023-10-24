@@ -14,38 +14,14 @@ namespace SysBot.Pokemon.Discord
 
         public RemoteControlAccessList SudoDiscord => Config.GlobalSudoList;
         public RemoteControlAccessList SudoRoles => Config.RoleSudo;
-        public RemoteControlAccessList FavoredRoles => Config.RoleFavored;
-
-        public RemoteControlAccessList RolesClone => Config.RoleCanClone;
-        public RemoteControlAccessList RolesTrade => Config.RoleCanTrade;
-        public RemoteControlAccessList RolesSeed => Config.RoleCanSeedCheck;
-        public RemoteControlAccessList RolesDump => Config.RoleCanDump;
+        public RemoteControlAccessList RolesRaid => Config.RoleRaidRequest;
         public RemoteControlAccessList RolesRemoteControl => Config.RoleRemoteControl;
-
-        public RemoteControlAccessList RolesEtumrepDump => Config.RoleCanEtumrepDump;
-        public RemoteControlAccessList RolesFixOT => Config.RoleCanFixOT;
-        public RemoteControlAccessList RolesTradeCord => Config.RoleCanTradeCord;
-        public RemoteControlAccessList RolesGiveaway => Config.RoleCanGiveaway;
-        public RemoteControlAccessList RolesSupportTrade => Config.RoleCanSupportTrade;
 
         public bool CanUseSudo(ulong uid) => SudoDiscord.Contains(uid);
         public bool CanUseSudo(IEnumerable<string> roles) => roles.Any(SudoRoles.Contains);
 
         public bool CanUseCommandChannel(ulong channel) => (WhitelistedChannels.List.Count == 0 && WhitelistedChannels.AllowIfEmpty) || WhitelistedChannels.Contains(channel);
         public bool CanUseCommandUser(ulong uid) => !BlacklistedUsers.Contains(uid);
-
-        public RequestSignificance GetSignificance(IEnumerable<string> roles)
-        {
-            var result = RequestSignificance.None;
-            foreach (var r in roles)
-            {
-                if (SudoRoles.Contains(r))
-                    result = RequestSignificance.Favored;
-                if (FavoredRoles.Contains(r))
-                    result = RequestSignificance.Favored;
-            }
-            return result;
-        }
 
         public DiscordManager(DiscordSettings cfg) => Config = cfg;
 
@@ -57,16 +33,9 @@ namespace SysBot.Pokemon.Discord
 
         private RemoteControlAccessList GetSet(string type) => type switch
         {
-            nameof(RolesClone) => RolesClone,
-            nameof(RolesTrade) => RolesTrade,
-            nameof(RolesSeed) => RolesSeed,
-            nameof(RolesDump) => RolesDump,
+            nameof(RolesRaid) => RolesRaid,
             nameof(RolesRemoteControl) => RolesRemoteControl,
-            nameof(RolesEtumrepDump) => RolesEtumrepDump,
-            nameof(RolesFixOT) => RolesFixOT,
-            nameof(RolesTradeCord) => RolesTradeCord,
-            nameof(RolesGiveaway) => RolesGiveaway,
-            nameof(RolesSupportTrade) => RolesSupportTrade,
+
             _ => throw new ArgumentOutOfRangeException(nameof(type)),
         };
     }

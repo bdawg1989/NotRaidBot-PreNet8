@@ -60,7 +60,6 @@ namespace SysBot.Pokemon.WinForms
             {
                 Config = new ProgramConfig();
                 RunningEnvironment = GetRunner(Config);
-                Config.Hub.Folder.CreateDefaults(Program.WorkingDirectory);
             }
 
             LoadControls();

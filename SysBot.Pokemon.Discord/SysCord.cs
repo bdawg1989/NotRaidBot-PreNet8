@@ -28,7 +28,7 @@ namespace SysBot.Pokemon.Discord
 
         private readonly DiscordSocketClient _client;
         private readonly DiscordManager Manager;
-        public readonly PokeTradeHub<T> Hub;
+        public readonly PokeRaidHub<T> Hub;
 
         // Keep the CommandService and DI container around for use with commands.
         // These two types require you install the Discord.Net.Commands package.
@@ -155,10 +155,6 @@ namespace SysBot.Pokemon.Discord
             }
             var modules = _commands.Modules.ToList();
 
-            var blacklist = Hub.Config.Discord.ModuleBlacklist
-                .Replace("Module", "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(z => z.Trim()).ToList();
-
             foreach (var module in modules)
             {
                 var name = module.Name;
@@ -166,8 +162,6 @@ namespace SysBot.Pokemon.Discord
                 var gen = name.IndexOf('`');
                 if (gen != -1)
                     name = name[..gen];
-                if (blacklist.Any(z => z.Equals(name, StringComparison.OrdinalIgnoreCase)))
-                    await _commands.RemoveModuleAsync(module).ConfigureAwait(false);
             }
 
             // Subscribe a handler to see if a message invokes a command.
@@ -194,23 +188,6 @@ namespace SysBot.Pokemon.Discord
                 if (handled)
                     return;
             }
-
-            await TryHandleMessageAsync(msg).ConfigureAwait(false);
-        }
-
-        private async Task TryHandleMessageAsync(SocketMessage msg)
-        {
-            // should this be a service?
-            if (msg.Attachments.Count > 0)
-            {
-                var mgr = Manager;
-                var cfg = mgr.Config;
-                if (cfg.ConvertPKMToShowdownSet && (cfg.ConvertPKMReplyAnyChannel || mgr.CanUseCommandChannel(msg.Channel.Id)))
-                {
-                    foreach (var att in msg.Attachments)
-                        await msg.Channel.RepostPKMAsShowdownAsync(att).ConfigureAwait(false);
-                }
-            }
         }
 
         private async Task<bool> TryHandleCommandAsync(SocketUserMessage msg, int pos)
@@ -232,9 +209,7 @@ namespace SysBot.Pokemon.Discord
                     await _commands.ExecuteAsync(context, pos, _services).ConfigureAwait(false);
                     return true;
                 }
-
-                if (Hub.Config.Discord.ReplyCannotUseCommandInChannel)
-                    await msg.Channel.SendMessageAsync("You can't use that command here.").ConfigureAwait(false);
+                await msg.Channel.SendMessageAsync("You can't use that command here.").ConfigureAwait(false);
                 return true;
             }
 
@@ -309,7 +284,6 @@ namespace SysBot.Pokemon.Discord
 
             // Restore Logging
             LogModule.RestoreLogging(_client, Hub.Config.Discord);
-            TradeStartModule<T>.RestoreTradeStarting(_client);
 
             // Don't let it load more than once in case of Discord hiccups.
             await Log(new LogMessage(LogSeverity.Info, "LoadLoggingAndEcho()", "Logging and Echo channels loaded!")).ConfigureAwait(false);

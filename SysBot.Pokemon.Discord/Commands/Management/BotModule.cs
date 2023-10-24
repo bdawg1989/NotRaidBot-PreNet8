@@ -45,8 +45,7 @@ namespace SysBot.Pokemon.Discord
             }
 
             bot.Start();
-            if (SysCordSettings.Settings.EchoOnBotStart)
-                await Context.Channel.EchoAndReply($"The bot at {ip} ({bot.Bot.Connection.Label}) has been commanded to Start.").ConfigureAwait(false);
+            await Context.Channel.EchoAndReply($"The bot at {ip} ({bot.Bot.Connection.Label}) has been commanded to Start.").ConfigureAwait(false);
         }
 
         [Command("botStop")]
@@ -62,8 +61,7 @@ namespace SysBot.Pokemon.Discord
             }
 
             bot.Stop();
-            if (SysCordSettings.Settings.EchoOnBotStart)
-                await Context.Channel.EchoAndReply($"The bot at {ip} ({bot.Bot.Connection.Label}) has been commanded to Stop.").ConfigureAwait(false);
+            await Context.Channel.EchoAndReply($"The bot at {ip} ({bot.Bot.Connection.Label}) has been commanded to Stop.").ConfigureAwait(false);
         }
 
         [Command("botIdle")]
@@ -80,8 +78,7 @@ namespace SysBot.Pokemon.Discord
             }
 
             bot.Pause();
-            if (SysCordSettings.Settings.EchoOnBotStart)
-                await Context.Channel.EchoAndReply($"The bot at {ip} ({bot.Bot.Connection.Label}) has been commanded to Idle.").ConfigureAwait(false);
+            await Context.Channel.EchoAndReply($"The bot at {ip} ({bot.Bot.Connection.Label}) has been commanded to Idle.").ConfigureAwait(false);
         }
 
         [Command("botChange")]
@@ -97,8 +94,7 @@ namespace SysBot.Pokemon.Discord
             }
 
             bot.Bot.Config.Initialize(task);
-            if (SysCordSettings.Settings.EchoOnBotStart)
-                await Context.Channel.EchoAndReply($"The bot at {ip} ({bot.Bot.Connection.Label}) has been commanded to do {task} as its next task.").ConfigureAwait(false);
+            await Context.Channel.EchoAndReply($"The bot at {ip} ({bot.Bot.Connection.Label}) has been commanded to do {task} as its next task.").ConfigureAwait(false);
         }
 
         [Command("botRestart")]
@@ -119,8 +115,7 @@ namespace SysBot.Pokemon.Discord
                 var c = bot.Bot.Connection;
                 c.Reset();
                 bot.Start();
-                if (SysCordSettings.Settings.EchoOnBotStart)
-                    await Context.Channel.EchoAndReply($"The bot at {ip} ({c.Label}) has been commanded to Restart.").ConfigureAwait(false);
+                await Context.Channel.EchoAndReply($"The bot at {ip} ({c.Label}) has been commanded to Restart.").ConfigureAwait(false);
             }
         }
     }

@@ -22,15 +22,5 @@ namespace SysBot.Pokemon
 
         [Category(Debug), Description("Skips creating bots when the program is started; helpful for testing integrations.")]
         public bool SkipConsoleBotCreation { get; set; }
-        [Browsable(false)]
-        [Category(Operation)]
-        [TypeConverter(typeof(ExpandableObjectConverter))]
-        public LegalitySettings Legality { get; set; } = new();
-        [Browsable(false)]
-        [Category(Operation)]
-        [TypeConverter(typeof(ExpandableObjectConverter))]
-        public FolderSettings Folder { get; set; } = new();
-
-        public abstract bool Shuffled { get; }
     }
 }
