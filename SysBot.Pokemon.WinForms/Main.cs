@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using MySql.Data.MySqlClient;
+using System.Data.SqlClient;
 
 namespace SysBot.Pokemon.WinForms
 {
@@ -24,9 +26,15 @@ namespace SysBot.Pokemon.WinForms
         public Main()
         {
             InitializeComponent();
+            Startup();
             TC_Main.SelectedIndexChanged += TC_Main_SelectedIndexChanged;
             RTB_Logs.TextChanged += RTB_Logs_TextChanged;
 
+            // Initially disable B_Start button
+            B_Start.Enabled = false;  // Assuming B_Start is the name of your start button
+
+            // Show the LicenseForm at the start
+            RegisterLicense();
             if (File.Exists(Program.ConfigPath))
             {
                 var lines = File.ReadAllText(Program.ConfigPath);
@@ -95,7 +103,6 @@ namespace SysBot.Pokemon.WinForms
         {
             MinimumSize = Size;
             PG_Hub.SelectedObject = RunningEnvironment.Config;
-
             var routines = ((PokeRoutineType[])Enum.GetValues(typeof(PokeRoutineType))).Where(z => RunningEnvironment.SupportsRoutine(z));
             var list = routines.Select(z => new ComboItem(z.ToString(), (int)z)).ToArray();
             CB_Routine.DisplayMember = nameof(ComboItem.Text);
@@ -715,5 +722,104 @@ namespace SysBot.Pokemon.WinForms
             B_Start.BackColor = DarkRed;
             B_Start.ForeColor = SoftWhite;
         }
+
+        public void Startup()
+        {
+            string existingLicenseKey = LicenseKeyHelper.ReadLicenseKey();
+            if (string.IsNullOrEmpty(existingLicenseKey))
+            {
+                // No existing license found; prompt user
+                RegisterLicense();
+            }
+            else
+            {
+                // Validate the existing license
+                if (ValidateLicense(existingLicenseKey))
+                {
+                    // Proceed with application
+                    B_Start.Enabled = true;
+                }
+                else
+                {
+                    // Invalid license, maybe prompt the user to re-enter it
+                    RegisterLicense();
+                }
+            }
+        }
+        private void RegisterLicense()
+        {
+            // Check if a license key has been saved previously
+            string savedLicenseKey = LicenseKeyHelper.ReadLicenseKey();
+            if (savedLicenseKey != null)
+            {
+                // Validate the saved license key
+                if (ValidateLicense(savedLicenseKey))
+                {
+                    B_Start.Enabled = true;
+                    return;
+                }
+                else
+                {
+                    MessageBox.Show("Saved license key is no longer valid.");
+                }
+            }
+
+            // Prompt for a new license key
+            using (var licenseForm = new LicenseForm())
+            {
+                if (licenseForm.ShowDialog() == DialogResult.OK)
+                {
+                    string newLicenseKey = licenseForm.LicenseKey;
+
+                    // Validate the new license key
+                    if (ValidateLicense(newLicenseKey))
+                    {
+                        // License key is valid and unused, proceed
+                        B_Start.Enabled = true;
+
+                        // Save the valid license key
+                        LicenseKeyHelper.SaveLicenseKey(newLicenseKey);
+                    }
+                    else
+                    {
+                        // Invalid or used license key, show an error or exit the application
+                        MessageBox.Show("Invalid or Used License Key");
+                        Application.Exit();
+                    }
+                }
+                else
+                {
+                    // Handle the cancel case here
+                    Application.Exit();
+                }
+            }
+        }
+        // Function to validate license
+        private bool ValidateLicense(string licenseKey)
+        {
+            bool isValid = false;
+
+            string connString = "Server=104.225.128.138;Database=southern_licenses;User ID=southern_licenses;Password=Cooper6316!;CharSet=utf8mb4;";
+            using (MySqlConnection conn = new MySqlConnection(connString))
+            {
+                conn.Open();
+
+                using (MySqlCommand cmd = new MySqlCommand("SELECT * FROM LicenseKeys WHERE license_key = @licenseKey AND is_valid = 1 AND used = 1", conn))
+                {
+                    cmd.Parameters.AddWithValue("@licenseKey", licenseKey);
+                    using (MySqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (reader.HasRows)
+                        {
+                            // The key is valid and has been marked as used.
+                            isValid = true;
+                        }
+                    }
+                }
+            }
+
+            return isValid;
+        }
+
     }
 }
