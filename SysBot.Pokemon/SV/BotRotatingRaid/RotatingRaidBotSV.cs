@@ -45,6 +45,7 @@ namespace SysBot.Pokemon
         private int EmptyRaid = 0;
         private int LostRaid = 0;
         private bool firstRun = true;
+        bool timedOut = false;
         public static int RotationCount { get; set; }
         private ulong TodaySeed;
         private ulong OverworldOffset;
@@ -529,7 +530,8 @@ namespace SysBot.Pokemon
                     if (timeInBattle.TotalMinutes >= 15)
                     {
                         Log("Battle timed out after 15 minutes. Exiting...");
-                        break;  // Exit the loop if 15 minutes have passed and disband lobby.
+                        timedOut = true;
+                        break;  
                     }
 
                     b++;
@@ -541,7 +543,18 @@ namespace SysBot.Pokemon
                     if (b % 10 == 0)
                         Log("Still in battle...");
                 }
+                if (timedOut)
+                {
 
+                    // Execute the logic to locate seed index and then close and restart the game
+                    await LocateSeedIndex(token).ConfigureAwait(false);
+                    await Task.Delay(0_500, token).ConfigureAwait(false);
+                    await CloseGame(Hub.Config, token).ConfigureAwait(false);
+                    if (ready)
+                        await StartGameRaid(Hub.Config, token).ConfigureAwait(false);
+
+                    return; // Exit the method as we've handled the timeout scenario
+                }
                 Log("Raid lobby disbanded!");
                 await Click(B, 0_500, token).ConfigureAwait(false);
                 await Click(B, 0_500, token).ConfigureAwait(false);
