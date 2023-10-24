@@ -16,8 +16,9 @@ namespace SysBot.Pokemon.WinForms
     public sealed partial class Main : Form
     {
         private readonly List<PokeBotState> Bots = new();
-        private IPokeBotRunner RunningEnvironment;
-        private ProgramConfig Config;
+        private ProgramConfig Config { get; set; } // make it a property with private setter
+        private IPokeBotRunner RunningEnvironment { get; set; }
+
         public readonly ISwitchConnectionAsync? SwitchConnection;
 
         public Main()
@@ -27,11 +28,18 @@ namespace SysBot.Pokemon.WinForms
 
             TC_Main.SelectedIndexChanged += TC_Main_SelectedIndexChanged;
             RTB_Logs.TextChanged += RTB_Logs_TextChanged;
-
-            Invoke((MethodInvoker)delegate
+            if (B_Start.IsHandleCreated)
+            {
+                B_Start.Invoke((MethodInvoker)delegate
+                {
+                    B_Start.Enabled = false;
+                });
+            }
+            else
             {
                 B_Start.Enabled = false;
-            });
+            }
+
         }
 
         private async Task InitializeAsync()
