@@ -1899,7 +1899,6 @@ namespace SysBot.Pokemon
             }
         }
         #endregion
-
         // Add this method in the relevant class where commands are handled
         public static Embed RaidInfoCommand(string seedValue, int contentType, TeraRaidMapParent map, int storyProgressLevel)
 
@@ -1913,6 +1912,16 @@ namespace SysBot.Pokemon
             byte[] content = StringToByteArray($"0000000{contentType}"); // change this to 1 for 6-Star, 2 for 1-6 Star Events, 3 for Mighty 7-Star Raids
             byte[] leaguepoints = StringToByteArray("00000000");
             byte[] raidbyte = enabled.Concat(area).ToArray().Concat(displaytype).ToArray().Concat(spawnpoint).ToArray().Concat(thisseed).ToArray().Concat(unused).ToArray().Concat(content).ToArray().Concat(leaguepoints).ToArray();
+
+            storyProgressLevel = storyProgressLevel switch
+            {
+                3 => 1,
+                4 => 2,
+                5 => 3,
+                6 => 4,
+                0 => 0,
+                _ => 4 // default case
+            };
 
             var raid = new Raid(raidbyte, map); // map is -> TeraRaidMapParent.Paldea or .Kitakami
             var progress = storyProgressLevel;
