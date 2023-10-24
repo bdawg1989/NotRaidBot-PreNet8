@@ -233,37 +233,9 @@ namespace SysBot.Pokemon.Discord
 
         private async Task MonitorStatusAsync(CancellationToken token)
         {
-            const int Interval = 20; // seconds
-            // Check datetime for update
             UserStatus state = UserStatus.Idle;
             while (!token.IsCancellationRequested)
             {
-                /*var time = DateTime.Now;
-                var lastLogged = LogUtil.LastLogged;
-                if (Hub.Config.Discord.BotColorStatusTradeOnly)
-                {
-                    var recent = Hub.Bots.ToArray()
-                        .Where(z => z.Config.InitialRoutine.IsTradeBot())
-                        .OrderByDescending(z => z.LastTime)
-                        .FirstOrDefault();
-                    lastLogged = recent?.LastTime ?? time;
-                }
-                var delta = time - lastLogged;
-                var gap = TimeSpan.FromSeconds(Interval) - delta;
-
-                bool noQueue = !Hub.Queues.Info.GetCanQueue();
-                if (gap <= TimeSpan.Zero)
-                {
-                    var idle = noQueue ? UserStatus.DoNotDisturb : UserStatus.Idle;
-                    if (idle != state)
-                    {
-                        state = idle;
-                        await _client.SetStatusAsync(state).ConfigureAwait(false);
-                    }
-                    await Task.Delay(2_000, token).ConfigureAwait(false);
-                    continue;
-                }
-                */
                 var active = UserStatus.Online;
                 if (active != state)
                 {

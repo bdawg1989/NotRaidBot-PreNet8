@@ -38,7 +38,7 @@ namespace SysBot.Pokemon.ConsoleApp
 
         private static void ExitNoConfig()
         {
-            var bot = new PokeBotState { Connection = new SwitchConnectionConfig { IP = "192.168.0.1", Port = 6000 }, InitialRoutine = PokeRoutineType.FlexTrade };
+            var bot = new PokeBotState { Connection = new SwitchConnectionConfig { IP = "192.168.0.1", Port = 6000 }, InitialRoutine = PokeRoutineType.RotatingRaidBot };
             var cfg = new ProgramConfig { Bots = new[] { bot } };
             var created = JsonSerializer.Serialize(cfg, ProgramConfigContext.Default.ProgramConfig);
             File.WriteAllText(ConfigPath, created);
