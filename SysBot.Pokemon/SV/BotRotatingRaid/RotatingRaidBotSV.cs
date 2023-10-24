@@ -56,7 +56,6 @@ namespace SysBot.Pokemon
         private string TeraRaidCode { get; set; } = string.Empty;
         private string BaseDescription = string.Empty;
         private readonly Dictionary<ulong, int> RaidTracker = new();
-        private List<BanList> GlobalBanList = new();
         private SAV9SV HostSAV = new();
         private DateTime StartTime = DateTime.Now;
         public static RaidContainer? container;
@@ -249,9 +248,6 @@ namespace SysBot.Pokemon
                 else
                     Log($"Parameter for {Settings.ActiveRaids[RotationCount].Species} has been set previously, skipping raid reads.");
 
-                if (!string.IsNullOrEmpty(Settings.GlobalBanListURL))
-                    await GrabGlobalBanlist(token).ConfigureAwait(false);
-
                 var currentSeed = BitConverter.ToUInt64(await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP, 8, token).ConfigureAwait(false), 0);
                 if (TodaySeed != currentSeed || LobbyError >= 3)
                 {
@@ -419,18 +415,6 @@ namespace SysBot.Pokemon
             Settings.ActiveRaids.RemoveAll(p => p.AddedByRACommand);
 
             await CleanExit(CancellationToken.None).ConfigureAwait(false);
-        }
-
-        private async Task GrabGlobalBanlist(CancellationToken token)
-        {
-            using var httpClient = new HttpClient();
-            var url = Settings.GlobalBanListURL;
-            var data = await httpClient.GetStringAsync(url, token).ConfigureAwait(false);
-            GlobalBanList = JsonConvert.DeserializeObject<List<BanList>>(data)!;
-            if (GlobalBanList.Count is not 0)
-                Log($"There are {GlobalBanList.Count} entries on the global ban list.");
-            else
-                Log("Failed to fetch the global ban list. Ensure you have the correct URL.");
         }
 
         private async Task LocateSeedIndex(CancellationToken token)
@@ -969,28 +953,11 @@ namespace SysBot.Pokemon
 
             int val = 0;
             var msg = string.Empty;
-            var banResultCC = Settings.RaidsBetweenUpdate == -1 ? (false, "") : await BanService.IsRaiderBanned(trainer.OT, Settings.BanListURL, Connection.Label, updateBanList).ConfigureAwait(false);
             var banResultCFW = RaiderBanList.List.FirstOrDefault(x => x.ID == nid);
             var banGlobalCFW = false;
-            BanList user = new();
-            for (int i = 0; i < GlobalBanList.Count; i++)
-            {
-                var gNID = GlobalBanList[i].NIDs;
-                for (int g = 0; g < gNID.Length; g++)
-                {
-                    if (gNID[g] == nid)
-                    {
-                        Log($"NID: {nid} found on GlobalBanList.");
-                        if (GlobalBanList[i].enabled)
-                            banGlobalCFW = true;
-                        user = GlobalBanList[i];
-                        break;
-                    }
-                }
-                if (banGlobalCFW is true)
-                    break;
-            }
-            bool isBanned = banResultCFW != default || banGlobalCFW || banResultCC.Item1;
+
+
+            bool isBanned = banResultCFW != default || banGlobalCFW;
 
             bool blockResult = false;
             var blockCheck = RaidTracker.ContainsKey(nid);
@@ -1023,7 +990,7 @@ namespace SysBot.Pokemon
 
             if (isBanned)
             {
-                msg = banResultCC.Item1 ? banResultCC.Item2 : banGlobalCFW ? $"{trainer.OT} was found in the global ban list.\nReason: {user.Comment}" : $"Penalty #{val}\n{banResultCFW!.Name} was found in the host's ban list.\n{banResultCFW.Comment}";
+                msg = $"Penalty #{val}\n{banResultCFW!.Name} was found in the host's ban list.\n{banResultCFW.Comment}";
                 Log(msg);
                 await EnqueueEmbed(null, msg, false, true, false, false, token).ConfigureAwait(false);
                 return true;
