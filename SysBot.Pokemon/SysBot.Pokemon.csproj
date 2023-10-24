@@ -42,5 +42,8 @@
 			<HintPath>deps\RaidCrawler.Core.dll</HintPath>
 		</Reference>
 	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="SysBot\Pokemon\" />
+	</ItemGroup>
 
 </Project>

@@ -26,7 +26,7 @@ namespace SysBot.Pokemon.Discord
         [Command("raidinfo")]
         [Alias("ri", "rv")]
         [Summary("Displays basic Raid Info of the provided seed.")]
-        public async Task RaidSeedInfoAsync(string seedValue, int level, string dlc = "p")
+        public async Task RaidSeedInfoAsync(string seedValue, int level, int storyProgressLevel, string dlc = "p")
         {
             uint seed;
             try
@@ -50,8 +50,7 @@ namespace SysBot.Pokemon.Discord
 
             try
             {
-                var embed = RotatingRaidBotSV.RaidInfoCommand(seedValue, (int)crystalType, dlc != "p" ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea);
-                await ReplyAsync(embed: embed);
+                var embed = RotatingRaidBotSV.RaidInfoCommand(seedValue, (int)crystalType, dlc != "p" ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea, storyProgressLevel); await ReplyAsync(embed: embed);
             }
             catch(Exception ex)
             {
@@ -360,7 +359,10 @@ namespace SysBot.Pokemon.Discord
         [Alias("arp")]
         [Summary("Adds new raid parameter.")]
         [RequireSudo]
-        public async Task AddNewRaidParam([Summary("Seed")] string seed, [Summary("Difficulty Level (1-8)")] int level)
+        public async Task AddNewRaidParam(
+            [Summary("Seed")] string seed,
+            [Summary("Difficulty Level (1-8)")] int level,
+            [Summary("Story Progress Level")] int storyProgressLevel)  // New parameter for StoryProgressLevel
         {
             // Validate the seed for hexadecimal format
             if (seed.Length != 8 || !seed.All(c => "0123456789abcdefABCDEF".Contains(c)))
@@ -373,7 +375,13 @@ namespace SysBot.Pokemon.Discord
                 await ReplyAsync("Invalid raid level. Please enter a level between 1 and 8.").ConfigureAwait(false);
                 return;
             }
-
+            // Convert StoryProgressLevel to GameProgress enum value
+            var gameProgress = ConvertToGameProgress(storyProgressLevel);
+            if (gameProgress == GameProgress.None)
+            {
+                await ReplyAsync("Invalid Story Progress Level. Please enter a value between 1 and 6.").ConfigureAwait(false);
+                return;
+            }
             // Determine the CrystalType based on the given difficulty level
             var crystalType = level switch
             {
@@ -386,7 +394,10 @@ namespace SysBot.Pokemon.Discord
 
             // Determine the correct map
             var selectedMap = RotatingRaidBotSV.IsKitakami ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea;
-            var raidEmbed = RotatingRaidBotSV.RaidInfoCommand(seed, (int)crystalType, selectedMap);  // Adjusted to use the selected map
+
+            // Updated to include storyProgressLevel
+            var raidEmbed = RotatingRaidBotSV.RaidInfoCommand(seed, (int)crystalType, selectedMap, storyProgressLevel);
+
             var species = raidEmbed.Author.Value.Name.Split(" ").Last(); // Extract the species name from the embed author field
             bool isShiny = raidEmbed.Author.Value.Name.Contains("Shiny");
             // New code to extract Form
@@ -433,6 +444,7 @@ namespace SysBot.Pokemon.Discord
                 PartyPK = new[] { "" },
                 Species = (Species)Enum.Parse(typeof(Species), species),
                 SpeciesForm = form,
+                StoryProgressLevel = (int)gameProgress,
                 Seed = seed,
                 IsCoded = true,
                 IsShiny = isShiny,
@@ -447,7 +459,10 @@ namespace SysBot.Pokemon.Discord
 
         [Command("ra")]
         [Summary("Adds new raid parameter next in the queue.")]
-        public async Task AddNewRaidParamNext([Summary("Seed")] string seed, [Summary("Difficulty Level (1-8)")] int level)
+        public async Task AddNewRaidParamNext(
+            [Summary("Seed")] string seed,
+            [Summary("Difficulty Level (1-8)")] int level,
+            [Summary("Story Progress Level")] int storyProgressLevel)  // New argument for StoryProgressLevel
         {
             // Check if raid requests are disabled by the host
             if (SysCord<T>.Runner.Hub.Config.RotatingRaidSV.DisableRequests)
@@ -473,7 +488,13 @@ namespace SysBot.Pokemon.Discord
                 await ReplyAsync("Invalid raid level. Please enter a level between 1 and 8.").ConfigureAwait(false);
                 return;
             }
-
+            // Convert StoryProgressLevel to GameProgress enum value
+            var gameProgress = ConvertToGameProgress(storyProgressLevel);
+            if (gameProgress == GameProgress.None)
+            {
+                await ReplyAsync("Invalid Story Progress Level. Please enter a value between 1 and 6.").ConfigureAwait(false);
+                return;
+            }
             // Determine the CrystalType based on the given difficulty level
             var crystalType = level switch
             {
@@ -486,7 +507,7 @@ namespace SysBot.Pokemon.Discord
 
             // Determine the correct map
             var selectedMap = RotatingRaidBotSV.IsKitakami ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea;
-            var raidEmbed = RotatingRaidBotSV.RaidInfoCommand(seed, (int)crystalType, selectedMap);  // Adjusted to use the selected map
+            var raidEmbed = RotatingRaidBotSV.RaidInfoCommand(seed, (int)crystalType, selectedMap, storyProgressLevel);
             var species = raidEmbed.Author.Value.Name.Split(" ").Last(); // Extract the species name from the embed author field
             bool isShiny = raidEmbed.Author.Value.Name.Contains("Shiny");
             // New code to extract Form
@@ -532,6 +553,7 @@ namespace SysBot.Pokemon.Discord
                 PartyPK = new[] { "" },
                 Species = (Species)Enum.Parse(typeof(Species), species),
                 SpeciesForm = form,
+                StoryProgressLevel = (int)gameProgress,
                 Seed = seed,
                 IsCoded = true,
                 IsShiny = isShiny,
@@ -553,6 +575,20 @@ namespace SysBot.Pokemon.Discord
             await Context.Message.DeleteAsync().ConfigureAwait(false);
             var msg = $"{Context.User.Mention}, added your raid to the queue! I'll DM you when it's about to start.";
             await ReplyAsync(msg, embed: raidEmbed).ConfigureAwait(false);
+        }
+
+        public GameProgress ConvertToGameProgress(int storyProgressLevel)
+        {
+            return storyProgressLevel switch
+            {
+                6 => GameProgress.Unlocked6Stars,
+                5 => GameProgress.Unlocked5Stars,
+                4 => GameProgress.Unlocked4Stars,
+                3 => GameProgress.Unlocked3Stars,
+                2 => GameProgress.UnlockedTeraRaids,
+                1 => GameProgress.Beginning,
+                _ => GameProgress.None,
+            };
         }
 
         [Command("rp")]

@@ -16,6 +16,9 @@ using static SysBot.Base.SwitchButton;
 using System.Net.Http;
 using static SysBot.Pokemon.RotatingRaidSettingsSV;
 using SysBot.Pokemon.SV.BotRaid.Helpers;
+using Newtonsoft.Json.Linq;
+using SysBot.Pokemon.SV.BotRaid;
+using static SysBot.Pokemon.Blocks;
 
 namespace SysBot.Pokemon
 {
@@ -57,7 +60,6 @@ namespace SysBot.Pokemon
         private DateTime StartTime = DateTime.Now;
         public static RaidContainer? container;
         public static bool IsKitakami = false;
-
         public override async Task MainLoop(CancellationToken token)
         {
 
@@ -670,7 +672,6 @@ namespace SysBot.Pokemon
             Log("Today Seed override complete.");
         }
 
-
         private async Task OverrideSeedIndex(int index, CancellationToken token)
         {
             if (index == -1)
@@ -703,7 +704,6 @@ namespace SysBot.Pokemon
             var currcrystal = await SwitchConnection.PointerPeek(1, ptr2, token).ConfigureAwait(false);
             if (currcrystal != crystal)
                 await SwitchConnection.PointerPoke(crystal, ptr2, token).ConfigureAwait(false);
-
         }
 
         // Asynchronously checks whether the den at the given index is active or inactive.
@@ -1487,7 +1487,8 @@ namespace SysBot.Pokemon
                 Log("Seed override completed.");
             }
 
-            await Task.Delay(1_000, token).ConfigureAwait(false);
+            // Call UpdateGameProgress
+            await UpdateGameProgress(token).ConfigureAwait(false);
 
             for (int i = 0; i < 8; i++)
                 await Click(A, 1_000, token).ConfigureAwait(false);
@@ -1508,8 +1509,87 @@ namespace SysBot.Pokemon
 
             await Task.Delay(5_000 + timing.ExtraTimeLoadOverworld, token).ConfigureAwait(false);
             Log("Back in the overworld!");
+            
             LostRaid = 0;
         }
+        private async Task WriteProgressLive(GameProgress progress)
+        {
+            if (Connection is null)
+                return;
+
+            if (progress >= GameProgress.Unlocked3Stars)
+            {
+                var toexpect = (bool?)await ReadBlock(RaidDataBlocks.KUnlockedRaidDifficulty3, CancellationToken.None);
+                await WriteBlock(true, RaidDataBlocks.KUnlockedRaidDifficulty3, CancellationToken.None, toexpect);
+            }
+            else
+            {
+                var toexpect = (bool?)await ReadBlock(RaidDataBlocks.KUnlockedRaidDifficulty3, CancellationToken.None);
+                await WriteBlock(false, RaidDataBlocks.KUnlockedRaidDifficulty3, CancellationToken.None, toexpect);
+            }
+
+            if (progress >= GameProgress.Unlocked4Stars)
+            {
+                var toexpect = (bool?)await ReadBlock(RaidDataBlocks.KUnlockedRaidDifficulty4, CancellationToken.None);
+                await WriteBlock(true, RaidDataBlocks.KUnlockedRaidDifficulty4, CancellationToken.None, toexpect);
+            }
+            else
+            {
+                var toexpect = (bool?)await ReadBlock(RaidDataBlocks.KUnlockedRaidDifficulty4, CancellationToken.None);
+                await WriteBlock(false, RaidDataBlocks.KUnlockedRaidDifficulty4, CancellationToken.None, toexpect);
+            }
+
+            if (progress >= GameProgress.Unlocked5Stars)
+            {
+                var toexpect = (bool?)await ReadBlock(RaidDataBlocks.KUnlockedRaidDifficulty5, CancellationToken.None);
+                await WriteBlock(true, RaidDataBlocks.KUnlockedRaidDifficulty5, CancellationToken.None, toexpect);
+            }
+            else
+            {
+                var toexpect = (bool?)await ReadBlock(RaidDataBlocks.KUnlockedRaidDifficulty5, CancellationToken.None);
+                await WriteBlock(false, RaidDataBlocks.KUnlockedRaidDifficulty5, CancellationToken.None, toexpect);
+            }
+
+            if (progress >= GameProgress.Unlocked6Stars)
+            {
+                var toexpect = (bool?)await ReadBlock(RaidDataBlocks.KUnlockedRaidDifficulty6, CancellationToken.None);
+                await WriteBlock(true, RaidDataBlocks.KUnlockedRaidDifficulty6, CancellationToken.None, toexpect);
+            }
+            else
+            {
+                var toexpect = (bool?)await ReadBlock(RaidDataBlocks.KUnlockedRaidDifficulty6, CancellationToken.None);
+                await WriteBlock(false, RaidDataBlocks.KUnlockedRaidDifficulty6, CancellationToken.None, toexpect);
+            }
+        }
+        public async Task UpdateGameProgress(CancellationToken token)
+        {
+            // Obtain the desired game progress level from the StoryProgressLevel property
+            var desiredProgressLevel = Settings.ActiveRaids[RotationCount].StoryProgressLevel;
+
+            // Convert the integer StoryProgressLevel to a GameProgress enum value
+            var desiredProgress = (GameProgress)desiredProgressLevel;
+
+            Log($"Desired game progress level: {desiredProgress}");
+
+            // Call ReadGameProgress to obtain the current game progress level
+            var currentProgress = await ReadGameProgress(token).ConfigureAwait(false);
+
+            Log($"Current game progress level: {currentProgress}");
+
+            // Compare the current game progress level to the desired game progress level
+            if (currentProgress != desiredProgress)
+            {
+                Log($"Updating game progress level to: {desiredProgress}");
+                // If they are different, call WriteProgressLive to update the game progress level
+                await WriteProgressLive(desiredProgress).ConfigureAwait(false);
+                Log($"Done.");
+            }
+            else
+            {
+                Log("Game progress level is already at the desired level. No update needed.");
+            }
+        }
+
 
         private async Task SkipRaidOnLosses(CancellationToken token)
         {
@@ -1821,7 +1901,8 @@ namespace SysBot.Pokemon
         #endregion
 
         // Add this method in the relevant class where commands are handled
-        public static Embed RaidInfoCommand(string seedValue, int contentType,  TeraRaidMapParent map)
+        public static Embed RaidInfoCommand(string seedValue, int contentType, TeraRaidMapParent map, int storyProgressLevel)
+
         {
             byte[] enabled = StringToByteArray("00000001");
             byte[] area = StringToByteArray("00000001");
@@ -1834,11 +1915,11 @@ namespace SysBot.Pokemon
             byte[] raidbyte = enabled.Concat(area).ToArray().Concat(displaytype).ToArray().Concat(spawnpoint).ToArray().Concat(thisseed).ToArray().Concat(unused).ToArray().Concat(content).ToArray().Concat(leaguepoints).ToArray();
 
             var raid = new Raid(raidbyte, map); // map is -> TeraRaidMapParent.Paldea or .Kitakami
-            var progress = StoryProgress;
+            var progress = storyProgressLevel;
             var raid_delivery_group_id = -1;
             var encounter = raid.GetTeraEncounter(container, progress, raid_delivery_group_id);
             var reward = encounter.GetRewards(container, raid, 0);
-            var stars = raid.IsEvent ? encounter.Stars : RaidExtensions.GetStarCount(raid, raid.Difficulty, StoryProgress, raid.IsBlack);
+            var stars = raid.IsEvent ? encounter.Stars : RaidExtensions.GetStarCount(raid, raid.Difficulty, storyProgressLevel, raid.IsBlack);
             var teraType = raid.GetTeraType(encounter);
             var form = encounter.Form;
 
@@ -1927,7 +2008,6 @@ namespace SysBot.Pokemon
             Array.Reverse(bytes);
             return bytes;
         }
-
 
         private async Task<bool> PrepareForDayroll(CancellationToken token)
         {
