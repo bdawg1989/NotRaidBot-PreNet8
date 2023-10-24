@@ -28,8 +28,10 @@ namespace SysBot.Pokemon.WinForms
             TC_Main.SelectedIndexChanged += TC_Main_SelectedIndexChanged;
             RTB_Logs.TextChanged += RTB_Logs_TextChanged;
 
-            // Initially disable B_Start button
-            B_Start.Enabled = false; // Assuming B_Start is the name of your start button
+            Invoke((MethodInvoker)delegate
+            {
+                B_Start.Enabled = false;
+            });
         }
 
         private async Task InitializeAsync()
