@@ -1916,9 +1916,9 @@ namespace SysBot.Pokemon
             var teraTypeLower = strings.Types[teraType].ToLower();
             var teraIconUrl = $"https://genpkm.com/images/teraicons/icon1/{teraTypeLower}.png";
             var disclaimer = $"NotRaidBot {NotRaidBot.Version} by Gengar & Kai\nhttps://notpaldea.net";
-            var titlePrefix = raid.IsShiny ? "Shiny" : "";
+            var titlePrefix = raid.IsShiny ? "Shiny " : "";
             var formName = ShowdownParsing.GetStringFromForm(pk.Form, strings, pk.Species, pk.Context);
-            var authorName = $"{stars} ★ {titlePrefix} {(Species)encounter.Species}{(pk.Form != 0 ? $"-{formName}" : "")}";
+            var authorName = $"{stars} ★ {titlePrefix}{(Species)encounter.Species}{(pk.Form != 0 ? $"-{formName}" : "")}";
 
             (int R, int G, int B) = RaidExtensions<PK9>.GetDominantColor(RaidExtensions<PK9>.PokeImg(pk, false, false));
             var embedColor = new Color(R, G, B);
@@ -1938,7 +1938,6 @@ namespace SysBot.Pokemon
                           $"{Format.Bold($"Scale:")} {PokeSizeDetailedUtil.GetSizeRating(pk.Scale)}";
                 x.IsInline = true;
             });
-
 
             embed.AddField("**__Moves__**", movesList, true);
             embed.AddField("**__Special Rewards__**", string.IsNullOrEmpty(specialRewards) ? "No Rewards To Display" : specialRewards, true);

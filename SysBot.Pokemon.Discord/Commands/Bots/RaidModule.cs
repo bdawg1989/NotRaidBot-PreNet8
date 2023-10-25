@@ -137,7 +137,7 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             if (File.Exists(pkpath))
                 data = File.ReadAllText(pkpath);
 
-            RotatingRaidSettingsSV.RotatingRaidParameters newparam = new()
+            RotatingRaidParameters newparam = new()
             {
                 CrystalType = crystalType,
                 DifficultyLevel = level,
@@ -224,7 +224,7 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             if (File.Exists(pkpath))
                 data = File.ReadAllText(pkpath);
 
-            RotatingRaidSettingsSV.RotatingRaidParameters newparam = new()
+            RotatingRaidParameters newparam = new()
             {
                 CrystalType = crystalType,
                 Description = new[] { description },
