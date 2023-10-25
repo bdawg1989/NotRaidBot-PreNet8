@@ -2,15 +2,15 @@
 using System;
 using System.Buffers.Binary;
 
-namespace SysBot.Pokemon
+namespace SysBot.Pokemon.SV.BotRaid
 {
-    public sealed class TradePartnerSV
+    public sealed class RaidPartnerSV
     {
         public string TID7 { get; }
         public string SID7 { get; }
         public string TrainerName { get; }
 
-        public TradePartnerSV(TradeMyStatus info)
+        public RaidPartnerSV(RaidMyStatus info)
         {
             TID7 = info.DisplayTID.ToString("D6");
             SID7 = info.DisplaySID.ToString("D4");
@@ -18,7 +18,7 @@ namespace SysBot.Pokemon
         }
     }
 
-    public sealed class TradeMyStatus
+    public sealed class RaidMyStatus
     {
         public readonly byte[] Data = new byte[0x30];
 

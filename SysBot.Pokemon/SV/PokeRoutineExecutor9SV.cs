@@ -123,9 +123,9 @@ namespace SysBot.Pokemon
             return sav;
         }
 
-        public async Task<TradeMyStatus> GetTradePartnerMyStatus(IReadOnlyList<long> pointer, CancellationToken token)
+        public async Task<RaidMyStatus> GetTradePartnerMyStatus(IReadOnlyList<long> pointer, CancellationToken token)
         {
-            var info = new TradeMyStatus();
+            var info = new RaidMyStatus();
             var read = await SwitchConnection.PointerPeek(info.Data.Length, pointer, token).ConfigureAwait(false);
             read.CopyTo(info.Data, 0);
             return info;
