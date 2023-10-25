@@ -47,7 +47,7 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
 
             try
             {
-                var embed = RotatingRaidBotSV.RaidInfoCommand(seedValue, (int)crystalType, dlc != "p" ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea, storyProgressLevel);
+                var (_, embed) = RotatingRaidBotSV.RaidInfoCommand(seedValue, (int)crystalType, dlc != "p" ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea, storyProgressLevel);
                 await ReplyAsync(embed: embed);
             }
             catch (Exception ex)
@@ -118,28 +118,7 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             var selectedMap = RotatingRaidBotSV.IsKitakami ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea;
 
             // Updated to include storyProgressLevel
-            var raidEmbed = RotatingRaidBotSV.RaidInfoCommand(seed, (int)crystalType, selectedMap, storyProgressLevel);
-
-            var species = raidEmbed.Author.Value.Name.Split(" ").Last(); // Extract the species name from the embed author field
-            bool isShiny = raidEmbed.Author.Value.Name.Contains("Shiny");
-            // New code to extract Form
-            int form = 0; // Initialize to a default value
-            var statsField = raidEmbed.Fields.FirstOrDefault(x => x.Name == "**__Stats__**");
-            if (statsField != null)
-            {
-                var formLine = statsField.Value.Split('\n').FirstOrDefault(line => line.Contains("Form:"));
-                if (formLine != null)
-                {
-                    var formString = formLine.Split(':').Last().Trim();
-                    // Extract digits from the string
-                    var formDigits = Regex.Match(formString, @"\d+").Value;
-                    if (int.TryParse(formDigits, out int formValue))
-                    {
-                        form = formValue;
-                    }
-                }
-            }
-
+            var (pk, raidEmbed) = RotatingRaidBotSV.RaidInfoCommand(seed, (int)crystalType, selectedMap, storyProgressLevel);
             var description = string.Empty;
             var prevpath = "bodyparam.txt";
             var filepath = "RaidFilesSV\\bodyparam.txt";
@@ -164,14 +143,14 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
                 DifficultyLevel = level,
                 Description = new[] { description },
                 PartyPK = new[] { "" },
-                Species = (Species)Enum.Parse(typeof(Species), species),
-                SpeciesForm = form,
+                Species = (Species)pk.Species,
+                SpeciesForm = pk.Form,
                 StoryProgressLevel = (int)gameProgress,
                 Seed = seed,
                 IsCoded = true,
-                IsShiny = isShiny,
+                IsShiny = pk.IsShiny,
                 AddedByRACommand = false,
-                Title = $"{species}",
+                Title = $"{(Species)pk.Species}",
             };
             Hub.Config.RotatingRaidSV.ActiveRaids.Add(newparam);
             await Context.Message.DeleteAsync().ConfigureAwait(false);
@@ -226,27 +205,7 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
 
             // Determine the correct map
             var selectedMap = RotatingRaidBotSV.IsKitakami ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea;
-            var raidEmbed = RotatingRaidBotSV.RaidInfoCommand(seed, (int)crystalType, selectedMap, storyProgressLevel);
-            var species = raidEmbed.Author.Value.Name.Split(" ").Last(); // Extract the species name from the embed author field
-            bool isShiny = raidEmbed.Author.Value.Name.Contains("Shiny");
-            // New code to extract Form
-            int form = 0; // Initialize to a default value
-            var statsField = raidEmbed.Fields.FirstOrDefault(x => x.Name == "**__Stats__**");
-            if (statsField != null)
-            {
-                var formLine = statsField.Value.Split('\n').FirstOrDefault(line => line.Contains("Form:"));
-                if (formLine != null)
-                {
-                    var formString = formLine.Split(':').Last().Trim();
-                    // Extract digits from the string
-                    var formDigits = Regex.Match(formString, @"\d+").Value;
-                    if (int.TryParse(formDigits, out int formValue))
-                    {
-                        form = formValue;
-                    }
-                }
-            }
-
+            var (pk, raidEmbed) = RotatingRaidBotSV.RaidInfoCommand(seed, (int)crystalType, selectedMap, storyProgressLevel);
             var description = string.Empty;
             var prevpath = "bodyparam.txt";
             var filepath = "RaidFilesSV\\bodyparam.txt";
@@ -270,12 +229,12 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
                 CrystalType = crystalType,
                 Description = new[] { description },
                 PartyPK = new[] { "" },
-                Species = (Species)Enum.Parse(typeof(Species), species),
-                SpeciesForm = form,
+                Species = (Species)pk.Species,
+                SpeciesForm = pk.Form,
                 StoryProgressLevel = (int)gameProgress,
                 Seed = seed,
                 IsCoded = true,
-                IsShiny = isShiny,
+                IsShiny = pk.IsShiny,
                 AddedByRACommand = true,
                 RequestedByUserID = Context.User.Id,
                 Title = $"{Context.User.Username}'s Requested Raid",

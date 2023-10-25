@@ -1850,7 +1850,7 @@ namespace SysBot.Pokemon
         }
         #endregion
         // Add this method in the relevant class where commands are handled
-        public static Embed RaidInfoCommand(string seedValue, int contentType, TeraRaidMapParent map, int storyProgressLevel)
+        public static (PK9, Embed) RaidInfoCommand(string seedValue, int contentType, TeraRaidMapParent map, int storyProgressLevel)
 
         {
             byte[] enabled = StringToByteArray("00000001");
@@ -1892,6 +1892,7 @@ namespace SysBot.Pokemon
                 Move3 = encounter.Move3,
                 Move4 = encounter.Move4,
             };
+            if (raid.IsShiny) CommonEdits.SetIsShiny(pk, true);
             Encounter9RNG.GenerateData(pk, param, EncounterCriteria.Unrestricted, raid.Seed);
             var strings = GameInfo.GetStrings(1);
             var movesList = "";
@@ -1916,7 +1917,8 @@ namespace SysBot.Pokemon
             var teraIconUrl = $"https://genpkm.com/images/teraicons/icon1/{teraTypeLower}.png";
             var disclaimer = $"NotRaidBot {NotRaidBot.Version} by Gengar & Kai\nhttps://notpaldea.net";
             var titlePrefix = raid.IsShiny ? "Shiny" : "";
-            var authorName = $"{stars} ★ {titlePrefix} {(Species)encounter.Species}";
+            var formName = ShowdownParsing.GetStringFromForm(pk.Form, strings, pk.Species, pk.Context);
+            var authorName = $"{stars} ★ {titlePrefix} {(Species)encounter.Species}{(pk.Form != 0 ? $"-{formName}" : "")}";
 
             (int R, int G, int B) = RaidExtensions<PK9>.GetDominantColor(RaidExtensions<PK9>.PokeImg(pk, false, false));
             var embedColor = new Color(R, G, B);
@@ -1929,8 +1931,7 @@ namespace SysBot.Pokemon
             embed.AddField(x =>
             {
                 x.Name = "**__Stats__**";
-                x.Value = $"{Format.Bold($"Form:")} {form} \n" +
-                          $"{Format.Bold($"TeraType:")} {strings.Types[teraType]} \n" +
+                x.Value = $"{Format.Bold($"TeraType:")} {strings.Types[teraType]} \n" +
                           $"{Format.Bold($"Ability:")} {strings.Ability[pk.Ability]}\n" +
                           $"{Format.Bold("Nature:")} {(Nature)pk.Nature}\n" +
                           $"{Format.Bold("IVs:")} {pk.IV_HP}/{pk.IV_ATK}/{pk.IV_DEF}/{pk.IV_SPA}/{pk.IV_SPD}/{pk.IV_SPE}\n" +
@@ -1955,7 +1956,7 @@ namespace SysBot.Pokemon
                 auth.IconUrl = teraIconUrl;
             });
 
-            return embed.Build();
+            return (pk, embed.Build());
         }
 
         public static byte[] StringToByteArray(string hex)
