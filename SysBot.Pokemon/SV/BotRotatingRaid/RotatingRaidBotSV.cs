@@ -185,26 +185,39 @@ namespace SysBot.Pokemon
 
         private void DirectorySearch(string sDir, string data)
         {
+            // Clear the active raids before populating it
             Settings.ActiveRaids.Clear();
+
+            // Read the entire content from the file into a string
             string contents = File.ReadAllText(sDir);
+
+            // Split the string based on commas to get each raid entry
             string[] moninfo = contents.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+
+            // Iterate over each raid entry
             for (int i = 0; i < moninfo.Length; i++)
             {
+                // Split the entry based on dashes to get individual pieces of information
                 var div = moninfo[i].Split(new[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
+
+                // Extracting seed, title, and difficulty level
                 var monseed = div[0];
                 var montitle = div[1];
-                var montent = div[2];
-                int difficultyLevel = int.Parse(div[2]); // Parsing the DifficultyLevel
+                int difficultyLevel = int.Parse(div[2]);
 
-                // Parsing and converting StoryProgressLevel, and then subtracting 1
-                int storyProgressInt = int.Parse(div[3]) - 1; // Subtract 1 here
+                // Extract and convert the StoryProgressLevel
+                int storyProgressLevelFromSeed = int.Parse(div[3]); // Parsing the StoryProgressLevel from the seed
+                int convertedStoryProgressLevel = storyProgressLevelFromSeed - 1; // Converting based on given conditions
 
-                TeraCrystalType type = montent switch
+                // Determine the TeraCrystalType based on the difficulty level
+                TeraCrystalType type = difficultyLevel switch
                 {
-                    "6" => TeraCrystalType.Black,
-                    "7" => TeraCrystalType.Might,
+                    6 => TeraCrystalType.Black,
+                    7 => TeraCrystalType.Might,
                     _ => TeraCrystalType.Base,
                 };
+
+                // Create a new RotatingRaidParameters object and populate its properties
                 RotatingRaidSettingsSV.RotatingRaidParameters param = new()
                 {
                     Seed = monseed,
@@ -212,10 +225,14 @@ namespace SysBot.Pokemon
                     Species = RaidExtensions<PK9>.EnumParse<Species>(montitle),
                     CrystalType = type,
                     PartyPK = new[] { data },
-                    DifficultyLevel = difficultyLevel,  // Added the DifficultyLevel
-                    StoryProgressLevel = storyProgressInt  // Subtract 1 and store the adjusted StoryProgressLevel
+                    DifficultyLevel = difficultyLevel,  // Set the DifficultyLevel
+                    StoryProgressLevel = convertedStoryProgressLevel  // Set the converted StoryProgressLevel
                 };
+
+                // Add the RotatingRaidParameters object to the ActiveRaids list
                 Settings.ActiveRaids.Add(param);
+
+                // Log the raid parameter generation
                 Log($"Parameters generated from text file for {montitle}.");
             }
         }
@@ -543,11 +560,11 @@ namespace SysBot.Pokemon
                 {
                     TimeSpan timeInBattle = DateTime.Now - battleStartTime;
 
-                    if (timeInBattle.TotalMinutes >= 15)
+                    if (timeInBattle.TotalMinutes >= 10)
                     {
-                        Log("Battle timed out after 15 minutes. Exiting...");
+                        Log("Battle timed out after 10 minutes. Exiting...");
                         timedOut = true;
-                        break;  
+                        break;
                     }
 
                     b++;
@@ -1386,7 +1403,7 @@ namespace SysBot.Pokemon
             if (!disband && !upnext && !raidstart && !Settings.EmbedToggles.IncludeMoves)
             {
                 embed.AddField(" **__Special Rewards__**", string.IsNullOrEmpty($"{RaidEmbedInfo.SpecialRewards}") ? "No Rewards To Display" : $"{RaidEmbedInfo.SpecialRewards}", true);
-            
+
             }
 
             if (!disband && names is null && !upnext)
@@ -1539,7 +1556,7 @@ namespace SysBot.Pokemon
 
             await Task.Delay(5_000 + timing.ExtraTimeLoadOverworld, token).ConfigureAwait(false);
             Log("Back in the overworld!");
-            
+
             LostRaid = 0;
         }
         private async Task WriteProgressLive(GameProgress progress)
@@ -1899,7 +1916,7 @@ namespace SysBot.Pokemon
                             Settings.ActiveRaids[a].Description = new[] { "\n**Raid Info:**", pkinfo, "\n**Moveset:**", movestr, extramoves, BaseDescription, res };
                             Settings.ActiveRaids[a].Title = $"{(Species)container.Encounters[i].Species} {starcount} - {(MoveType)container.Raids[i].TeraType}";
                         } */
-                        
+
                         Settings.ActiveRaids[a].IsSet = false; // we don't use zyro's preset.txt file, ew.
                         done = true;
                     }
@@ -1969,7 +1986,7 @@ namespace SysBot.Pokemon
                     extraMoves += $"\\- {strings.Move[encounter.ExtraMoves[i]]}\n";
                 }
             }
-            if(!string.IsNullOrEmpty(extraMoves)) movesList += $"**Extra Moves:**\n{extraMoves}";
+            if (!string.IsNullOrEmpty(extraMoves)) movesList += $"**Extra Moves:**\n{extraMoves}";
             var specialRewards = GetSpecialRewards(reward);
             var teraTypeLower = strings.Types[teraType].ToLower();
             var teraIconUrl = $"https://genpkm.com/images/teraicons/icon1/{teraTypeLower}.png";
