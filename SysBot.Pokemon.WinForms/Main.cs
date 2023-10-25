@@ -34,6 +34,25 @@ namespace SysBot.Pokemon.WinForms
         }
         private async Task InitializeAsync()
         {
+            string discordName = string.Empty;
+
+            // Existing license check code
+            string licenseKey = LicenseKeyHelper.ReadLicenseKey();
+            if (string.IsNullOrEmpty(licenseKey))
+            {
+                this.Show(); // Show the main form
+                await RegisterLicenseAsync();
+            }
+            else
+            {
+                // Fetch the Discord name
+                discordName = await LicenseKeyHelper.ValidateLicenseAndFetchNameAsync(licenseKey);
+                if (string.IsNullOrEmpty(discordName))
+                {
+                    // License is invalid; handle accordingly
+                    await RegisterLicenseAsync();
+                }
+            }
             if (string.IsNullOrEmpty(LicenseKeyHelper.ReadLicenseKey()))
             {
                 this.Show(); // Show the main form
@@ -63,7 +82,7 @@ namespace SysBot.Pokemon.WinForms
             }
 
             LoadControls();
-            Text = $"{(string.IsNullOrEmpty(Config.Hub.BotName) ? "NOT RaidBot" : Config.Hub.BotName)} {NotRaidBot.Version} ({Config.Mode})";
+            Text = $"{(string.IsNullOrEmpty(Config.Hub.BotName) ? "NOT RaidBot" : Config.Hub.BotName)} {NotRaidBot.Version} ({Config.Mode}) - Registered to: {(string.IsNullOrEmpty(discordName) ? "NOT REGISTERED" : discordName)}";
             Task.Run(BotMonitor);
             InitUtil.InitializeStubs(Config.Mode);
         }
@@ -766,6 +785,7 @@ namespace SysBot.Pokemon.WinForms
                 Application.Exit();
             }
         }
+
 
 
         private async Task RegisterLicenseAsync()
