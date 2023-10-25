@@ -490,7 +490,7 @@ namespace SysBot.Pokemon
                         {
                             try
                             {
-                                await EnqueueEmbed(null, "Oops! Something went wrong, resetting to recover.", false, false, false, false, token).ConfigureAwait(false);
+                                await EnqueueEmbed(null, "", false, false, false, false, token).ConfigureAwait(false);
                                 success = true;
                                 break;
                             }

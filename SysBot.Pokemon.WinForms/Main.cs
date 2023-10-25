@@ -30,17 +30,7 @@ namespace SysBot.Pokemon.WinForms
             TC_Main.SelectedIndexChanged += TC_Main_SelectedIndexChanged;
             RTB_Logs.TextChanged += RTB_Logs_TextChanged;
 
-            if (B_Start.InvokeRequired)
-            {
-                B_Start.Invoke((MethodInvoker)delegate
-                {
-                    B_Start.Enabled = false;
-                });
-            }
-            else
-            {
-                B_Start.Enabled = false;
-            }
+            SetButtonStartStateSafe(false);
         }
         private async Task InitializeAsync()
         {
@@ -760,7 +750,8 @@ namespace SysBot.Pokemon.WinForms
                     if (await LicenseKeyHelper.ValidateLicenseAsync(existingLicenseKey).ConfigureAwait(false))
                     {
                         // Proceed with application
-                        B_Start.Enabled = true;
+                        SetButtonStartStateSafe(true);
+
                     }
                     else
                     {
@@ -786,7 +777,7 @@ namespace SysBot.Pokemon.WinForms
                 {
                     if (await LicenseKeyHelper.ValidateLicenseAsync(savedLicenseKey))
                     {
-                        B_Start.Enabled = true;
+                        SetButtonStartStateSafe(true);
                         return;
                     }
                     else
@@ -804,17 +795,19 @@ namespace SysBot.Pokemon.WinForms
 
                         if (await LicenseKeyHelper.ValidateLicenseAsync(newLicenseKey))
                         {
-                            B_Start.Enabled = true;
+                            SetButtonStartStateSafe(true);
                             LicenseKeyHelper.SaveLicenseKey(newLicenseKey);
                         }
                         else
                         {
                             MessageBox.Show("Invalid or used license key.");
+                            SetButtonStartStateSafe(false);
                             Application.Exit();
                         }
                     }
                     else
                     {
+                        SetButtonStartStateSafe(false);
                         Application.Exit();
                     }
                 }
@@ -825,5 +818,19 @@ namespace SysBot.Pokemon.WinForms
             }
         }
 
+        private void SetButtonStartStateSafe(bool state)
+        {
+            if (B_Start.InvokeRequired)
+            {
+                B_Start.Invoke((MethodInvoker)delegate
+                {
+                    B_Start.Enabled = state;
+                });
+            }
+            else
+            {
+                B_Start.Enabled = state;
+            }
+        }
     }
 }
