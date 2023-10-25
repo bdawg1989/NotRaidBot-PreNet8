@@ -5,7 +5,7 @@ namespace SysBot.Pokemon
     public class ProgramConfig : BotList<PokeBotState>
     {
         public ProgramMode Mode { get; set; } = ProgramMode.SV;
-        public PokeTradeHubConfig Hub { get; set; } = new();
+        public PokeRaidHubConfig Hub { get; set; } = new();
     }
 
     public enum ProgramMode

@@ -8,7 +8,7 @@ namespace SysBot.Pokemon
 {
     public interface IPokeBotRunner
     {
-        PokeTradeHubConfig Config { get; }
+        PokeRaidHubConfig Config { get; }
         bool RunOnce { get; }
         bool IsRunning { get; }
 
@@ -29,7 +29,7 @@ namespace SysBot.Pokemon
         public readonly PokeRaidHub<T> Hub;
         private readonly BotFactory<T> Factory;
 
-        public PokeTradeHubConfig Config => Hub.Config;
+        public PokeRaidHubConfig Config => Hub.Config;
 
         protected PokeBotRunner(PokeRaidHub<T> hub, BotFactory<T> factory)
         {
@@ -37,7 +37,7 @@ namespace SysBot.Pokemon
             Factory = factory;
         }
 
-        protected PokeBotRunner(PokeTradeHubConfig config, BotFactory<T> factory)
+        protected PokeBotRunner(PokeRaidHubConfig config, BotFactory<T> factory)
         {
             Factory = factory;
             Hub = new PokeRaidHub<T>(config);
@@ -48,14 +48,14 @@ namespace SysBot.Pokemon
         public override void Add(RoutineExecutor<PokeBotState> bot)
         {
             base.Add(bot);
-            if (bot is PokeRoutineExecutorBase b && b.Config.InitialRoutine.IsTradeBot())
+            if (bot is PokeRoutineExecutorBase b && b.Config.InitialRoutine.IsRaidBot())
                 Hub.Bots.Add(b);
         }
 
         public override bool Remove(IConsoleBotConfig cfg, bool callStop)
         {
             var bot = GetBot(cfg)?.Bot;
-            if (bot is PokeRoutineExecutorBase b && b.Config.InitialRoutine.IsTradeBot())
+            if (bot is PokeRoutineExecutorBase b && b.Config.InitialRoutine.IsRaidBot())
                 Hub.Bots.Remove(b);
             return base.Remove(cfg, callStop);
         }

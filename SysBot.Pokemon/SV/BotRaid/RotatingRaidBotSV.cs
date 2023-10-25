@@ -1451,7 +1451,7 @@ namespace SysBot.Pokemon.SV.BotRaid
         }
 
         // From PokeTradeBotSV, modified.
-        private async Task<bool> ConnectToOnline(PokeTradeHubConfig config, CancellationToken token)
+        private async Task<bool> ConnectToOnline(PokeRaidHubConfig config, CancellationToken token)
         {
             if (await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false))
                 return true;
@@ -1519,7 +1519,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             return true;
         }
 
-        public async Task StartGameRaid(PokeTradeHubConfig config, CancellationToken token)
+        public async Task StartGameRaid(PokeRaidHubConfig config, CancellationToken token)
         {
             var timing = config.Timings;
             await Click(A, 1_000 + timing.ExtraTimeLoadProfile, token).ConfigureAwait(false);
@@ -2083,7 +2083,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             return true;
         }
 
-        private async Task<bool> SaveGame(PokeTradeHubConfig config, CancellationToken token)
+        private async Task<bool> SaveGame(PokeRaidHubConfig config, CancellationToken token)
         {
 
             await Click(X, 3_000, token).ConfigureAwait(false);
