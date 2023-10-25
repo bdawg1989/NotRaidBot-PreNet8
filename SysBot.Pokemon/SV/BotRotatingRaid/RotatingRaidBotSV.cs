@@ -486,6 +486,25 @@ namespace SysBot.Pokemon
                         // We read bad data, reset game to end early and recover.
                         var msg = "Oops! Something went wrong, resetting to recover.";
                         await EnqueueEmbed(null, msg, false, false, false, false, token).ConfigureAwait(false);
+                        bool success = false;
+                        for (int attempt = 1; attempt <= 3; attempt++)
+                        {
+                            try
+                            {
+                                await EnqueueEmbed(null, "Oops! Something went wrong, resetting to recover.", false, false, false, false, token).ConfigureAwait(false);
+                                success = true;
+                                break;
+                            }
+                            catch (Exception ex)
+                            {
+                                Log($"Attempt {attempt} failed with error: {ex.Message}");
+                                if (attempt == 3)
+                                {
+                                    Log("All attempts failed. Continuing without sending embed.");
+                                }
+                            }
+                        }
+
                         await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
                         return;
                     }
@@ -494,7 +513,24 @@ namespace SysBot.Pokemon
                     bool hatTrick = lobbyTrainersFinal.Count == 3 && names.Distinct().Count() == 1;
 
                     await Task.Delay(15_000, token).ConfigureAwait(false);
-                    await EnqueueEmbed(names, "", hatTrick, false, false, true, token).ConfigureAwait(false);
+                    bool embedSuccess = false;
+                    for (int attempt = 1; attempt <= 3; attempt++)
+                    {
+                        try
+                        {
+                            await EnqueueEmbed(names, "", hatTrick, false, false, true, token).ConfigureAwait(false);
+                            embedSuccess = true;
+                            break;
+                        }
+                        catch (Exception ex)
+                        {
+                            Log($"Attempt {attempt} failed with error: {ex.Message}");
+                            if (attempt == 3)
+                            {
+                                Log("All attempts failed. Continuing without sending embed.");
+                            }
+                        }
+                    }
                 }
 
                 DateTime battleStartTime = DateTime.Now;
