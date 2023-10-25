@@ -782,7 +782,7 @@ namespace SysBot.Pokemon.WinForms
                     }
                     else
                     {
-                        MessageBox.Show("Saved license key is no longer valid.");
+                        MessageBox.Show("Saved license key is no longer valid.\nPlease contact support for help.\n\nhttps://notraidbot.net");
                         LicenseKeyHelper.DeleteLicenseKey();  // Clear the invalid saved key
                     }
                 }
@@ -800,7 +800,7 @@ namespace SysBot.Pokemon.WinForms
                         }
                         else
                         {
-                            MessageBox.Show("Invalid or used license key.");
+                            MessageBox.Show("Invalid or used license key.\nPlease contact support for help.\n\nhttps://notraidbot.net");
                             SetButtonStartStateSafe(false);
                             Application.Exit();
                         }

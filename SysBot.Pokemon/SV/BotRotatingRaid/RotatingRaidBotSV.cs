@@ -1236,7 +1236,15 @@ namespace SysBot.Pokemon
 
             byte[]? bytes = Array.Empty<byte>();
             if (Settings.TakeScreenshot && !upnext)
-                bytes = await SwitchConnection.PixelPeek(token).ConfigureAwait(false) ?? Array.Empty<byte>();
+                try
+                {
+                    // Assuming this is another place where a network call is made
+                    bytes = await SwitchConnection.PixelPeek(token).ConfigureAwait(false) ?? Array.Empty<byte>();
+                }
+                catch (Exception ex)
+                {
+                    Log($"Error while fetching pixels: {ex.Message}");
+                }
 
             string disclaimer = Settings.ActiveRaids.Count > 1
                                 ? $"NotRaidBot {NotRaidBot.Version} by Gengar & Kai\nhttps://notpaldea.net"
@@ -1263,16 +1271,26 @@ namespace SysBot.Pokemon
             {
                 var altUrl = AltPokeImg(pk);
 
-                // Check if AltPokeImg URL is valid
-                if (await IsValidImageUrlAsync(altUrl))
+                try
                 {
-                    turl = altUrl;
+                    // Check if AltPokeImg URL is valid
+                    if (await IsValidImageUrlAsync(altUrl))
+                    {
+                        turl = altUrl;
+                    }
+                    else
+                    {
+                        Settings.ActiveRaids[RotationCount].SpriteAlternateArt = false;  // Set SpriteAlternateArt to false if no img found
+                        turl = RaidExtensions<PK9>.PokeImg(pk, false, false);
+                        Log($"AltPokeImg URL was not valid. Setting SpriteAlternateArt to false.");
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    Settings.ActiveRaids[RotationCount].SpriteAlternateArt = false;  // Set SpriteAlternateArt to false if no img found
+                    // Log the exception and use the default sprite
+                    Log($"Error while validating alternate image URL: {ex.Message}");
+                    Settings.ActiveRaids[RotationCount].SpriteAlternateArt = false;  // Set SpriteAlternateArt to false due to error
                     turl = RaidExtensions<PK9>.PokeImg(pk, false, false);
-                    Log($"AltPokeImg URL was not valid. Setting SpriteAlternateArt to false.");
                 }
             }
             else
