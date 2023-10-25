@@ -121,7 +121,7 @@ namespace SysBot.Pokemon
                 File.Move(prevrotationpath, rotationpath);
             if (!File.Exists(rotationpath))
             {
-                File.WriteAllText(rotationpath, "000091EC-Kricketune-3,0000717F-Seviper-3");
+                File.WriteAllText(rotationpath, "000091EC-Kricketune-3-6,0000717F-Seviper-3-6");
                 Log("Creating a default raidsv.txt file, skipping generation as file is empty.");
                 return;
             }
@@ -171,7 +171,8 @@ namespace SysBot.Pokemon
             StringBuilder sb = new StringBuilder();
             foreach (var raid in raidsToSave)
             {
-                sb.Append($"{raid.Seed}-{raid.Species}-{raid.DifficultyLevel},"); // Adjust this line based on your object's properties
+                // Include the StoryProgressLevel in the string being saved
+                sb.Append($"{raid.Seed}-{raid.Species}-{raid.DifficultyLevel}-{raid.StoryProgressLevel},");
             }
 
             // Remove the trailing comma
@@ -181,7 +182,6 @@ namespace SysBot.Pokemon
             // Write the contents to the file
             File.WriteAllText(savePath, sb.ToString());
         }
-
 
         private void DirectorySearch(string sDir, string data)
         {
@@ -196,6 +196,9 @@ namespace SysBot.Pokemon
                 var montent = div[2];
                 int difficultyLevel = int.Parse(div[2]); // Parsing the DifficultyLevel
 
+                // Parsing and converting StoryProgressLevel, and then subtracting 1
+                int storyProgressInt = int.Parse(div[3]) - 1; // Subtract 1 here
+
                 TeraCrystalType type = montent switch
                 {
                     "6" => TeraCrystalType.Black,
@@ -209,12 +212,14 @@ namespace SysBot.Pokemon
                     Species = RaidExtensions<PK9>.EnumParse<Species>(montitle),
                     CrystalType = type,
                     PartyPK = new[] { data },
-                    DifficultyLevel = difficultyLevel  // Added the DifficultyLevel
+                    DifficultyLevel = difficultyLevel,  // Added the DifficultyLevel
+                    StoryProgressLevel = storyProgressInt  // Subtract 1 and store the adjusted StoryProgressLevel
                 };
                 Settings.ActiveRaids.Add(param);
                 Log($"Parameters generated from text file for {montitle}.");
             }
         }
+
         private async Task InnerLoop(CancellationToken token)
         {
             bool partyReady;

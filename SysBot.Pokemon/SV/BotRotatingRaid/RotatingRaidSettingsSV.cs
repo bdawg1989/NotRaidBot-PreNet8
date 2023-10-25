@@ -131,7 +131,7 @@ namespace SysBot.Pokemon
             public override string ToString() => $"{Title}";
             public bool ActiveInRotation { get; set; } = true;
             public int DifficultyLevel { get; set; } = 0;
-            public int StoryProgressLevel { get; set; } = 6;
+            public int StoryProgressLevel { get; set; } = 5;
             public TeraCrystalType CrystalType { get; set; } = TeraCrystalType.Base;
             [Browsable(false)]
             public string[] Description { get; set; } = Array.Empty<string>();
