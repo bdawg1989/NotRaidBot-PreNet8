@@ -149,15 +149,18 @@ namespace SysBot.Pokemon
         }
         private void SaveSeeds()
         {
+            // Exit the function if saving seeds to file is not enabled
             if (!Settings.SaveSeedsToFile)
                 return;
 
+            // Filter out raids that don't need to be saved
             var raidsToSave = Settings.ActiveRaids.Where(raid => !raid.AddedByRACommand).ToList();
 
+            // Exit the function if there are no raids to save
             if (!raidsToSave.Any())
                 return;
 
-            // Define the directory and file paths
+            // Define directory and file paths
             var directoryPath = "raidfilessv";
             var fileName = "savedSeeds.txt";
             var savePath = Path.Combine(directoryPath, fileName);
@@ -168,20 +171,27 @@ namespace SysBot.Pokemon
                 Directory.CreateDirectory(directoryPath);
             }
 
+            // Initialize StringBuilder to build the save string
             StringBuilder sb = new StringBuilder();
+
+            // Loop through each raid to be saved
             foreach (var raid in raidsToSave)
             {
-                // Include the StoryProgressLevel in the string being saved
-                sb.Append($"{raid.Seed}-{raid.Species}-{raid.DifficultyLevel}-{raid.StoryProgressLevel},");
+                // Increment the StoryProgressLevel by 1 before saving
+                int incrementedStoryProgressLevel = raid.StoryProgressLevel + 1;
+
+                // Build the string to save, including the incremented StoryProgressLevel
+                sb.Append($"{raid.Seed}-{raid.Species}-{raid.DifficultyLevel}-{incrementedStoryProgressLevel},");
             }
 
-            // Remove the trailing comma
+            // Remove the trailing comma at the end
             if (sb.Length > 0)
                 sb.Length--;
 
-            // Write the contents to the file
+            // Write the built string to the file
             File.WriteAllText(savePath, sb.ToString());
         }
+
 
         private void DirectorySearch(string sDir, string data)
         {
