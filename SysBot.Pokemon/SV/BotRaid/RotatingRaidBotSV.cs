@@ -16,7 +16,7 @@ using static SysBot.Pokemon.RotatingRaidSettingsSV;
 using SysBot.Pokemon.SV.BotRaid.Helpers;
 using static SysBot.Pokemon.Blocks;
 
-namespace SysBot.Pokemon
+namespace SysBot.Pokemon.SV.BotRaid
 {
     public class RotatingRaidBotSV : PokeRoutineExecutor9SV
     {
@@ -228,7 +228,7 @@ namespace SysBot.Pokemon
                 };
 
                 // Create a new RotatingRaidParameters object and populate its properties
-                RotatingRaidSettingsSV.RotatingRaidParameters param = new()
+                RotatingRaidParameters param = new()
                 {
                     Seed = monseed,
                     Title = montitle,
@@ -250,7 +250,7 @@ namespace SysBot.Pokemon
         private async Task InnerLoop(CancellationToken token)
         {
             bool partyReady;
-            List<(ulong, TradeMyStatus)> lobbyTrainers;
+            List<(ulong, RaidMyStatus)> lobbyTrainers;
             StartTime = DateTime.Now;
             var dayRoll = 0;
             RotationCount = 0;
@@ -446,7 +446,7 @@ namespace SysBot.Pokemon
             var data = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP, 2304, token).ConfigureAwait(false);
             for (int i = 0; i < 69; i++)
             {
-                var seed = BitConverter.ToUInt32(data.Slice(0x20 + (i * 0x20), 4));
+                var seed = BitConverter.ToUInt32(data.Slice(0x20 + i * 0x20, 4));
                 if (seed == 0)
                 {
                     SeedIndexToReplace = i;
@@ -470,10 +470,10 @@ namespace SysBot.Pokemon
             Log($"Index not located.");
         }
 
-        private async Task CompleteRaid(List<(ulong, TradeMyStatus)> trainers, CancellationToken token)
+        private async Task CompleteRaid(List<(ulong, RaidMyStatus)> trainers, CancellationToken token)
         {
             bool ready = false;
-            List<(ulong, TradeMyStatus)> lobbyTrainersFinal = new();
+            List<(ulong, RaidMyStatus)> lobbyTrainersFinal = new();
             if (await IsConnectedToLobby(token).ConfigureAwait(false))
             {
                 int b = 0;
@@ -656,7 +656,7 @@ namespace SysBot.Pokemon
                 await OverrideTodaySeed(token).ConfigureAwait(false);
         }
 
-        private void ApplyPenalty(List<(ulong, TradeMyStatus)> trainers)
+        private void ApplyPenalty(List<(ulong, RaidMyStatus)> trainers)
         {
             for (int i = 0; i < trainers.Count; i++)
             {
@@ -674,7 +674,7 @@ namespace SysBot.Pokemon
                 }
             }
         }
-        private async Task CountRaids(List<(ulong, TradeMyStatus)>? trainers, CancellationToken token)
+        private async Task CountRaids(List<(ulong, RaidMyStatus)>? trainers, CancellationToken token)
         {
             int countP = 0;
             int countK = 0;
@@ -683,16 +683,16 @@ namespace SysBot.Pokemon
             var dataP = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP, 2304, token).ConfigureAwait(false);
             for (int i = 0; i < 69; i++)
             {
-                var seed = BitConverter.ToUInt32(dataP.Slice(0 + (i * 32), 4));
+                var seed = BitConverter.ToUInt32(dataP.Slice(0 + i * 32, 4));
                 if (seed != 0)
                     countP++;
             }
 
             // Read data from RaidBlockPointerK for the remaining raids
-            var dataK = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerK, (26 * 32), token).ConfigureAwait(false);
+            var dataK = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerK, 26 * 32, token).ConfigureAwait(false);
             for (int i = 0; i < 26; i++)
             {
-                var seed = BitConverter.ToUInt32(dataK.Slice(0 + (i * 32), 4));
+                var seed = BitConverter.ToUInt32(dataK.Slice(0 + i * 32, 4));
                 if (seed != 0)
                     countK++;
             }
@@ -701,7 +701,7 @@ namespace SysBot.Pokemon
             {
                 Log("Back in the overworld, checking if we won or lost.");
 
-                if ((countP <= 68 && countK == 26) || (countP == 69 && countK <= 25))
+                if (countP <= 68 && countK == 26 || countP == 69 && countK <= 25)
                 {
                     Log("Yay!  We defeated the raid!");
                     WinCount++;
@@ -1004,7 +1004,7 @@ namespace SysBot.Pokemon
             return $"\n{TeraRaidCode}\n";
         }
 
-        private async Task<bool> CheckIfTrainerBanned(TradeMyStatus trainer, ulong nid, int player, bool updateBanList, CancellationToken token)
+        private async Task<bool> CheckIfTrainerBanned(RaidMyStatus trainer, ulong nid, int player, bool updateBanList, CancellationToken token)
         {
             Log($"Player {player}: {trainer.OT} | TID: {trainer.DisplayTID} | NID: {nid}");
             if (!RaidTracker.ContainsKey(nid))
@@ -1057,17 +1057,17 @@ namespace SysBot.Pokemon
             return false;
         }
 
-        private async Task<(bool, List<(ulong, TradeMyStatus)>)> ReadTrainers(CancellationToken token)
+        private async Task<(bool, List<(ulong, RaidMyStatus)>)> ReadTrainers(CancellationToken token)
         {
             await EnqueueEmbed(null, "", false, false, false, false, token).ConfigureAwait(false);
 
-            List<(ulong, TradeMyStatus)> lobbyTrainers = new();
+            List<(ulong, RaidMyStatus)> lobbyTrainers = new();
             var wait = TimeSpan.FromSeconds(Settings.TimeToWait);
             var endTime = DateTime.Now + wait;
             bool full = false;
             bool updateBanList = Settings.RaidsBetweenUpdate != -1 && (RaidCount == 0 || RaidCount % Settings.RaidsBetweenUpdate == 0);
 
-            while (!full && (DateTime.Now < endTime))
+            while (!full && DateTime.Now < endTime)
             {
                 for (int i = 0; i < 3; i++)
                 {
@@ -1077,7 +1077,7 @@ namespace SysBot.Pokemon
                     var nidOfs = TeraNIDOffsets[i];
                     var data = await SwitchConnection.ReadBytesAbsoluteAsync(nidOfs, 8, token).ConfigureAwait(false);
                     var nid = BitConverter.ToUInt64(data, 0);
-                    while (nid == 0 && (DateTime.Now < endTime))
+                    while (nid == 0 && DateTime.Now < endTime)
                     {
                         await Task.Delay(0_500, token).ConfigureAwait(false);
                         data = await SwitchConnection.ReadBytesAbsoluteAsync(nidOfs, 8, token).ConfigureAwait(false);
@@ -1088,7 +1088,7 @@ namespace SysBot.Pokemon
                     ptr[2] += i * 0x30;
                     var trainer = await GetTradePartnerMyStatus(ptr, token).ConfigureAwait(false);
 
-                    while (trainer.OT.Length == 0 && (DateTime.Now < endTime))
+                    while (trainer.OT.Length == 0 && DateTime.Now < endTime)
                     {
                         await Task.Delay(0_500, token).ConfigureAwait(false);
                         trainer = await GetTradePartnerMyStatus(ptr, token).ConfigureAwait(false);
@@ -1108,7 +1108,7 @@ namespace SysBot.Pokemon
                         lobbyTrainers.Add((nid, trainer));
 
                     full = lobbyTrainers.Count == 3;
-                    if (full || (DateTime.Now >= endTime))
+                    if (full || DateTime.Now >= endTime)
                         break;
                 }
             }
@@ -1216,7 +1216,7 @@ namespace SysBot.Pokemon
             var nidPointer = new long[] { Offsets.LinkTradePartnerNIDPointer[0], Offsets.LinkTradePartnerNIDPointer[1], Offsets.LinkTradePartnerNIDPointer[2] };
             for (int p = 0; p < TeraNIDOffsets.Length; p++)
             {
-                nidPointer[2] = Offsets.LinkTradePartnerNIDPointer[2] + (p * 0x8);
+                nidPointer[2] = Offsets.LinkTradePartnerNIDPointer[2] + p * 0x8;
                 TeraNIDOffsets[p] = await SwitchConnection.PointerAll(nidPointer, token).ConfigureAwait(false);
             }
             Log("Caching offsets complete!");
@@ -1295,9 +1295,9 @@ namespace SysBot.Pokemon
             if (pk.Form != 0)
                 form = $"-{pk.Form}";
             if (Settings.ActiveRaids[RotationCount].IsShiny == true)
-                CommonEdits.SetIsShiny(pk, true);
+                pk.SetIsShiny(true);
             else
-                CommonEdits.SetIsShiny(pk, false);
+                pk.SetIsShiny(false);
 
             if (Settings.ActiveRaids[RotationCount].SpriteAlternateArt && Settings.ActiveRaids[RotationCount].IsShiny)
             {
@@ -1337,7 +1337,7 @@ namespace SysBot.Pokemon
             (int R, int G, int B) dominantColor = RaidExtensions<PK9>.GetDominantColor(turl);
 
             // Use the dominant color, unless it's a disband or hatTrick situation
-            var embedColor = disband ? Discord.Color.Red : hatTrick ? Discord.Color.Purple : new Discord.Color(dominantColor.R, dominantColor.G, dominantColor.B);
+            var embedColor = disband ? Color.Red : hatTrick ? Color.Purple : new Color(dominantColor.R, dominantColor.G, dominantColor.B);
 
             TimeSpan duration = new TimeSpan(0, 2, 31);
 
@@ -1355,7 +1355,7 @@ namespace SysBot.Pokemon
             {
                 Title = disband ? $"**Raid canceled: [{TeraRaidCode}]**" : upnext && Settings.TotalRaidsToHost != 0 ? $"Raid Ended - Preparing Next Raid!" : upnext && Settings.TotalRaidsToHost == 0 ? $"Raid Ended - Preparing Next Raid!" : "",
                 Color = embedColor,
-                Description = disband ? message : upnext ? (Settings.TotalRaidsToHost == 0 ? $"# {Settings.ActiveRaids[RotationCount].Title}\n\n{futureTimeMessage}" : $"# {Settings.ActiveRaids[RotationCount].Title}\n\n{futureTimeMessage}") : raidstart ? "" : description,
+                Description = disband ? message : upnext ? Settings.TotalRaidsToHost == 0 ? $"# {Settings.ActiveRaids[RotationCount].Title}\n\n{futureTimeMessage}" : $"# {Settings.ActiveRaids[RotationCount].Title}\n\n{futureTimeMessage}" : raidstart ? "" : description,
                 ImageUrl = bytes.Length > 0 ? "attachment://zap.jpg" : default,
             };
 
@@ -1451,7 +1451,7 @@ namespace SysBot.Pokemon
         }
 
         // From PokeTradeBotSV, modified.
-        private async Task<bool> ConnectToOnline(PokeTradeHubConfig config, CancellationToken token)
+        private async Task<bool> ConnectToOnline(PokeRaidHubConfig config, CancellationToken token)
         {
             if (await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false))
                 return true;
@@ -1519,7 +1519,7 @@ namespace SysBot.Pokemon
             return true;
         }
 
-        public async Task StartGameRaid(PokeTradeHubConfig config, CancellationToken token)
+        public async Task StartGameRaid(PokeRaidHubConfig config, CancellationToken token)
         {
             var timing = config.Timings;
             await Click(A, 1_000 + timing.ExtraTimeLoadProfile, token).ConfigureAwait(false);
@@ -1715,16 +1715,16 @@ namespace SysBot.Pokemon
             int delivery;
             int enc;
 
-            if (init || (SeedIndexToReplace >= 0 && SeedIndexToReplace <= 69))
+            if (init || SeedIndexToReplace >= 0 && SeedIndexToReplace <= 69)
             {
                 dataP = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP + RaidBlock.HEADER_SIZE, (int)RaidBlock.SIZE_BASE, token).ConfigureAwait(false);
             }
-            if (init || (SeedIndexToReplace >= 70))
+            if (init || SeedIndexToReplace >= 70)
             {
                 dataK = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerK, (int)RaidBlock.SIZE_KITAKAMI, token).ConfigureAwait(false);
             }
 
-            if (init || (SeedIndexToReplace >= 0 && SeedIndexToReplace <= 69))
+            if (init || SeedIndexToReplace >= 0 && SeedIndexToReplace <= 69)
             {
                 (delivery, enc) = container.ReadAllRaids(dataP, StoryProgress, EventProgress, 0, TeraRaidMapParent.Paldea);
 
@@ -1752,7 +1752,7 @@ namespace SysBot.Pokemon
             container.ClearEncounters();
             container.ClearRewards();
 
-            if (init || (SeedIndexToReplace >= 70 && SeedIndexToReplace <= 94))
+            if (init || SeedIndexToReplace >= 70 && SeedIndexToReplace <= 94)
             {
                 (delivery, enc) = container.ReadAllRaids(dataK, StoryProgress, EventProgress, 0, TeraRaidMapParent.Kitakami);
 
@@ -1834,7 +1834,7 @@ namespace SysBot.Pokemon
                             res = "**Special Rewards:**\n" + res;
                         Log($"Seed {seed:X8} found for {(Species)container.Encounters[i].Species}");
                         Settings.ActiveRaids[a].Seed = $"{seed:X8}";
-                        var stars = container.Raids[i].IsEvent ? container.Encounters[i].Stars : RaidExtensions.GetStarCount(container.Raids[i], container.Raids[i].Difficulty, StoryProgress, container.Raids[i].IsBlack);
+                        var stars = container.Raids[i].IsEvent ? container.Encounters[i].Stars : container.Raids[i].GetStarCount(container.Raids[i].Difficulty, StoryProgress, container.Raids[i].IsBlack);
                         string starcount = string.Empty;
                         switch (stars)
                         {
@@ -1963,7 +1963,7 @@ namespace SysBot.Pokemon
             var raid_delivery_group_id = -1;
             var encounter = raid.GetTeraEncounter(container, progress, raid_delivery_group_id);
             var reward = encounter.GetRewards(container, raid, 0);
-            var stars = raid.IsEvent ? encounter.Stars : RaidExtensions.GetStarCount(raid, raid.Difficulty, storyProgressLevel, raid.IsBlack);
+            var stars = raid.IsEvent ? encounter.Stars : raid.GetStarCount(raid.Difficulty, storyProgressLevel, raid.IsBlack);
             var teraType = raid.GetTeraType(encounter);
             var form = encounter.Form;
 
@@ -1977,7 +1977,7 @@ namespace SysBot.Pokemon
                 Move3 = encounter.Move3,
                 Move4 = encounter.Move4,
             };
-            if (raid.IsShiny) CommonEdits.SetIsShiny(pk, true);
+            if (raid.IsShiny) pk.SetIsShiny(true);
             Encounter9RNG.GenerateData(pk, param, EncounterCriteria.Unrestricted, raid.Seed);
             var strings = GameInfo.GetStrings(1);
             var movesList = "";
@@ -2083,7 +2083,7 @@ namespace SysBot.Pokemon
             return true;
         }
 
-        private async Task<bool> SaveGame(PokeTradeHubConfig config, CancellationToken token)
+        private async Task<bool> SaveGame(PokeRaidHubConfig config, CancellationToken token)
         {
 
             await Click(X, 3_000, token).ConfigureAwait(false);

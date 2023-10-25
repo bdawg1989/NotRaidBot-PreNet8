@@ -18,7 +18,7 @@ namespace SysBot.Pokemon.Discord
     {
         public static DiscordManager Manager { get; internal set; } = default!;
         public static DiscordSettings Settings => Manager.Config;
-        public static PokeTradeHubConfig HubConfig { get; internal set; } = default!;
+        public static PokeRaidHubConfig HubConfig { get; internal set; } = default!;
     }
 
     public sealed class SysCord<T> where T : PKM, new()
@@ -145,12 +145,9 @@ namespace SysBot.Pokemon.Discord
 
             await _commands.AddModulesAsync(assembly, _services).ConfigureAwait(false);
             var genericTypes = assembly.DefinedTypes.Where(z => z.IsSubclassOf(typeof(ModuleBase<SocketCommandContext>)) && z.IsGenericType);
-            bool initTC = typeof(T) == typeof(PK8) || typeof(T) == typeof(PB8) || typeof(T) == typeof(PK9);
             foreach (var t in genericTypes)
             {
                 var genModule = t.MakeGenericType(typeof(T));
-                if (!initTC && t.Name == "TradeCordModule`1")
-                    continue;
                 await _commands.AddModuleAsync(genModule, _services).ConfigureAwait(false);
             }
             var modules = _commands.Modules.ToList();

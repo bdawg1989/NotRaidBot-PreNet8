@@ -18,6 +18,6 @@
 
     public static class PokeRoutineTypeExtensions
     {
-        public static bool IsTradeBot(this PokeRoutineType type) => type is PokeRoutineType.RotatingRaidBot;
+        public static bool IsRaidBot(this PokeRoutineType type) => type is PokeRoutineType.RotatingRaidBot;
     }
 }

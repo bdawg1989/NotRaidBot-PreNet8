@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Globalization;
 using static SysBot.Pokemon.RotatingRaidSettingsSV;
+using SysBot.Pokemon.SV.BotRaid;
 
 namespace SysBot.Pokemon.Discord.Commands.Bots
 {

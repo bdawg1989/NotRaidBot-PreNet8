@@ -32,13 +32,6 @@ namespace SysBot.Pokemon
             return new PK9(data);
         }
 
-        public async Task<PK9> ReadPokemonMain(uint offset, int size, CancellationToken token)
-        {
-            var data = await SwitchConnection.ReadBytesMainAsync(offset, size, token).ConfigureAwait(false);
-            var pk = new PK9(data);
-            return pk;
-        }
-
         public override async Task<PK9> ReadPokemonPointer(IEnumerable<long> jumps, int size, CancellationToken token)
         {
             var (valid, offset) = await ValidatePointerAll(jumps, token).ConfigureAwait(false);
@@ -47,41 +40,15 @@ namespace SysBot.Pokemon
             return await ReadPokemon(offset, token).ConfigureAwait(false);
         }
 
-        public async Task<bool> ReadIsChanged(uint offset, byte[] original, CancellationToken token)
-        {
-            var result = await Connection.ReadBytesAsync(offset, original.Length, token).ConfigureAwait(false);
-            return !result.SequenceEqual(original);
-        }
-
         public override async Task<PK9> ReadBoxPokemon(int box, int slot, CancellationToken token)
         {
             // Shouldn't be reading anything but box1slot1 here. Slots are not consecutive.
             var jumps = Offsets.BoxStartPokemonPointer.ToArray();
             return await ReadPokemonPointer(jumps, BoxFormatSlotSize, token).ConfigureAwait(false);
         }
-
-        public async Task SetBoxPokemonAbsolute(ulong offset, PK9 pkm, CancellationToken token, ITrainerInfo? sav = null)
-        {
-            if (sav != null)
-            {
-                // Update PKM to the current save's handler data
-                pkm.Trade(sav);
-                pkm.RefreshChecksum();
-            }
-
-            pkm.ResetPartyStats();
-            await SwitchConnection.WriteBytesAbsoluteAsync(pkm.EncryptedBoxData, offset, token).ConfigureAwait(false);
-        }
-
         public async Task SetCurrentBox(byte box, CancellationToken token)
         {
             await SwitchConnection.PointerPoke(new[] { box }, Offsets.CurrentBoxPointer, token).ConfigureAwait(false);
-        }
-
-        public async Task<byte> GetCurrentBox(CancellationToken token)
-        {
-            var data = await SwitchConnection.PointerPeek(1, Offsets.CurrentBoxPointer, token).ConfigureAwait(false);
-            return data[0];
         }
 
         public async Task<SAV9SV> IdentifyTrainer(CancellationToken token)
@@ -123,9 +90,9 @@ namespace SysBot.Pokemon
             return sav;
         }
 
-        public async Task<TradeMyStatus> GetTradePartnerMyStatus(IReadOnlyList<long> pointer, CancellationToken token)
+        public async Task<RaidMyStatus> GetTradePartnerMyStatus(IReadOnlyList<long> pointer, CancellationToken token)
         {
-            var info = new TradeMyStatus();
+            var info = new RaidMyStatus();
             var read = await SwitchConnection.PointerPeek(info.Data.Length, pointer, token).ConfigureAwait(false);
             read.CopyTo(info.Data, 0);
             return info;
@@ -149,25 +116,13 @@ namespace SysBot.Pokemon
             await DetachController(token).ConfigureAwait(false);
         }
 
-        protected virtual async Task EnterLinkCode(int code, PokeTradeHubConfig config, CancellationToken token)
-        {
-            // Default implementation to just press directional arrows. Can do via Hid keys, but users are slower than bots at even the default code entry.
-            var keys = TradeUtil.GetPresses(code);
-            foreach (var key in keys)
-            {
-                int delay = config.Timings.KeypressTime;
-                await Click(key, delay, token).ConfigureAwait(false);
-            }
-            // Confirm Code outside of this method (allow synchronization)
-        }
-
-        public async Task ReOpenGame(PokeTradeHubConfig config, CancellationToken token)
+        public async Task ReOpenGame(PokeRaidHubConfig config, CancellationToken token)
         {
             await CloseGame(config, token).ConfigureAwait(false);
             await StartGame(config, token).ConfigureAwait(false);
         }
 
-        public async Task CloseGame(PokeTradeHubConfig config, CancellationToken token)
+        public async Task CloseGame(PokeRaidHubConfig config, CancellationToken token)
         {
             var timing = config.Timings;
             // Close out of the game
@@ -178,7 +133,7 @@ namespace SysBot.Pokemon
             Log("Closed out of the game!");
         }
 
-        public async Task StartGame(PokeTradeHubConfig config, CancellationToken token)
+        public async Task StartGame(PokeRaidHubConfig config, CancellationToken token)
         {
             var timing = config.Timings;
             // Open game.
@@ -232,18 +187,6 @@ namespace SysBot.Pokemon
             return data[0] == 1;
         }
 
-        public async Task<ulong> GetTradePartnerNID(ulong offset, CancellationToken token)
-        {
-            var data = await SwitchConnection.ReadBytesAbsoluteAsync(offset, 8, token).ConfigureAwait(false);
-            return BitConverter.ToUInt64(data, 0);
-        }
-
-        public async Task ClearTradePartnerNID(ulong offset, CancellationToken token)
-        {
-            var data = new byte[8];
-            await SwitchConnection.WriteBytesAbsoluteAsync(data, offset, token).ConfigureAwait(false);
-        }
-
         public async Task<bool> IsOnOverworld(ulong offset, CancellationToken token)
         {
             var data = await SwitchConnection.ReadBytesAbsoluteAsync(offset, 1, token).ConfigureAwait(false);
@@ -259,33 +202,13 @@ namespace SysBot.Pokemon
             return await IsOnOverworld(offset, token).ConfigureAwait(false);
         }
 
-        // 0x10 if fully loaded into Poké Portal.
-        public async Task<bool> IsInPokePortal(ulong offset, CancellationToken token)
-        {
-            var data = await SwitchConnection.ReadBytesAbsoluteAsync(offset, 1, token).ConfigureAwait(false);
-            return data[0] == 0x10;
-        }
-
-        // 0x14 in a box and during trades, trade evolutions, and move learning.
-        public async Task<bool> IsInBox(ulong offset, CancellationToken token)
-        {
-            var data = await SwitchConnection.ReadBytesAbsoluteAsync(offset, 1, token).ConfigureAwait(false);
-            return data[0] == 0x14;
-        }
-
         public async Task<TextSpeedOption> GetTextSpeed(CancellationToken token)
         {
             var data = await SwitchConnection.PointerPeek(1, Offsets.ConfigPointer, token).ConfigureAwait(false);
             return (TextSpeedOption)(data[0] & 3);
         }
 
-
-        // Zyro additions
-        public async Task SetBoxPokemonEgg(PK9 pkm, ulong ofs, CancellationToken token)
-        {
-            pkm.ResetPartyStats();
-            await SwitchConnection.WriteBytesAbsoluteAsync(pkm.EncryptedPartyData, ofs, token).ConfigureAwait(false);
-        }
+        //Zyro additions
 
         public async Task SVSaveGameOverworld(CancellationToken token)
         {
@@ -306,6 +229,7 @@ namespace SysBot.Pokemon
             else
                 return await ReadDecryptedBlock(block, token).ConfigureAwait(false);
         }
+
         public async Task<bool> WriteBlock(object data, DataBlock block, CancellationToken token, object? toExpect = default)
         {
             if (block.IsEncrypted)
@@ -313,6 +237,7 @@ namespace SysBot.Pokemon
             else
                 return await WriteDecryptedBlock((byte[])data!, block, token).ConfigureAwait(false);
         }
+
         private async Task<bool> WriteEncryptedBlockSafe(DataBlock block, object? toExpect, object toWrite, CancellationToken token)
         {
             if (toExpect == default || toWrite == default)
@@ -329,6 +254,7 @@ namespace SysBot.Pokemon
                 _ => throw new NotSupportedException($"Block {block.Name} (Type {block.Type}) is currently not supported.")
             };
         }
+
         private async Task<bool> WriteEncryptedBlockInt32(DataBlock block, int valueToExpect, int valueToInject, CancellationToken token)
         {
             if (Config.Connection.Protocol is SwitchProtocol.WiFi && !Connection.Connected)
@@ -350,6 +276,7 @@ namespace SysBot.Pokemon
             await SwitchConnection.WriteBytesAbsoluteAsync(header, address, token).ConfigureAwait(false);
             return true;
         }
+
         private async Task<byte[]> ReadDecryptedBlock(DataBlock block, CancellationToken token)
         {
             if (Config.Connection.Protocol is SwitchProtocol.WiFi && !Connection.Connected)
@@ -416,6 +343,7 @@ namespace SysBot.Pokemon
             await SwitchConnection.WriteBytesAbsoluteAsync(header, address, token).ConfigureAwait(false);
             return true;
         }
+
         private async Task<byte[]> ReadEncryptedBlockHeader(DataBlock block, CancellationToken token)
         {
             if (Config.Connection.Protocol is SwitchProtocol.WiFi && !Connection.Connected)
@@ -426,6 +354,7 @@ namespace SysBot.Pokemon
             header = BlockUtil.DecryptBlock(block.Key, header);
             return header;
         }
+
         private async Task<int> ReadEncryptedBlockInt32(DataBlock block, CancellationToken token)
         {
             var header = await ReadEncryptedBlockHeader(block, token).ConfigureAwait(false);
@@ -464,6 +393,7 @@ namespace SysBot.Pokemon
 
             return true;
         }
+
         private async Task<bool> WriteEncryptedBlockBool(DataBlock block, bool valueToExpect, bool valueToInject, CancellationToken token)
         {
             if (Config.Connection.Protocol is SwitchProtocol.WiFi && !Connection.Connected)
@@ -544,6 +474,7 @@ namespace SysBot.Pokemon
                 _ => throw new NotSupportedException($"Block {block.Name} (Type {block.Type}) is currently not supported.")
             };
         }
+
         private async Task<byte[]?> ReadEncryptedBlockArray(DataBlock block, CancellationToken token)
         {
             if (Config.Connection.Protocol is SwitchProtocol.WiFi && !Connection.Connected)
@@ -554,6 +485,7 @@ namespace SysBot.Pokemon
             data = BlockUtil.DecryptBlock(block.Key, data);
             return data[6..];
         }
+
         public async Task<bool> ReadEncryptedBlockBool(DataBlock block, CancellationToken token)
         {
             if (Config.Connection.Protocol is SwitchProtocol.WiFi && !Connection.Connected)
@@ -563,16 +495,19 @@ namespace SysBot.Pokemon
             var res = BlockUtil.DecryptBlock(block.Key, data);
             return res[0] == 2;
         }
+
         private async Task<byte> ReadEncryptedBlockByte(DataBlock block, CancellationToken token)
         {
             var header = await ReadEncryptedBlockHeader(block, token).ConfigureAwait(false);
             return header[1];
         }
+
         private async Task<uint> ReadEncryptedBlockUint(DataBlock block, CancellationToken token)
         {
             var header = await ReadEncryptedBlockHeader(block, token).ConfigureAwait(false);
             return ReadUInt32LittleEndian(header.AsSpan()[1..]);
         }
+
         private async Task<byte[]?> ReadEncryptedBlockObject(DataBlock block, CancellationToken token)
         {
             if (Config.Connection.Protocol is SwitchProtocol.WiFi && !Connection.Connected)
@@ -586,6 +521,7 @@ namespace SysBot.Pokemon
             var res = BlockUtil.DecryptBlock(block.Key, data)[5..];
             return res;
         }
+
         public async Task<ulong> SearchSaveKey(ulong baseBlock, uint key, CancellationToken token)
         {
             var data = await SwitchConnection.ReadBytesAbsoluteAsync(baseBlock + 8, 16, token).ConfigureAwait(false);
@@ -617,7 +553,7 @@ namespace SysBot.Pokemon
             return block;
         }
 
-    public async Task<ulong> SearchSaveKeyRaid(ulong BaseBlockKeyPointer, uint key, CancellationToken token)
+        public async Task<ulong> SearchSaveKeyRaid(ulong BaseBlockKeyPointer, uint key, CancellationToken token)
         {
             var data = await SwitchConnection.ReadBytesAbsoluteAsync(BaseBlockKeyPointer + 8, 16, token).ConfigureAwait(false);
             var start = BitConverter.ToUInt64(data.AsSpan()[..8]);
@@ -679,6 +615,7 @@ namespace SysBot.Pokemon
         }
 
         private readonly IReadOnlyList<uint> DifficultyFlags = new List<uint>() { 0xEC95D8EF, 0xA9428DFE, 0x9535F471, 0x6E7F8220 };
+
         public async Task<int> GetStoryProgress(ulong BaseBlockKeyPointer, CancellationToken token)
         {
             for (int i = DifficultyFlags.Count - 1; i >= 0; i--)
@@ -690,6 +627,7 @@ namespace SysBot.Pokemon
             }
             return 0;
         }
+
         public async Task<GameProgress> ReadGameProgress(CancellationToken token)
         {
 
@@ -714,7 +652,6 @@ namespace SysBot.Pokemon
 
             return GameProgress.UnlockedTeraRaids;
         }
-
 
         public async Task ReadEventRaids(ulong BaseBlockKeyPointer, RaidContainer container, CancellationToken token, bool force = false)
         {
