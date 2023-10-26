@@ -593,8 +593,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                     await LocateSeedIndex(token).ConfigureAwait(false);
                     await Task.Delay(0_500, token).ConfigureAwait(false);
                     await CloseGame(Hub.Config, token).ConfigureAwait(false);
-                    if (ready)
-                        await StartGameRaid(Hub.Config, token).ConfigureAwait(false);
+                    await StartGameRaid(Hub.Config, token).ConfigureAwait(false);
 
                     return; // Exit the method as we've handled the timeout scenario
                 }
