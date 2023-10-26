@@ -674,6 +674,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 }
             }
         }
+
         private async Task CountRaids(List<(ulong, RaidMyStatus)>? trainers, CancellationToken token)
         {
             int countP = 0;
@@ -790,6 +791,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             Log($"Den is {msg}.");
             return status == 1;
         }
+
         private async Task SanitizeRotationCount(CancellationToken token)
         {
             await Task.Delay(0_050, token).ConfigureAwait(false);
@@ -847,6 +849,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 }
             }
         }
+
         private void ProcessRandomRotation()
         {
             // Check the remaining raids for any added by the RA command
@@ -865,7 +868,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             RotationCount = random.Next(Settings.ActiveRaids.Count);
             Log($"Setting Rotation Count to {RotationCount}");
         }
-
 
         private async Task InjectPartyPk(string battlepk, CancellationToken token)
         {
@@ -1004,7 +1006,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             return $"\n{TeraRaidCode}\n";
         }
 
-        private async Task<bool> CheckIfTrainerBanned(RaidMyStatus trainer, ulong nid, int player, bool updateBanList, CancellationToken token)
+        private async Task<bool> CheckIfTrainerBanned(RaidMyStatus trainer, ulong nid, int player, CancellationToken token)
         {
             Log($"Player {player}: {trainer.OT} | TID: {trainer.DisplayTID} | NID: {nid}");
             if (!RaidTracker.ContainsKey(nid))
@@ -1065,7 +1067,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             var wait = TimeSpan.FromSeconds(Settings.TimeToWait);
             var endTime = DateTime.Now + wait;
             bool full = false;
-            bool updateBanList = Settings.RaidsBetweenUpdate != -1 && (RaidCount == 0 || RaidCount % Settings.RaidsBetweenUpdate == 0);
 
             while (!full && DateTime.Now < endTime)
             {
@@ -1096,10 +1097,8 @@ namespace SysBot.Pokemon.SV.BotRaid
 
                     if (nid != 0 && !string.IsNullOrWhiteSpace(trainer.OT))
                     {
-                        if (await CheckIfTrainerBanned(trainer, nid, player, updateBanList, token).ConfigureAwait(false))
+                        if (await CheckIfTrainerBanned(trainer, nid, player, token).ConfigureAwait(false))
                             return (false, lobbyTrainers);
-
-                        updateBanList = false;
                     }
 
                     if (lobbyTrainers.FirstOrDefault(x => x.Item1 == nid) != default && trainer.OT.Length > 0)
@@ -1221,6 +1220,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
             Log("Caching offsets complete!");
         }
+
         private static async Task<bool> IsValidImageUrlAsync(string url)
         {
             using (var httpClient = new HttpClient())
@@ -1450,7 +1450,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             EchoUtil.RaidEmbed(bytes, fileName, embed);
         }
 
-        // From PokeTradeBotSV, modified.
         private async Task<bool> ConnectToOnline(PokeRaidHubConfig config, CancellationToken token)
         {
             if (await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false))
@@ -1482,7 +1481,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             return true;
         }
 
-        // From PokeTradeBotSV.
         private async Task<bool> RecoverToOverworld(CancellationToken token)
         {
             if (await IsOnOverworld(OverworldOffset, token).ConfigureAwait(false))
@@ -1569,6 +1567,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             LostRaid = 0;
         }
+
         private async Task WriteProgressLive(GameProgress progress)
         {
             if (Connection is null)
@@ -1618,6 +1617,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 await WriteBlock(false, RaidDataBlocks.KUnlockedRaidDifficulty6, CancellationToken.None, toexpect);
             }
         }
+
         public async Task UpdateGameProgress(CancellationToken token)
         {
             // Obtain the desired game progress level from the StoryProgressLevel property
@@ -1646,7 +1646,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                 Log("Game progress level is already at the desired level. No update needed.");
             }
         }
-
 
         private async Task SkipRaidOnLosses(CancellationToken token)
         {
@@ -1934,7 +1933,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
         }
         #endregion
-        // Add this method in the relevant class where commands are handled
+
         public static (PK9, Embed) RaidInfoCommand(string seedValue, int contentType, TeraRaidMapParent map, int storyProgressLevel)
 
         {
