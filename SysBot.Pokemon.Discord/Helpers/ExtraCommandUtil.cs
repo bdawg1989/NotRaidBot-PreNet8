@@ -94,7 +94,7 @@ namespace SysBot.Pokemon.Discord
                     msg = await cachedMsg.GetOrDownloadAsync().ConfigureAwait(false);
                 else msg = cachedMsg.Value;
 
-                bool process = msg.Embeds.First().Fields[0].Name.Contains("Giveaway Pool") || msg.Embeds.First().Fields[0].Name.Contains("List");
+                bool process = msg.Embeds.First().Fields[0].Name.Contains("list");
                 if (!process || !reaction.User.IsSpecified)
                     return;
 
