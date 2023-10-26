@@ -41,7 +41,6 @@ public static class LicenseKeyHelper
 
         return cpuId;
     }
-
     public static async Task<bool> ValidateLicenseAsync(string licenseKey)
     {
         using (HttpClient httpClient = new HttpClient())
@@ -65,5 +64,27 @@ public static class LicenseKeyHelper
         }
 
         return false;
+    }
+    public static async Task<string> ValidateLicenseAndFetchNameAsync(string licenseKey)
+    {
+        using (HttpClient httpClient = new HttpClient())
+        {
+            string cpuId = GetCpuId();
+            var content = new FormUrlEncodedContent(new[]
+            {
+            new KeyValuePair<string, string>("license_key", licenseKey),
+            new KeyValuePair<string, string>("cpu_id", cpuId)
+        });
+
+            var response = await httpClient.PostAsync("https://genpkm.com/rblicenses/validate_license.php", content);
+            var responseString = await response.Content.ReadAsStringAsync();
+
+            JObject jsonResponse = JObject.Parse(responseString);
+            if ((string)jsonResponse["status"] == "success")
+            {
+                return (string)jsonResponse["discord_name"];
+            }
+        }
+        return string.Empty;
     }
 }
