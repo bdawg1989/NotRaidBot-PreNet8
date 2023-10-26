@@ -15,6 +15,7 @@ using System.Net.Http;
 using static SysBot.Pokemon.RotatingRaidSettingsSV;
 using SysBot.Pokemon.SV.BotRaid.Helpers;
 using static SysBot.Pokemon.Blocks;
+using System.Net;
 
 namespace SysBot.Pokemon.SV.BotRaid
 {
@@ -1247,10 +1248,23 @@ namespace SysBot.Pokemon.SV.BotRaid
         {
             using (var httpClient = new HttpClient())
             {
-                var response = await httpClient.GetAsync(url);
-                return response.IsSuccessStatusCode;
+                try
+                {
+                    var response = await httpClient.GetAsync(url);
+                    return response.IsSuccessStatusCode;
+                }
+                catch (HttpRequestException ex) when (ex.InnerException is WebException webEx && webEx.Status == WebExceptionStatus.TrustFailure)
+                {
+
+                }
+                catch (Exception ex)
+                {
+
+                }
+                return false;
             }
         }
+
 
         private async Task EnqueueEmbed(List<string>? names, string message, bool hatTrick, bool disband, bool upnext, bool raidstart, CancellationToken token)
         {

@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using PKHeX.Core;
+using SysBot.Base;
 using SysBot.Pokemon.Helpers;
 
 namespace SysBot.Pokemon
@@ -16,8 +18,8 @@ namespace SysBot.Pokemon
             bool fd = false;
             string[] baseLink;
             if (fullSize)
-                baseLink = "https://raw.githubusercontent.com/zyro670/HomeImages/master/512x512/poke_capture_0001_000_mf_n_00000000_f_n.png".Split('_');
-            else baseLink = "https://raw.githubusercontent.com/zyro670/HomeImages/master/128x128/poke_capture_0001_000_mf_n_00000000_f_n.png".Split('_');
+                baseLink = "https://genpkm.com/HomeImages/master/512x512/poke_capture_0001_000_mf_n_00000000_f_n.png".Split('_');
+            else baseLink = "https://genpkm.com/HomeImages/master/128x128/poke_capture_0001_000_mf_n_00000000_f_n.png".Split('_');
 
             if (Enum.IsDefined(typeof(GenderDependent), pkm.Species) && !canGmax && pkm.Form is 0)
             {
@@ -53,7 +55,7 @@ namespace SysBot.Pokemon
 
                 string s = pkm.IsShiny ? "r" : "n";
                 string g = md && pkm.Gender is not 1 ? "md" : "fd";
-                return $"https://raw.githubusercontent.com/zyro670/HomeImages/master/128x128/poke_capture_0" + $"{pkm.Species}" + "_00" + $"{pkm.Form}" + "_" + $"{g}" + "_n_00000000_f_" + $"{s}" + ".png";
+                return $"https://genpkm.com/HomeImages/master/128x128/poke_capture_0" + $"{pkm.Species}" + "_00" + $"{pkm.Form}" + "_" + $"{g}" + "_n_00000000_f_" + $"{s}" + ".png";
             }
 
             baseLink[2] = pkm.Species < 10 ? $"000{pkm.Species}" : pkm.Species < 100 && pkm.Species > 9 ? $"00{pkm.Species}" : pkm.Species >= 1000 ? $"{pkm.Species}" : $"0{pkm.Species}";
@@ -82,48 +84,62 @@ namespace SysBot.Pokemon
 
         public static (int R, int G, int B) GetDominantColor(string imageUrl)
         {
-            using var httpClient = new HttpClient();
-            using var response = httpClient.GetAsync(imageUrl).Result;
-            using var stream = response.Content.ReadAsStreamAsync().Result;
-            using var image = new Bitmap(stream);
-
-            var colorCount = new Dictionary<System.Drawing.Color, int>();
-
-            for (int y = 0; y < image.Height; y++)
+            try
             {
-                for (int x = 0; x < image.Width; x++)
+                using var httpClient = new HttpClient();
+                using var response = httpClient.GetAsync(imageUrl).Result;
+                using var stream = response.Content.ReadAsStreamAsync().Result;
+                using var image = new Bitmap(stream);
+
+                var colorCount = new Dictionary<System.Drawing.Color, int>();
+
+                for (int y = 0; y < image.Height; y++)
                 {
-                    var pixelColor = image.GetPixel(x, y);
-
-                    // If the pixel is mostly transparent or very light, skip it
-                    if (pixelColor.A < 128 || pixelColor.GetBrightness() > 0.9) continue;
-
-                    var brightnessFactor = (int)(pixelColor.GetBrightness() * 100);
-                    var saturationFactor = (int)(pixelColor.GetSaturation() * 100);
-                    var combinedFactor = brightnessFactor + saturationFactor; // Combine both brightness and saturation for weight
-
-                    var quantizedColor = System.Drawing.Color.FromArgb(
-                        pixelColor.R / 10 * 10,
-                        pixelColor.G / 10 * 10,
-                        pixelColor.B / 10 * 10
-                    );
-
-                    if (colorCount.ContainsKey(quantizedColor))
+                    for (int x = 0; x < image.Width; x++)
                     {
-                        colorCount[quantizedColor] += combinedFactor;
-                    }
-                    else
-                    {
-                        colorCount[quantizedColor] = combinedFactor;
+                        var pixelColor = image.GetPixel(x, y);
+
+                        if (pixelColor.A < 128 || pixelColor.GetBrightness() > 0.9) continue;
+
+                        var brightnessFactor = (int)(pixelColor.GetBrightness() * 100);
+                        var saturationFactor = (int)(pixelColor.GetSaturation() * 100);
+                        var combinedFactor = brightnessFactor + saturationFactor;
+
+                        var quantizedColor = System.Drawing.Color.FromArgb(
+                            pixelColor.R / 10 * 10,
+                            pixelColor.G / 10 * 10,
+                            pixelColor.B / 10 * 10
+                        );
+
+                        if (colorCount.ContainsKey(quantizedColor))
+                        {
+                            colorCount[quantizedColor] += combinedFactor;
+                        }
+                        else
+                        {
+                            colorCount[quantizedColor] = combinedFactor;
+                        }
                     }
                 }
+
+                if (colorCount.Count == 0)
+                    return (255, 255, 255);
+
+                var dominantColor = colorCount.Aggregate((a, b) => a.Value > b.Value ? a : b).Key;
+                return (dominantColor.R, dominantColor.G, dominantColor.B);
+            }
+            catch (HttpRequestException ex) when (ex.InnerException is WebException webEx && webEx.Status == WebExceptionStatus.TrustFailure)
+            {
+                // Handle SSL certificate errors here.
+                LogUtil.LogError($"SSL Certificate error when accessing {imageUrl}. Error: {ex.Message}", "GetDominantColor");
+            }
+            catch (Exception ex)
+            {
+                // Handle other errors here.
+                LogUtil.LogError($"Error processing image from {imageUrl}. Error: {ex.Message}", "GetDominantColor");
             }
 
-            if (colorCount.Count == 0)
-                return (255, 255, 255);  // Return white if no suitable pixels found
-
-            var dominantColor = colorCount.Aggregate((a, b) => a.Value > b.Value ? a : b).Key;
-            return (dominantColor.R, dominantColor.G, dominantColor.B);
+            return (255, 255, 255);  // Default to white if an exception occurs.
         }
 
         public static bool HasMark(IRibbonIndex pk, out RibbonIndex result)

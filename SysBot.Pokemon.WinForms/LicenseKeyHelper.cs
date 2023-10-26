@@ -5,6 +5,8 @@ using Newtonsoft.Json.Linq;
 using System.Management;
 using System.Collections.Generic;
 using System;
+using System.Net;
+using SysBot.Base;
 
 public static class LicenseKeyHelper
 {
@@ -45,26 +47,42 @@ public static class LicenseKeyHelper
     {
         using (HttpClient httpClient = new HttpClient())
         {
-            string cpuId = GetCpuId();
-
-            var content = new FormUrlEncodedContent(new[]
+            try
             {
-            new KeyValuePair<string, string>("license_key", licenseKey),
-            new KeyValuePair<string, string>("cpu_id", cpuId)
-        });
+                string cpuId = GetCpuId();
 
-            var response = await httpClient.PostAsync("https://genpkm.com/rblicenses/validate_license.php", content);
-            var responseString = await response.Content.ReadAsStringAsync();
+                var content = new FormUrlEncodedContent(new[]
+                {
+                new KeyValuePair<string, string>("license_key", licenseKey),
+                new KeyValuePair<string, string>("cpu_id", cpuId)
+            });
 
-            JObject jsonResponse = JObject.Parse(responseString);
-            if ((string)jsonResponse["status"] == "success")
+                var response = await httpClient.PostAsync("https://genpkm.com/rblicenses/validate_license.php", content);
+                var responseString = await response.Content.ReadAsStringAsync();
+
+                JObject jsonResponse = JObject.Parse(responseString);
+                if ((string)jsonResponse["status"] == "success")
+                {
+                    return true;
+                }
+            }
+            catch (HttpRequestException ex) when (ex.InnerException is WebException webEx && webEx.Status == WebExceptionStatus.TrustFailure)
             {
-                return true;
+                // Handle SSL certificate errors here.
+                LogUtil.LogError($"SSL Certificate error when validating license. Error: {ex.Message}", "ValidateLicenseAsync");
+
+            }
+            catch (Exception ex)
+            {
+                // Handle other errors here.
+                LogUtil.LogError($"SSL Certificate error when validating license. Error: {ex.Message}", "ValidateLicenseAsync");
+
             }
         }
 
         return false;
     }
+
     public static async Task<string> ValidateLicenseAndFetchNameAsync(string licenseKey)
     {
         using (HttpClient httpClient = new HttpClient())

@@ -64,10 +64,10 @@ namespace SysBot.Pokemon
         // Miscellaneous settings.
         [Category(Misc), Description("[SWSH/SV] Extra time in milliseconds to wait after clicking + to connect to Y-Comm (SWSH) or L to connect online (SV).")]
         public int ExtraTimeConnectOnline { get; set; }
-        [Browsable(false)]
+        
         [Category(Misc), Description("Number of times to attempt reconnecting to a socket connection after a connection is lost. Set this to -1 to try indefinitely.")]
         public int ReconnectAttempts { get; set; } = 30;
-        [Browsable(false)]
+        
         [Category(Misc), Description("Extra time in milliseconds to wait between attempts to reconnect. Base time is 30 seconds.")]
         public int ExtraReconnectDelay { get; set; }
         [Browsable(false)]
