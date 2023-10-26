@@ -478,6 +478,29 @@ namespace SysBot.Pokemon.SV.BotRaid
             {
                 int b = 0;
                 Log("Preparing for battle!");
+                // Initialize a CancellationTokenSource with a 5-minute timeout
+                using (var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5)))
+                {
+                    // Create a linked token so that we can handle either the 5-minute timeout or external cancellation
+                    using (var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(token, cts.Token))
+                    {
+                        CancellationToken linkedToken = linkedTokenSource.Token;
+
+                        // Existing loop to check if you are in the raid
+                        while (!await IsInRaid(token).ConfigureAwait(false))
+                        {
+                            if (linkedToken.IsCancellationRequested)
+                            {
+                                Log("Oops! Something went wrong, resetting to recover.");
+                                // Logic to reset and recover
+                                await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
+                                return;
+                            }
+
+                            await Click(A, 1_000, token).ConfigureAwait(false);
+                        }
+                    }
+                }
                 while (!await IsInRaid(token).ConfigureAwait(false))
                     await Click(A, 1_000, token).ConfigureAwait(false);
 
