@@ -54,6 +54,13 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
                 _ => throw new ArgumentException("Invalid difficulty level.")
             };
 
+            // Check if event type is specified but events are turned off
+            if (eventType == "Event" && !settings.EventSettings.EventActive)
+            {
+                await ReplyAsync("Sorry, but the Event Setting is turned off at this time or there are no Events active.").ConfigureAwait(false);
+                return;
+            }
+
             try
             {
                 var raidDeliveryGroupID = settings.EventSettings.RaidDeliveryGroupID;
@@ -132,6 +139,13 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
                 7 => (TeraCrystalType)3,
                 _ => throw new ArgumentException("Invalid difficulty level.")
             };
+
+            // Check if event type is specified but events are turned off
+            if (eventType == "Event" && !settings.EventSettings.EventActive)
+            {
+                await ReplyAsync("Sorry, but the Event Setting is turned off at this time or there are no Events active.").ConfigureAwait(false);
+                return;
+            }
 
             // Determine the correct map
             var selectedMap = RotatingRaidBotSV.IsKitakami ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea;
@@ -231,6 +245,13 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
                 7 => (TeraCrystalType)3,
                 _ => throw new ArgumentException("Invalid difficulty level.")
             };
+
+            // Check if event type is specified but events are turned off
+            if (eventType == "Event" && !settings.EventSettings.EventActive)
+            {
+                await ReplyAsync("Sorry, but the Event Setting is turned off at this time or there are no Events active.").ConfigureAwait(false);
+                return;
+            }
 
             // Determine the correct map
             var selectedMap = RotatingRaidBotSV.IsKitakami ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea;
