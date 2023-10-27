@@ -45,7 +45,7 @@ namespace SysBot.Pokemon.Discord
             }
 
             bot.Start();
-            await Context.Channel.EchoAndReply($"The bot at {ip} ({bot.Bot.Connection.Label}) has been commanded to Start.").ConfigureAwait(false);
+            // await Context.Channel.EchoAndReply($"The bot at {ip} ({bot.Bot.Connection.Label}) has been commanded to Start.").ConfigureAwait(false);
         }
 
         [Command("botStop")]
@@ -61,7 +61,7 @@ namespace SysBot.Pokemon.Discord
             }
 
             bot.Stop();
-            await Context.Channel.EchoAndReply($"The bot at {ip} ({bot.Bot.Connection.Label}) has been commanded to Stop.").ConfigureAwait(false);
+            // await Context.Channel.EchoAndReply($"The bot at {ip} ({bot.Bot.Connection.Label}) has been commanded to Stop.").ConfigureAwait(false);
         }
 
         [Command("botIdle")]

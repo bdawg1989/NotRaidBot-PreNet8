@@ -79,7 +79,7 @@ namespace SysBot.Pokemon.Discord
                 if (discord.GetChannel(ch.ID) is ISocketMessageChannel c)
                     AddEchoChannel(c, ch.ID);
             }
-            EchoUtil.Echo("Added echo notification to Discord channel(s) on Bot startup.");
+            // EchoUtil.Echo("Added echo notification to Discord channel(s) on Bot startup.");
         }
 
         [Command("Announce", RunMode = RunMode.Async)]
