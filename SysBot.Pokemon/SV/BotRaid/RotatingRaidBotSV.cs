@@ -1774,7 +1774,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 {
                     if (raid.IsEvent)
                     {
-                        // Settings.EventActive = true; Uncomment when raid events actually work.
+                        Settings.EventSettings.EventActive = true;
                         break; // Exit loop if an event raid is found
                     }
                 }
@@ -1796,13 +1796,13 @@ namespace SysBot.Pokemon.SV.BotRaid
 
                 if (delivery > 0)
                     Log($"Invalid delivery group ID for {delivery} raid(s). Try deleting the \"cache\" folder.");
-
+                
                 // Check the raids to see if any are event raids for Kitakami
                 foreach (var raid in container.Raids)
                 {
                     if (raid.IsEvent)
                     {
-                        // Settings.EventActive = true; uncomment when event raids actually work
+                        Settings.EventSettings.EventActive = true;
                         break; // Exit loop if an event raid is found
                     }
                 }
@@ -1970,8 +1970,13 @@ namespace SysBot.Pokemon.SV.BotRaid
         }
         #endregion
 
-        public static (PK9, Embed) RaidInfoCommand(string seedValue, int contentType, TeraRaidMapParent map, int storyProgressLevel)
-
+        public static (PK9, Embed) RaidInfoCommand(
+            string seedValue,
+            int contentType,
+            TeraRaidMapParent map,
+            int storyProgressLevel,
+            int raidDeliveryGroupID,
+            bool isEvent = false) // new isEvent parameter
         {
             byte[] enabled = StringToByteArray("00000001");
             byte[] area = StringToByteArray("00000001");
@@ -1988,14 +1993,14 @@ namespace SysBot.Pokemon.SV.BotRaid
                 3 => 1,
                 4 => 2,
                 5 => 3,
-                6 => 4,
+                6 => 4, 
                 0 => 0,
-                _ => 4 // default case
+                _ => 4 // default 6Unlocked
             };
 
             var raid = new Raid(raidbyte, map); // map is -> TeraRaidMapParent.Paldea or .Kitakami
             var progress = storyProgressLevel;
-            var raid_delivery_group_id = 1;
+            var raid_delivery_group_id = raidDeliveryGroupID;
             var encounter = raid.GetTeraEncounter(container, progress, raid_delivery_group_id);
             var reward = encounter.GetRewards(container, raid, 0);
             var stars = raid.IsEvent ? encounter.Stars : raid.GetStarCount(raid.Difficulty, storyProgressLevel, raid.IsBlack);
@@ -2038,7 +2043,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             var disclaimer = $"NotRaidBot {NotRaidBot.Version} by Gengar & Kai\nhttps://notpaldea.net";
             var titlePrefix = raid.IsShiny ? "Shiny " : "";
             var formName = ShowdownParsing.GetStringFromForm(pk.Form, strings, pk.Species, pk.Context);
-            var authorName = $"{stars} ★ {titlePrefix}{(Species)encounter.Species}{(pk.Form != 0 ? $"-{formName}" : "")}";
+            var authorName = $"{stars} ★ {titlePrefix}{(Species)encounter.Species}{(pk.Form != 0 ? $"-{formName}" : "")}{(isEvent ? " (Event Raid)" : "")}";
 
             (int R, int G, int B) = RaidExtensions<PK9>.GetDominantColor(RaidExtensions<PK9>.PokeImg(pk, false, false));
             var embedColor = new Color(R, G, B);

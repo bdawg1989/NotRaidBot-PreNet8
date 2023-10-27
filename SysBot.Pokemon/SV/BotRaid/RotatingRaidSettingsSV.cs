@@ -46,9 +46,9 @@ namespace SysBot.Pokemon
 
         [Category(FeatureToggle), Description("Choose the TeraType Icon set to use in the author area of the embed.  Icon1 are custom, Icon2 is not.")]
         public TeraIconType SelectedTeraIconType { get; set; } = TeraIconType.Icon1;
-        /* Unhide if event raids ever get fixed
-        [Category(Hosting), Description("Set to \"true\" when events are active to properly process level 7 (event) and level 8 (distribution) raids.")]
-        public bool EventActive { get; set; } = false; */
+
+        [Category(Hosting), Description("Settings related to Events."), Browsable(true)]
+        public EventSettingsCategory EventSettings { get; set; } = new();
 
         [Category(Hosting), Description("RotatingRaid Preset Filters"), DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         public RotatingRaidPresetFiltersCategory EmbedToggles { get; set; } = new();
@@ -153,7 +153,17 @@ namespace SysBot.Pokemon
             [System.Text.Json.Serialization.JsonIgnore]
             public SocketUser? User { get; set; }
         }
+        [Category(Hosting), TypeConverter(typeof(CategoryConverter<EventSettingsCategory>))]
+        public class EventSettingsCategory
+        {
+            public override string ToString() => "Event Settings";
 
+            [Category(Hosting), Description("Set to \"true\" when events are active to properly process level 7 (event) and level 5 (distribution) raids.")]
+            public bool EventActive { get; set; } = false;
+
+            [Category(Hosting), Description("Set this value to the value of the event den location (Event Index) from Tera Finder.  Make sure you are at this location if you plan to host event raids.  -1 means No Event.")]
+            public int RaidDeliveryGroupID { get; set; } = -1;
+        }
         [Category(Hosting), TypeConverter(typeof(CategoryConverter<RotatingRaidPresetFiltersCategory>))]
         public class RotatingRaidPresetFiltersCategory
         {

@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Globalization;
 using static SysBot.Pokemon.RotatingRaidSettingsSV;
 using SysBot.Pokemon.SV.BotRaid;
+using LibUsbDotNet.DeviceNotify;
 
 namespace SysBot.Pokemon.Discord.Commands.Bots
 {
@@ -25,7 +26,12 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
         [Command("raidinfo")]
         [Alias("ri", "rv")]
         [Summary("Displays basic Raid Info of the provided seed.")]
-        public async Task RaidSeedInfoAsync(string seedValue, int level, int storyProgressLevel = 6, string dlc = "p")
+        public async Task RaidSeedInfoAsync(
+            string seedValue,
+            int level,
+            int storyProgressLevel = 6,
+            string dlc = "p",
+            string eventType = null)  // New optional parameter for specifying event type
         {
             uint seed;
             try
@@ -38,18 +44,21 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
                 return;
             }
 
+            var settings = Hub.Config.RotatingRaidSV;  // Get RotatingRaidSV settings
+
             var crystalType = level switch
             {
-                >= 1 and <= 5 => (TeraCrystalType)0,
+                >= 1 and <= 5 => eventType == "Event" ? (TeraCrystalType)2 : (TeraCrystalType)0,
                 6 => (TeraCrystalType)1,
                 7 => (TeraCrystalType)3,
-                8 => (TeraCrystalType)2,
                 _ => throw new ArgumentException("Invalid difficulty level.")
             };
 
             try
             {
-                var (_, embed) = RotatingRaidBotSV.RaidInfoCommand(seedValue, (int)crystalType, dlc != "p" ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea, storyProgressLevel);
+                var raidDeliveryGroupID = settings.EventSettings.RaidDeliveryGroupID;
+                var isEvent = eventType == "Event";
+                var (_, embed) = RotatingRaidBotSV.RaidInfoCommand(seedValue, (int)crystalType, dlc != "p" ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea, storyProgressLevel, raidDeliveryGroupID, isEvent);
                 await ReplyAsync(embed: embed);
             }
             catch (Exception ex)
@@ -57,6 +66,7 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
                 await ReplyAsync(ex.Message);
             }
         }
+
 
         [Command("repeek")]
         [Summary("Take and send a screenshot from the specified Switch.")]
@@ -81,12 +91,16 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             var embed = new EmbedBuilder { ImageUrl = $"attachment://{img}", Color = Color.Purple }.WithFooter(new EmbedFooterBuilder { Text = $"Captured image from bot at address {address}." });
             await Context.Channel.SendFileAsync(ms, img, "", false, embed: embed.Build());
         }
-        
+
         [Command("addRaidParams")]
         [Alias("arp")]
         [Summary("Adds new raid parameter.")]
         [RequireSudo]
-        public async Task AddNewRaidParam([Summary("Seed")] string seed, [Summary("Difficulty Level (1-8)")] int level, [Summary("Story Progress Level")] int storyProgressLevel = 6)  // New parameter for StoryProgressLevel
+        public async Task AddNewRaidParam(
+            [Summary("Seed")] string seed,
+            [Summary("Difficulty Level (1-7)")] int level,
+            [Summary("Story Progress Level")] int storyProgressLevel = 6,
+            [Summary("Event (Optional)")] string eventType = null)  // New optional parameter for specifying event type
         {
             // Validate the seed for hexadecimal format
             if (seed.Length != 8 || !seed.All(c => "0123456789abcdefABCDEF".Contains(c)))
@@ -94,11 +108,12 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
                 await ReplyAsync("Invalid seed format. Please enter a seed consisting of exactly 8 hexadecimal digits.").ConfigureAwait(false);
                 return;
             }
-            if (level < 1 || level > 8)
+            if (level < 1 || level > 7)  // Adjusted level range to 1-7
             {
-                await ReplyAsync("Invalid raid level. Please enter a level between 1 and 8.").ConfigureAwait(false);
+                await ReplyAsync("Invalid raid level. Please enter a level between 1 and 7.").ConfigureAwait(false);  // Adjusted message to reflect new level range
                 return;
             }
+
             // Convert StoryProgressLevel to GameProgress enum value
             var gameProgress = ConvertToGameProgress(storyProgressLevel);
             if (gameProgress == GameProgress.None)
@@ -106,21 +121,23 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
                 await ReplyAsync("Invalid Story Progress Level. Please enter a value between 1 and 6.").ConfigureAwait(false);
                 return;
             }
-            // Determine the CrystalType based on the given difficulty level
+
+            // Get the settings object from Hub
+            var settings = Hub.Config.RotatingRaidSV;
+
             var crystalType = level switch
             {
-                >= 1 and <= 5 => (TeraCrystalType)0,
+                >= 1 and <= 5 => eventType == "Event" ? (TeraCrystalType)2 : (TeraCrystalType)0,
                 6 => (TeraCrystalType)1,
                 7 => (TeraCrystalType)3,
-                8 => (TeraCrystalType)2,
                 _ => throw new ArgumentException("Invalid difficulty level.")
             };
 
             // Determine the correct map
             var selectedMap = RotatingRaidBotSV.IsKitakami ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea;
 
-            // Updated to include storyProgressLevel
-            var (pk, raidEmbed) = RotatingRaidBotSV.RaidInfoCommand(seed, (int)crystalType, selectedMap, storyProgressLevel);
+            var raidDeliveryGroupID = settings.EventSettings.RaidDeliveryGroupID;
+            var (pk, raidEmbed) = RotatingRaidBotSV.RaidInfoCommand(seed, (int)crystalType, selectedMap, storyProgressLevel, raidDeliveryGroupID);
             var description = string.Empty;
             var prevpath = "bodyparam.txt";
             var filepath = "RaidFilesSV\\bodyparam.txt";
@@ -162,7 +179,11 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
 
         [Command("ra")]
         [Summary("Adds new raid parameter next in the queue.")]
-        public async Task AddNewRaidParamNext([Summary("Seed")] string seed, [Summary("Difficulty Level (1-8)")] int level, [Summary("Story Progress Level")] int storyProgressLevel = 6)  // New argument for StoryProgressLevel with default value
+        public async Task AddNewRaidParamNext(
+            [Summary("Seed")] string seed,
+            [Summary("Difficulty Level (1-7)")] int level,
+            [Summary("Story Progress Level")] int storyProgressLevel = 6,
+            [Summary("Event (Optional)")] string eventType = null)  // New argument for specifying an event
         {
             // Check if raid requests are disabled by the host
             if (Hub.Config.RotatingRaidSV.DisableRequests)
@@ -170,6 +191,7 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
                 await ReplyAsync("Raid Requests are currently disabled by the host.").ConfigureAwait(false);
                 return;
             }
+
             // Check if the user already has a request
             var userId = Context.User.Id;
             if (Hub.Config.RotatingRaidSV.ActiveRaids.Any(r => r.RequestedByUserID == userId))
@@ -177,17 +199,20 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
                 await ReplyAsync("You already have an existing raid request in the queue.").ConfigureAwait(false);
                 return;
             }
+
             // Validate the seed for hexadecimal format
             if (seed.Length != 8 || !seed.All(c => "0123456789abcdefABCDEF".Contains(c)))
             {
                 await ReplyAsync("Invalid seed format. Please enter a seed consisting of exactly 8 hexadecimal digits.").ConfigureAwait(false);
                 return;
             }
-            if (level < 1 || level > 8)
+
+            if (level < 1 || level > 7)  // Adjusted level range to 1-7
             {
-                await ReplyAsync("Invalid raid level. Please enter a level between 1 and 8.").ConfigureAwait(false);
+                await ReplyAsync("Invalid raid level. Please enter a level between 1 and 7.").ConfigureAwait(false);  // Adjusted message to reflect new level range
                 return;
             }
+
             // Convert StoryProgressLevel to GameProgress enum value
             var gameProgress = ConvertToGameProgress(storyProgressLevel);
             if (gameProgress == GameProgress.None)
@@ -195,19 +220,22 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
                 await ReplyAsync("Invalid Story Progress Level. Please enter a value between 1 and 6.").ConfigureAwait(false);
                 return;
             }
-            // Determine the CrystalType based on the given difficulty level
+
+            // Get the settings object from Hub
+            var settings = Hub.Config.RotatingRaidSV;
+
             var crystalType = level switch
             {
-                >= 1 and <= 5 => (TeraCrystalType)0,
+                >= 1 and <= 5 => eventType == "Event" ? (TeraCrystalType)2 : (TeraCrystalType)0,
                 6 => (TeraCrystalType)1,
                 7 => (TeraCrystalType)3,
-                8 => (TeraCrystalType)2,
                 _ => throw new ArgumentException("Invalid difficulty level.")
             };
 
             // Determine the correct map
             var selectedMap = RotatingRaidBotSV.IsKitakami ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea;
-            var (pk, raidEmbed) = RotatingRaidBotSV.RaidInfoCommand(seed, (int)crystalType, selectedMap, storyProgressLevel);
+            var raidDeliveryGroupID = settings.EventSettings.RaidDeliveryGroupID;
+            var (pk, raidEmbed) = RotatingRaidBotSV.RaidInfoCommand(seed, (int)crystalType, selectedMap, storyProgressLevel, raidDeliveryGroupID);
             var description = string.Empty;
             var prevpath = "bodyparam.txt";
             var filepath = "RaidFilesSV\\bodyparam.txt";
@@ -232,6 +260,7 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
                 Description = new[] { description },
                 PartyPK = new[] { "" },
                 Species = (Species)pk.Species,
+                DifficultyLevel = level,
                 SpeciesForm = pk.Form,
                 StoryProgressLevel = (int)gameProgress,
                 Seed = seed,
@@ -239,7 +268,8 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
                 IsShiny = pk.IsShiny,
                 AddedByRACommand = true,
                 RequestedByUserID = Context.User.Id,
-                Title = $"{Context.User.Username}'s Requested Raid",
+                Title = $"{Context.User.Username}'s Requested Raid{(eventType == "Event" ? " (Event Raid)" : "")}",
+
                 User = Context.User,
             };
 
