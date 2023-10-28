@@ -381,8 +381,6 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
         public async Task CheckQueueStatus()
         {
             var userId = Context.User.Id;
-
-            // Assuming RotatingRaidBotSV.RotationCount holds the current position in the queue
             int currentPosition = RotatingRaidBotSV.RotationCount;
 
             // Find the index of the user's request in the queue
@@ -398,7 +396,16 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             }
             else
             {
-                int raidsBeforeUser = userRequestIndex - currentPosition;
+                int raidsBeforeUser;
+                // Handle Random Rotation differently
+                if (Hub.Config.RotatingRaidSV.RandomRotation)
+                {
+                    raidsBeforeUser = CalculateEffectiveQueuePosition(userId, currentPosition);
+                }
+                else
+                {
+                    raidsBeforeUser = userRequestIndex - currentPosition;
+                }
 
                 if (raidsBeforeUser <= 0)
                 {
@@ -409,7 +416,7 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
                 else
                 {
                     // Calculate ETA
-                    int etaMinutes = raidsBeforeUser * 6;
+                    int etaMinutes = raidsBeforeUser * 6;  // Assuming each raid takes 6 minutes
 
                     embed.Title = "Queue Status";
                     embed.Color = Color.Orange;
@@ -421,6 +428,32 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
 
             await Context.Message.DeleteAsync().ConfigureAwait(false);
             await ReplyAsync(embed: embed.Build()).ConfigureAwait(false);
+        }
+
+        private int CalculateEffectiveQueuePosition(ulong userId, int currentPosition)
+        {
+            int effectivePosition = 0;
+
+            // Count how many raids are before the user's request, considering priority and randomness
+            for (int i = currentPosition; i < Hub.Config.RotatingRaidSV.ActiveRaids.Count; i++)
+            {
+                if (Hub.Config.RotatingRaidSV.ActiveRaids[i].RequestedByUserID != userId)
+                {
+                    effectivePosition++;
+                }
+                else
+                {
+                    // Found the user's request
+                    break;
+                }
+
+                // Check for priority raids added by RA command
+                if (Hub.Config.RotatingRaidSV.ActiveRaids[i].AddedByRACommand)
+                {
+                    effectivePosition--;  // RA-added raids are prioritized, so decrement the effective position
+                }
+            }
+            return effectivePosition;
         }
 
         [Command("rqc")]

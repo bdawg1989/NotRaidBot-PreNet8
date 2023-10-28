@@ -1576,10 +1576,10 @@ namespace SysBot.Pokemon.SV.BotRaid
                 Log($"Rotation for {Settings.ActiveRaids[RotationCount].Species} has been found.\nAttempting to override seed.");
                 await OverrideSeedIndex(SeedIndexToReplace, token).ConfigureAwait(false);
                 Log("Seed override completed.");
+                // Call UpdateGameProgress
+                await UpdateGameProgress(token).ConfigureAwait(false);
+                await Task.Delay(3_000 + timing.ExtraTimeLoadGame, token).ConfigureAwait(false);
             }
-
-            // Call UpdateGameProgress
-            await UpdateGameProgress(token).ConfigureAwait(false);
 
             for (int i = 0; i < 8; i++)
                 await Click(A, 1_000, token).ConfigureAwait(false);
