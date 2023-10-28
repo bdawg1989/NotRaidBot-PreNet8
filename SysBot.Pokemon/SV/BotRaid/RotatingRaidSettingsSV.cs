@@ -1,10 +1,10 @@
-﻿using PKHeX.Core;
-using System;
+﻿using Discord.WebSocket;
+using PKHeX.Core;
 using SysBot.Base;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
-using Discord.WebSocket;
 
 
 namespace SysBot.Pokemon
@@ -159,16 +159,16 @@ namespace SysBot.Pokemon
         public class RotatingRaidPresetFiltersCategory
         {
             public override string ToString() => "Embed Toggles";
-           /* 
-            [Category(Hosting), Description("If true, the bot will attempt to auto-generate Raid Embeds based on the \"preset.txt\" file.")]
-            public bool UsePresetFile { get; set; } = true;
-            
-            [Category(Hosting), Description("If true, the bot will use the first line of preset as title.")]
-            public bool TitleFromPreset { get; set; } = true;
-            
-            [Category(Hosting), Description("If true, the bot will overwrite any set Title with the new one.")]
-            public bool ForceTitle { get; set; } = true;
-           */
+            /* 
+             [Category(Hosting), Description("If true, the bot will attempt to auto-generate Raid Embeds based on the \"preset.txt\" file.")]
+             public bool UsePresetFile { get; set; } = true;
+
+             [Category(Hosting), Description("If true, the bot will use the first line of preset as title.")]
+             public bool TitleFromPreset { get; set; } = true;
+
+             [Category(Hosting), Description("If true, the bot will overwrite any set Title with the new one.")]
+             public bool ForceTitle { get; set; } = true;
+            */
             [Category(Hosting), Description("Raid embed description.")]
             public string[] RaidEmbedDescription { get; set; } = Array.Empty<string>();
 
@@ -205,5 +205,5 @@ namespace SysBot.Pokemon
 
             public override bool CanConvertTo(ITypeDescriptorContext? context, Type? destinationType) => destinationType != typeof(string) && base.CanConvertTo(context, destinationType);
         }
-    }    
+    }
 }

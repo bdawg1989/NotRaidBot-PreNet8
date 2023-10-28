@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace SysBot.Pokemon.Discord
 {
-    public class OwnerModule<T> : ModuleBase<SocketCommandContext> where T : PKM, new ()
+    public class OwnerModule<T> : ModuleBase<SocketCommandContext> where T : PKM, new()
     {
         private readonly ExtraCommandUtil<T> Util = new();
 

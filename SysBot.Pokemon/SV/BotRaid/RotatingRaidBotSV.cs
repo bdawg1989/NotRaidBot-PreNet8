@@ -1,21 +1,21 @@
 using Discord;
 using PKHeX.Core;
+using RaidCrawler.Core.Structures;
 using SysBot.Base;
+using SysBot.Pokemon.SV.BotRaid.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using RaidCrawler.Core.Structures;
 using static SysBot.Base.SwitchButton;
-using System.Net.Http;
-using static SysBot.Pokemon.RotatingRaidSettingsSV;
-using SysBot.Pokemon.SV.BotRaid.Helpers;
 using static SysBot.Pokemon.Blocks;
-using System.Net;
+using static SysBot.Pokemon.RotatingRaidSettingsSV;
 
 namespace SysBot.Pokemon.SV.BotRaid
 {
@@ -1009,9 +1009,9 @@ namespace SysBot.Pokemon.SV.BotRaid
                 RaidTracker.Add(nid, 0);
 
             var msg = string.Empty;
-            var banResultCFW = RaiderBanList.List.FirstOrDefault(x => x.ID == nid);  
+            var banResultCFW = RaiderBanList.List.FirstOrDefault(x => x.ID == nid);
             bool isBanned = banResultCFW != default;
-   
+
             if (isBanned)
             {
                 msg = $"{banResultCFW!.Name} was found in the host's ban list.\n{banResultCFW.Comment}";
@@ -1736,7 +1736,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
                 if (delivery > 0)
                     Log($"Invalid delivery group ID for {delivery} raid(s). Try deleting the \"cache\" folder.");
-                
+
                 // Check the raids to see if any are event raids for Kitakami
                 foreach (var raid in container.Raids)
                 {
@@ -1933,7 +1933,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 3 => 1,
                 4 => 2,
                 5 => 3,
-                6 => 4, 
+                6 => 4,
                 0 => 0,
                 _ => 4 // default 6Unlocked
             };

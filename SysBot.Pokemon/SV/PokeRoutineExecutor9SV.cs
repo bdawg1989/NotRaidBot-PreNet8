@@ -1,17 +1,17 @@
 ﻿using PKHeX.Core;
+using RaidCrawler.Core.Structures;
 using SysBot.Base;
+using SysBot.Pokemon.SV.BotRaid;
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using RaidCrawler.Core.Structures;
-using static SysBot.Pokemon.PokeDataOffsetsSV;
 using static SysBot.Base.SwitchButton;
-using static System.Buffers.Binary.BinaryPrimitives;
-using SysBot.Pokemon.SV.BotRaid;
 using static SysBot.Pokemon.Blocks;
+using static SysBot.Pokemon.PokeDataOffsetsSV;
+using static System.Buffers.Binary.BinaryPrimitives;
 
 namespace SysBot.Pokemon
 {

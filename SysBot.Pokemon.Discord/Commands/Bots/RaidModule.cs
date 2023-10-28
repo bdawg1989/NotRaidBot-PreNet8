@@ -3,18 +3,16 @@ using Discord.Commands;
 using PKHeX.Core;
 using SysBot.Base;
 using SysBot.Pokemon.Discord.Helpers;
+using SysBot.Pokemon.SV.BotRaid;
 using System;
-using System.Text.RegularExpressions;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Globalization;
 using static SysBot.Pokemon.RotatingRaidSettingsSV;
-using SysBot.Pokemon.SV.BotRaid;
-using LibUsbDotNet.DeviceNotify;
 
 namespace SysBot.Pokemon.Discord.Commands.Bots
 {

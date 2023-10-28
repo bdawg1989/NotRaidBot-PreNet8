@@ -1,12 +1,12 @@
-﻿using System.IO;
+﻿using Newtonsoft.Json.Linq;
+using SysBot.Base;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Management;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
-using System.Management;
-using System.Collections.Generic;
-using System;
-using System.Net;
-using SysBot.Base;
 
 public static class LicenseKeyHelper
 {

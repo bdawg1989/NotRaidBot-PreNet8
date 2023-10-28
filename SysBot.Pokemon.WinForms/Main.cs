@@ -1,16 +1,15 @@
 ﻿using PKHeX.Core;
-using SysBot.Pokemon.SV.BotRaid.Helpers;
 using SysBot.Base;
+using SysBot.Pokemon.SV.BotRaid.Helpers;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Drawing;
-using System.Diagnostics;
 
 namespace SysBot.Pokemon.WinForms
 {

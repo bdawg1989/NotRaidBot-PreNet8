@@ -1,6 +1,6 @@
 ﻿using Discord;
-using Discord.Rest;
 using Discord.Commands;
+using Discord.Rest;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using PKHeX.Core;

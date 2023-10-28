@@ -1,12 +1,12 @@
-﻿using System;
+﻿using PKHeX.Core;
+using SysBot.Base;
+using SysBot.Pokemon.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using PKHeX.Core;
-using SysBot.Base;
-using SysBot.Pokemon.Helpers;
 
 namespace SysBot.Pokemon
 {
