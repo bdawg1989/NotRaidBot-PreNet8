@@ -14,8 +14,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using static SysBot.Base.SwitchButton;
-using static SysBot.Pokemon.Blocks;
 using static SysBot.Pokemon.RotatingRaidSettingsSV;
+using static SysBot.Pokemon.SV.BotRaid.Blocks;
 
 namespace SysBot.Pokemon.SV.BotRaid
 {

@@ -9,8 +9,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using static SysBot.Base.SwitchButton;
-using static SysBot.Pokemon.Blocks;
 using static SysBot.Pokemon.PokeDataOffsetsSV;
+using static SysBot.Pokemon.SV.BotRaid.Blocks;
 using static System.Buffers.Binary.BinaryPrimitives;
 
 namespace SysBot.Pokemon
