@@ -1,21 +1,21 @@
 using Discord;
 using PKHeX.Core;
+using RaidCrawler.Core.Structures;
 using SysBot.Base;
+using SysBot.Pokemon.SV.BotRaid.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using RaidCrawler.Core.Structures;
 using static SysBot.Base.SwitchButton;
-using System.Net.Http;
 using static SysBot.Pokemon.RotatingRaidSettingsSV;
-using SysBot.Pokemon.SV.BotRaid.Helpers;
-using static SysBot.Pokemon.Blocks;
-using System.Net;
+using static SysBot.Pokemon.SV.BotRaid.Blocks;
 
 namespace SysBot.Pokemon.SV.BotRaid
 {
@@ -81,12 +81,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             if (Settings.TimeToWait is < 0 or > 180)
             {
                 Log("Time to wait must be between 0 and 180 seconds.");
-                return;
-            }
-
-            if (Settings.RaidsBetweenUpdate == 0 || Settings.RaidsBetweenUpdate < -1)
-            {
-                Log("Raids between updating the global ban list must be greater than 0, or -1 if you want it off.");
                 return;
             }
 
@@ -679,25 +673,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                 await OverrideTodaySeed(token).ConfigureAwait(false);
         }
 
-        private void ApplyPenalty(List<(ulong, RaidMyStatus)> trainers)
-        {
-            for (int i = 0; i < trainers.Count; i++)
-            {
-                var nid = trainers[i].Item1;
-                var name = trainers[i].Item2.OT;
-                if (RaidTracker.ContainsKey(nid) && nid != 0)
-                {
-                    var entry = RaidTracker[nid];
-                    var Count = entry + 1;
-                    RaidTracker[nid] = Count;
-                    Log($"Player: {name} completed the raid with catch count: {Count}.");
-
-                    if (Settings.CatchLimit != 0 && Count == Settings.CatchLimit)
-                        Log($"Player: {name} has met the catch limit {Count}/{Settings.CatchLimit}, adding to the block list for this session for {Settings.ActiveRaids[RotationCount].Species}.");
-                }
-            }
-        }
-
         private async Task CountRaids(List<(ulong, RaidMyStatus)>? trainers, CancellationToken token)
         {
             int countP = 0;
@@ -729,8 +704,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                 {
                     Log("Yay!  We defeated the raid!");
                     WinCount++;
-                    if (trainers.Count > 0)
-                        ApplyPenalty(trainers);
                 }
                 else
                 {
@@ -1035,46 +1008,13 @@ namespace SysBot.Pokemon.SV.BotRaid
             if (!RaidTracker.ContainsKey(nid))
                 RaidTracker.Add(nid, 0);
 
-            int val = 0;
             var msg = string.Empty;
             var banResultCFW = RaiderBanList.List.FirstOrDefault(x => x.ID == nid);
-            var banGlobalCFW = false;
-
-
-            bool isBanned = banResultCFW != default || banGlobalCFW;
-
-            bool blockResult = false;
-            var blockCheck = RaidTracker.ContainsKey(nid);
-            if (blockCheck)
-            {
-                RaidTracker.TryGetValue(nid, out val);
-                if (val >= Settings.CatchLimit && Settings.CatchLimit != 0) // Soft pity - block user
-                {
-                    blockResult = true;
-                    RaidTracker[nid] = val + 1;
-                    Log($"Player: {trainer.OT} current penalty count: {val}.");
-                }
-                if (val == Settings.CatchLimit + 2 && Settings.CatchLimit != 0) // Hard pity - ban user
-                {
-                    msg = $"{trainer.OT} is now banned for repeatedly attempting to go beyond the catch limit for {Settings.ActiveRaids[RotationCount].Species} on {DateTime.Now}.";
-                    Log(msg);
-                    RaiderBanList.List.Add(new() { ID = nid, Name = trainer.OT, Comment = msg });
-                    blockResult = false;
-                    await EnqueueEmbed(null, $"Penalty #{val}\n" + msg, false, true, false, false, token).ConfigureAwait(false);
-                    return true;
-                }
-                if (blockResult && !isBanned)
-                {
-                    msg = $"Penalty #{val}\n{trainer.OT} has already reached the catch limit.\nPlease do not join again.\nRepeated attempts to join like this will result in a ban from future raids.";
-                    Log(msg);
-                    await EnqueueEmbed(null, msg, false, true, false, false, token).ConfigureAwait(false);
-                    return true;
-                }
-            }
+            bool isBanned = banResultCFW != default;
 
             if (isBanned)
             {
-                msg = $"Penalty #{val}\n{banResultCFW!.Name} was found in the host's ban list.\n{banResultCFW.Comment}";
+                msg = $"{banResultCFW!.Name} was found in the host's ban list.\n{banResultCFW.Comment}";
                 Log(msg);
                 await EnqueueEmbed(null, msg, false, true, false, false, token).ConfigureAwait(false);
                 return true;
@@ -1796,7 +1736,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
                 if (delivery > 0)
                     Log($"Invalid delivery group ID for {delivery} raid(s). Try deleting the \"cache\" folder.");
-                
+
                 // Check the raids to see if any are event raids for Kitakami
                 foreach (var raid in container.Raids)
                 {
@@ -1993,7 +1933,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 3 => 1,
                 4 => 2,
                 5 => 3,
-                6 => 4, 
+                6 => 4,
                 0 => 0,
                 _ => 4 // default 6Unlocked
             };

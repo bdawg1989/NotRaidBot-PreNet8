@@ -3,18 +3,16 @@ using Discord.Commands;
 using PKHeX.Core;
 using SysBot.Base;
 using SysBot.Pokemon.Discord.Helpers;
+using SysBot.Pokemon.SV.BotRaid;
 using System;
-using System.Text.RegularExpressions;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Globalization;
 using static SysBot.Pokemon.RotatingRaidSettingsSV;
-using SysBot.Pokemon.SV.BotRaid;
-using LibUsbDotNet.DeviceNotify;
 
 namespace SysBot.Pokemon.Discord.Commands.Bots
 {
@@ -31,7 +29,7 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             int level,
             int storyProgressLevel = 6,
             string dlc = "p",
-            string eventType = null)  // New optional parameter for specifying event type
+            string? eventType = null)  // New optional parameter for specifying event type
         {
             uint seed;
             try
@@ -107,7 +105,7 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             [Summary("Seed")] string seed,
             [Summary("Difficulty Level (1-7)")] int level,
             [Summary("Story Progress Level")] int storyProgressLevel = 6,
-            [Summary("Event (Optional)")] string eventType = null)  // New optional parameter for specifying event type
+            [Summary("Event (Optional)")] string? eventType = null)  // New optional parameter for specifying event type
         {
             // Validate the seed for hexadecimal format
             if (seed.Length != 8 || !seed.All(c => "0123456789abcdefABCDEF".Contains(c)))
@@ -197,7 +195,7 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             [Summary("Seed")] string seed,
             [Summary("Difficulty Level (1-7)")] int level,
             [Summary("Story Progress Level")] int storyProgressLevel = 6,
-            [Summary("Event (Optional)")] string eventType = null)  // New argument for specifying an event
+            [Summary("Event (Optional)")] string? eventType = null)  // New argument for specifying an event
         {
             // Check if raid requests are disabled by the host
             if (Hub.Config.RotatingRaidSV.DisableRequests)
@@ -605,7 +603,6 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             var embed = new EmbedBuilder();
             List<string> cmds = new()
             {
-                "$scl - Sets the catch limit for your raids.\n",
                 "$crb - Clear all in raider ban list.\n",
                 "$vrl - View all raids in the list.\n",
                 "$arp - Add parameter to the collection.\nEx: [Command] [Index] [Species] [Difficulty]\n",

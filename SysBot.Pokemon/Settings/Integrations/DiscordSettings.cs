@@ -1,5 +1,4 @@
-﻿using MathNet.Numerics;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using static SysBot.Pokemon.RotatingRaidSettingsSV;
 
 namespace SysBot.Pokemon

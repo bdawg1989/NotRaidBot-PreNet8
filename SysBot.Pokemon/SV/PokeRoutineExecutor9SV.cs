@@ -1,17 +1,17 @@
 ﻿using PKHeX.Core;
+using RaidCrawler.Core.Structures;
 using SysBot.Base;
+using SysBot.Pokemon.SV.BotRaid;
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using RaidCrawler.Core.Structures;
-using static SysBot.Pokemon.PokeDataOffsetsSV;
 using static SysBot.Base.SwitchButton;
+using static SysBot.Pokemon.PokeDataOffsetsSV;
+using static SysBot.Pokemon.SV.BotRaid.Blocks;
 using static System.Buffers.Binary.BinaryPrimitives;
-using SysBot.Pokemon.SV.BotRaid;
-using static SysBot.Pokemon.Blocks;
 
 namespace SysBot.Pokemon
 {
@@ -32,20 +32,6 @@ namespace SysBot.Pokemon
             return new PK9(data);
         }
 
-        public override async Task<PK9> ReadPokemonPointer(IEnumerable<long> jumps, int size, CancellationToken token)
-        {
-            var (valid, offset) = await ValidatePointerAll(jumps, token).ConfigureAwait(false);
-            if (!valid)
-                return new PK9();
-            return await ReadPokemon(offset, token).ConfigureAwait(false);
-        }
-
-        public override async Task<PK9> ReadBoxPokemon(int box, int slot, CancellationToken token)
-        {
-            // Shouldn't be reading anything but box1slot1 here. Slots are not consecutive.
-            var jumps = Offsets.BoxStartPokemonPointer.ToArray();
-            return await ReadPokemonPointer(jumps, BoxFormatSlotSize, token).ConfigureAwait(false);
-        }
         public async Task SetCurrentBox(byte box, CancellationToken token)
         {
             await SwitchConnection.PointerPoke(new[] { box }, Offsets.CurrentBoxPointer, token).ConfigureAwait(false);
@@ -209,7 +195,6 @@ namespace SysBot.Pokemon
         }
 
         //Zyro additions
-
         public async Task SVSaveGameOverworld(CancellationToken token)
         {
             Log("Saving the game...");
@@ -221,7 +206,6 @@ namespace SysBot.Pokemon
         }
 
         // Save Block Additions from TeraFinder/RaidCrawler/sv-livemap
-
         public async Task<object?> ReadBlock(DataBlock block, CancellationToken token)
         {
             if (block.IsEncrypted)

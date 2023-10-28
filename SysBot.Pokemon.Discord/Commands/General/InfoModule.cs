@@ -1,13 +1,11 @@
 ﻿using Discord;
 using Discord.Commands;
+using SysBot.Pokemon.SV.BotRaid.Helpers;
 using System;
 using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using SysBot.Pokemon.SV.BotRaid.Helpers;
 
 namespace SysBot.Pokemon.Discord
 {

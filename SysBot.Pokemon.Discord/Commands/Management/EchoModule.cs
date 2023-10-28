@@ -40,7 +40,7 @@ namespace SysBot.Pokemon.Discord
         {
             public readonly ulong ChannelID;
             public readonly string ChannelName;
-            public readonly Action<string> Action;            
+            public readonly Action<string> Action;
             public readonly Action<byte[], string, EmbedBuilder> RaidAction;
             public string EmbedResult = string.Empty;
 
@@ -49,7 +49,7 @@ namespace SysBot.Pokemon.Discord
                 ChannelID = channelId;
                 ChannelName = channelName;
                 Action = action;
-                RaidAction = raidAction;                
+                RaidAction = raidAction;
             }
         }
 

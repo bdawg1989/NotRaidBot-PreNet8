@@ -1,8 +1,6 @@
 ﻿using PKHeX.Core;
 using PKHeX.Core.AutoMod;
 using System;
-using System.IO;
-using System.Linq;
 using System.Threading;
 
 namespace SysBot.Pokemon

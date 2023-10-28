@@ -35,7 +35,7 @@ namespace SysBot.Pokemon.Discord
                     $"Bot State: {SummarizeBots(allBots)}\n";
                 x.IsInline = false;
             });
-                       
+
             await ReplyAsync("Bot Status", false, builder.Build()).ConfigureAwait(false);
         }
 
