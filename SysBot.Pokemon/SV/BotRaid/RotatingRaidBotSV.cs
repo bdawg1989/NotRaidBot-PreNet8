@@ -55,6 +55,7 @@ namespace SysBot.Pokemon.SV.BotRaid
         private SAV9SV HostSAV = new();
         private DateTime StartTime = DateTime.Now;
         public static RaidContainer? container;
+        private static int attemptCount = 0;
         public static bool IsKitakami = false;
         public override async Task MainLoop(CancellationToken token)
         {
@@ -878,19 +879,73 @@ namespace SysBot.Pokemon.SV.BotRaid
         private async Task<bool> PrepareForRaid(CancellationToken token)
         {
             Log("Preparing lobby...");
-            // Make sure we're connected.
-            while (!await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false))
+
+            int attempts = 0;  // Counter to track the number of connection attempts.
+            int maxAttempts = 5;  // Maximum allowed connection attempts before considering it a softban.
+
+            while (true)  // Outer loop to repeat the entire process after waiting for 31 minutes
             {
-                Log("Connecting...");
-                await RecoverToOverworld(token).ConfigureAwait(false);
-                if (!await ConnectToOnline(Hub.Config, token).ConfigureAwait(false))
-                    return false;
+                // Initial check for online connection.
+                bool isConnected = await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false);
+                Log($"Initial online status check returned: {isConnected}");
+
+                attempts = 0;  // Reset the attempts counter for a fresh start.
+
+                while (!isConnected && attempts < maxAttempts)
+                {
+                    attempts++;
+                    Log($"Connecting... (Attempt {attempts} of {maxAttempts})");
+
+                    await RecoverToOverworld(token).ConfigureAwait(false);
+                    if (!await ConnectToOnline(Hub.Config, token).ConfigureAwait(false))
+                        return false;
+
+                    await Task.Delay(5000, token).ConfigureAwait(false);  // Wait 5 seconds to check again.
+                    await Click(B, 0_500, token).ConfigureAwait(false);
+                    await Click(B, 0_500, token).ConfigureAwait(false);
+                    await Click(B, 0_500, token).ConfigureAwait(false);
+                    await Click(B, 0_500, token).ConfigureAwait(false);
+
+                    // Check again after attempting to connect.
+                    isConnected = await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false);
+                    Log($"Online status check after connection attempt returned: {isConnected}");
+                }
+
+                // Send an embed message and press 'B' button after the 5th attempt.
+                if (attempts == maxAttempts)
+                {
+                    await Click(B, 0_500, token).ConfigureAwait(false);
+                    await Click(B, 0_500, token).ConfigureAwait(false);
+
+                    // Create and send an embed notifying of technical difficulties.
+                    EmbedBuilder embed = new EmbedBuilder();
+                    embed.Title = "Experiencing Technical Difficulties";
+                    embed.Description = "The bot is experiencing issues connecting online. Please stand by as we try to resolve the issue.";
+                    embed.Color = Color.Red;
+                    embed.ThumbnailUrl = "https://genpkm.com/images/x.png";  // Setting the thumbnail URL directly
+                    EchoUtil.RaidEmbed(null, "", embed);
+                }
+
+
+                // If we've reached the maximum number of attempts, assume a softban scenario.
+                if (attempts >= maxAttempts)
+                {
+                    Log("Reached maximum connection attempts. Assuming softban. Waiting for 31 minutes...");
+                    await Task.Delay(1860000, token).ConfigureAwait(false);  // Wait for 1,860,000ms / 31 minutes
+                    continue;  // Continue the outer loop to try connecting again
+                }
+
+                // If we've successfully connected, break out of the outer loop.
+                if (isConnected)
+                {
+                    break;
+                }
             }
 
             await Task.Delay(2_500, token).ConfigureAwait(false);
             await Click(B, 0_500, token).ConfigureAwait(false);
 
-            // Inject PartyPK after we save the game, zyro.
+            // Inject PartyPK after we save the game.
             var len = string.Empty;
             foreach (var l in Settings.ActiveRaids[RotationCount].PartyPK)
                 len += l;
