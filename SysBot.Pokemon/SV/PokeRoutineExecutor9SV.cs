@@ -107,7 +107,14 @@ namespace SysBot.Pokemon
             await CloseGame(config, token).ConfigureAwait(false);
             await StartGame(config, token).ConfigureAwait(false);
         }
-
+        public async Task GoHome(PokeRaidHubConfig config, CancellationToken token)
+        {
+            var timing = config.Timings;
+            // Close out of the game
+            await Click(B, 0_500, token).ConfigureAwait(false);
+            await Click(HOME, 2_000 + timing.ExtraTimeReturnHome, token).ConfigureAwait(false);
+            Log("Went to Home Screen");
+        }
         public async Task CloseGame(PokeRaidHubConfig config, CancellationToken token)
         {
             var timing = config.Timings;

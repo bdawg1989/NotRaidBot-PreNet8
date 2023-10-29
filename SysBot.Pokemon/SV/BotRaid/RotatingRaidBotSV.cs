@@ -1164,6 +1164,55 @@ namespace SysBot.Pokemon.SV.BotRaid
             var data = await SwitchConnection.ReadBytesMainAsync(Offsets.LoadedIntoDesiredState, 1, token).ConfigureAwait(false);
             return data[0] == 0x02; // 2 when in raid, 1 when not
         }
+        private async Task AdvanceDaySV(CancellationToken token)
+        {
+            var scrollroll = Settings.DateTimeFormat switch
+            {
+                DTFormat.DDMMYY => 0,
+                DTFormat.YYMMDD => 2,
+                _ => 1,
+            };
+
+            for (int i = 0; i < 2; i++)
+                await Click(B, 0_150, token).ConfigureAwait(false);
+
+            for (int i = 0; i < 2; i++)
+                await Click(DRIGHT, 0_150, token).ConfigureAwait(false);
+            await Click(DDOWN, 0_150, token).ConfigureAwait(false);
+            await Click(DRIGHT, 0_150, token).ConfigureAwait(false);
+            await Click(A, 1_250, token).ConfigureAwait(false); // Enter settings
+
+            await PressAndHold(DDOWN, 2_000, 0_250, token).ConfigureAwait(false); // Scroll to system settings
+            await Click(A, 1_250, token).ConfigureAwait(false);
+
+            if (Settings.UseOvershoot)
+            {
+                await PressAndHold(DDOWN, Settings.HoldTimeForRollover, 1_000, token).ConfigureAwait(false);
+                await Click(DUP, 0_500, token).ConfigureAwait(false);
+            }
+            else if (!Settings.UseOvershoot)
+            {
+                for (int i = 0; i < 39; i++)
+                    await Click(DDOWN, 0_100, token).ConfigureAwait(false);
+            }
+
+            await Click(A, 1_250, token).ConfigureAwait(false);
+            for (int i = 0; i < 2; i++)
+                await Click(DDOWN, 0_150, token).ConfigureAwait(false);
+            await Click(A, 0_500, token).ConfigureAwait(false);
+            for (int i = 0; i < scrollroll; i++) // 0 to roll day for DDMMYY, 1 to roll day for MMDDYY, 3 to roll hour
+                await Click(DRIGHT, 0_200, token).ConfigureAwait(false);
+
+            await Click(DUP, 0_200, token).ConfigureAwait(false); // Advance a day
+
+            for (int i = 0; i < 8; i++) // Mash DRIGHT to confirm
+                await Click(DRIGHT, 0_200, token).ConfigureAwait(false);
+
+            await Click(A, 0_200, token).ConfigureAwait(false); // Confirm date/time change
+            await Click(HOME, 1_000, token).ConfigureAwait(false); // Back to title screen
+
+            await Click(A, 0_200, token).ConfigureAwait(false); // Back in Game
+        }
 
         private async Task RolloverCorrectionSV(CancellationToken token)
         {
@@ -1766,7 +1815,15 @@ namespace SysBot.Pokemon.SV.BotRaid
                 (delivery, enc) = container.ReadAllRaids(dataP, StoryProgress, EventProgress, 0, TeraRaidMapParent.Paldea);
 
                 if (enc > 0)
-                    Log($"Failed to find encounters for {enc} raid(s).");
+                {
+                    Log($"Failed to find encounters for {enc} raid(s).  Stop the bot, delete any Event raids in ActiveRaids, day roll to refresh map.");
+                    await GoHome(Hub.Config, token).ConfigureAwait(false);
+                    await AdvanceDaySV(token).ConfigureAwait(false);
+                    await Task.Delay(5_000, token).ConfigureAwait(false);
+                    await SaveGame(Hub.Config, token).ConfigureAwait(false);
+                    await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
+                }
+
 
                 if (delivery > 0)
                     Log($"Invalid delivery group ID for {delivery} raid(s). Try deleting the \"cache\" folder.");
