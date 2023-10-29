@@ -1657,6 +1657,13 @@ namespace SysBot.Pokemon.SV.BotRaid
             // Convert the integer StoryProgressLevel to a GameProgress enum value
             var desiredProgress = (GameProgress)desiredProgressLevel;
 
+            // Skip updating if the desired progress is "Beginning" (0) or "None" (6)
+            if (desiredProgress == GameProgress.Beginning || desiredProgress == GameProgress.None)
+            {
+                Log($"Desired game progress is set to {desiredProgress}. Skipping update.");
+                return;
+            }
+
             Log($"Desired game progress level: {desiredProgress}");
 
             // Call ReadGameProgress to obtain the current game progress level
