@@ -638,12 +638,20 @@ namespace SysBot.Pokemon.SV.BotRaid
                         break;
                     }
 
-                    // Check if we have a move sequence and haven't reached the end of it
-                    if (moveSequence != null && moveIndex < moveSequence.Length)
+                    // Uh-oh Spaghetti-o! If there's no move sequence, let's just skip ahead.
+                    if (moveSequence == null)
                     {
+                        Log("Move sequence is null, skipping validation and execution.");
+                        continue;  // Skip the rest of the loop
+                    }
+
+                    // Check if we haven't reached the end of the move sequence
+                    if (moveIndex < moveSequence.Length)
+                    {
+                        // Let's get our current move and make sure it's all neat and trim!
                         string currentMoveEntry = moveSequence[moveIndex].Trim();
 
-                        // Check that the entry has the expected format (contains '-')
+                        // Wait a sec, does this move even have a '-'? No? Invalid!
                         if (!currentMoveEntry.Contains('-'))
                         {
                             Log($"Invalid move sequence format for entry {currentMoveEntry}. Skipping.");
