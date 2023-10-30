@@ -206,11 +206,11 @@ namespace SysBot.Pokemon.SV.BotRaid
                 // Split the entry based on dashes to get individual pieces of information
                 var div = moninfo[i].Split(new[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
 
-                // Check if div has enough elements to avoid index out of range errors
-                if (div.Length < 4)
+                // Check if the split result has exactly 4 parts
+                if (div.Length != 4)
                 {
-                    Log($"Skipping invalid raid entry: {moninfo[i]}");
-                    continue;
+                    Log($"Error processing entry: {moninfo[i]}. Expected 4 parts but found {div.Length}. Skipping this entry.");
+                    continue; // Skip processing this entry and move to the next one
                 }
 
                 // Extracting seed, title, and difficulty level
