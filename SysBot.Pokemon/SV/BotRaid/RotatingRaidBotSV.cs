@@ -206,13 +206,30 @@ namespace SysBot.Pokemon.SV.BotRaid
                 // Split the entry based on dashes to get individual pieces of information
                 var div = moninfo[i].Split(new[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
 
+                // Check if div has enough elements to avoid index out of range errors
+                if (div.Length < 4)
+                {
+                    Log($"Skipping invalid raid entry: {moninfo[i]}");
+                    continue;
+                }
+
                 // Extracting seed, title, and difficulty level
                 var monseed = div[0];
                 var montitle = div[1];
-                int difficultyLevel = int.Parse(div[2]);
+
+                if (!int.TryParse(div[2], out int difficultyLevel))
+                {
+                    Log($"Unable to parse difficulty level for entry: {moninfo[i]}");
+                    continue;
+                }
 
                 // Extract and convert the StoryProgressLevel
-                int storyProgressLevelFromSeed = int.Parse(div[3]); // Parsing the StoryProgressLevel from the seed
+                if (!int.TryParse(div[3], out int storyProgressLevelFromSeed))
+                {
+                    Log($"Unable to parse StoryProgressLevel for entry: {moninfo[i]}");
+                    continue;
+                }
+
                 int convertedStoryProgressLevel = storyProgressLevelFromSeed - 1; // Converting based on given conditions
 
                 // Determine the TeraCrystalType based on the difficulty level
