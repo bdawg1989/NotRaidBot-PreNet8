@@ -468,6 +468,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
         private async Task CompleteRaid(List<(ulong, RaidMyStatus)> trainers, CancellationToken token)
         {
+            bool lobbyDisbanded = false;
             bool ready = false;
             List<(ulong, RaidMyStatus)> lobbyTrainersFinal = new();
             if (await IsConnectedToLobby(token).ConfigureAwait(false))
@@ -680,7 +681,13 @@ namespace SysBot.Pokemon.SV.BotRaid
                         Log($"Executing command {currentMoveEntry} {repeatTimes} times");
                         for (int i = 0; i < repeatTimes; i++)
                         {
+                            if (lobbyDisbanded) // Check the flag here
+                            {
+                                break; // Exit this loop if the lobby has disbanded
+                            }
+
                             Log($"Executing command {currentMoveEntry} ({i + 1}/{repeatTimes})");
+
 
                             // Click the 'A' button 7 times consecutively, each with a 2 second delay
                             for (int clickCount = 0; clickCount < 7; clickCount++)
@@ -697,13 +704,12 @@ namespace SysBot.Pokemon.SV.BotRaid
                                 int checkInterval = 1000; // Check every second
                                 while (remainingWaitTime > 0)
                                 {
-                                    // Check if the lobby has disbanded.
                                     if (!await IsConnectedToLobby(token).ConfigureAwait(false))
                                     {
                                         Log("Raid lobby disbanded! Exiting move sequence.");
-                                        return;  // Exit the function entirely, you could also use 'break' depending on your logic.
+                                        lobbyDisbanded = true; // Set the flag
+                                        break; // Break out of the waiting loop
                                     }
-                                    // Wait for the check interval duration.
                                     await Task.Delay(checkInterval, token).ConfigureAwait(false);
                                     remainingWaitTime -= checkInterval;
                                 }
@@ -711,7 +717,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                         }
 
                         // Wait before re-entering the menu only after all repetitions are complete; 
-                        if (repeatTimes > 0)
+                        if (repeatTimes > 0 && !lobbyDisbanded) // Also check for the lobbyDisbanded flag here
                         {
                             int remainingWaitTime = Settings.MoveSequence.TimeToWait * 1000; // Time in milliseconds
                             int checkInterval = 1000; // Check every second
@@ -724,7 +730,8 @@ namespace SysBot.Pokemon.SV.BotRaid
                                 if (!await IsConnectedToLobby(token).ConfigureAwait(false))
                                 {
                                     Log("Raid lobby disbanded! Exiting move sequence.");
-                                    return;  // Exit the function entirely, you could also use 'break' depending on your logic.
+                                    lobbyDisbanded = true; // Set the flag to true
+                                    break;  // Break out of the while loop, this allows you to continue the function
                                 }
                                 // Wait for the check interval duration.
                                 await Task.Delay(checkInterval, token).ConfigureAwait(false);
@@ -738,6 +745,13 @@ namespace SysBot.Pokemon.SV.BotRaid
                     }
                     else
                     {
+                        // Check if the lobby has disbanded.
+                        if (lobbyDisbanded)
+                        {
+                            Log("Raid lobby disbanded! Skipping RaidAction.");
+                            continue;  // Skip to the next iteration of the main loop
+                        }
+
                         // Only proceed with RaidAction if still connected to the lobby
                         if (await IsConnectedToLobby(token).ConfigureAwait(false))
                         {
