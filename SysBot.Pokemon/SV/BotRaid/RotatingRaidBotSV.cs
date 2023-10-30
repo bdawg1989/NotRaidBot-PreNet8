@@ -584,6 +584,30 @@ namespace SysBot.Pokemon.SV.BotRaid
                 }
 
                 DateTime battleStartTime = DateTime.Now;
+                // Initialize move sequence and move index
+                string[] moveSequence = null;
+                int moveIndex = 0;
+
+                // Check if we have a MoveSequence for the current raid rotation, regardless of how it was added
+                if (Settings.ActiveRaids[RotationCount] != null && !string.IsNullOrEmpty(Settings.ActiveRaids[RotationCount].MoveSequence))
+                {
+                    moveSequence = Settings.ActiveRaids[RotationCount].MoveSequence?.Split(',');
+                    Log($"Loaded move sequence from settings: {string.Join(", ", moveSequence)}");
+                }
+                else if (Settings.ActiveRaids[RotationCount].AddedByRACommand)  // Fallback to check if this raid was added by the RA command
+                {
+                    var user = Settings.ActiveRaids[RotationCount].User;
+                    if (user != null)
+                    {
+                        // Retrieve the move sequence from the user's raid
+                        moveSequence = Settings.ActiveRaids[RotationCount].MoveSequence?.Split(',');
+                        Log($"Loaded move sequence from RA command: {string.Join(", ", moveSequence)}");
+                    }
+                }
+                else
+                {
+                    Log("No move sequence is specified for this raid rotation.");
+                }
 
                 while (await IsConnectedToLobby(token).ConfigureAwait(false))
                 {
@@ -596,14 +620,155 @@ namespace SysBot.Pokemon.SV.BotRaid
                         break;
                     }
 
-                    b++;
-                    switch (Settings.LobbyOptions.Action)
+                    // Check if we have a move sequence and haven't reached the end of it
+                    if (moveSequence != null && moveIndex < moveSequence.Length)
                     {
-                        case RaidAction.AFK: await Task.Delay(3_000, token).ConfigureAwait(false); break;
-                        case RaidAction.MashA: await Click(A, 3_500, token).ConfigureAwait(false); break;
+                        string currentMoveEntry = moveSequence[moveIndex].Trim();
+
+                        // Check that the entry has the expected format (contains '-')
+                        if (!currentMoveEntry.Contains('-'))
+                        {
+                            Log($"Invalid move sequence format for entry {currentMoveEntry}. Skipping.");
+                            continue;
+                        }
+
+                        string moveLetter = currentMoveEntry.Split('-')[0];
+                        int repeatTimes = int.Parse(currentMoveEntry.Split('-')[1]);
+
+                        Log($"Preparing to execute command: {currentMoveEntry}");
+
+                        // Check if the current move is a Cheer
+                        if (moveLetter.StartsWith("Cheer"))
+                        {
+                            // Enter Cheer menu: DDown once and then A
+                            Log("Pressing Down to reach the cheer menu.");
+                            await Click(DDOWN, 500, token).ConfigureAwait(false);
+
+                            Log("Pressing A to enter the cheer menu.");
+                            await Click(A, 1_000, token).ConfigureAwait(false);
+
+                            // Determine which Cheer to execute
+                            int cheerNumber = int.Parse(moveLetter.Substring(5));
+                            Log($"Need to press Down {cheerNumber - 1} times to reach cheer {cheerNumber}");
+
+                            // Press Down to reach the correct cheer
+                            for (int i = 0; i < cheerNumber - 1; i++)
+                            {
+                                Log($"Pressing Down to reach the cheer ({i + 1}/{cheerNumber - 1})");
+                                await Click(DDOWN, 500, token).ConfigureAwait(false);
+                            }
+                        }
+                        else
+                        {
+                            // Enter move menu: just A
+                            Log("Pressing A to enter the move menu.");
+                            await Click(A, 500, token).ConfigureAwait(false);
+
+                            // Determine the number of Down presses needed to reach the move.
+                            int downPresses = moveLetter[0] - 'A';
+                            Log($"Need to press Down {downPresses} times to reach move {moveLetter}");
+
+                            // Press Down to reach the correct move
+                            for (int i = 0; i < downPresses; i++)
+                            {
+                                Log($"Pressing Down to reach the move ({i + 1}/{downPresses})");
+                                await Click(DDOWN, 500, token).ConfigureAwait(false);
+                            }
+                        }
+
+                        // Execute the command 'repeatTimes' number of times
+                        Log($"Executing command {currentMoveEntry} {repeatTimes} times");
+                        for (int i = 0; i < repeatTimes; i++)
+                        {
+                            Log($"Executing command {currentMoveEntry} ({i + 1}/{repeatTimes})");
+
+                            // Click the 'A' button 7 times consecutively, each with a 2 second delay
+                            for (int clickCount = 0; clickCount < 7; clickCount++)
+                            {
+                                await Click(A, 2_000, token).ConfigureAwait(false);
+                            }
+
+                            // If we have more repeats to perform, wait before executing the same command again
+                            if (i < repeatTimes - 1)
+                            {
+                                Log($"Waiting {Settings.MoveSequence.TimeToWait} seconds before executing the same command again.");
+                                // Changed the Delay to a loop that keeps checking for lobby disbandment.
+                                int remainingWaitTime = Settings.MoveSequence.TimeToWait * 1000; // Time in milliseconds
+                                int checkInterval = 1000; // Check every second
+                                while (remainingWaitTime > 0)
+                                {
+                                    // Check if the lobby has disbanded.
+                                    if (!await IsConnectedToLobby(token).ConfigureAwait(false))
+                                    {
+                                        Log("Raid lobby disbanded! Exiting move sequence.");
+                                        return;  // Exit the function entirely, you could also use 'break' depending on your logic.
+                                    }
+                                    // Wait for the check interval duration.
+                                    await Task.Delay(checkInterval, token).ConfigureAwait(false);
+                                    remainingWaitTime -= checkInterval;
+                                }
+                            }
+                        }
+
+                        // Wait before re-entering the menu only after all repetitions are complete; 
+                        if (repeatTimes > 0)
+                        {
+                            int remainingWaitTime = Settings.MoveSequence.TimeToWait * 1000; // Time in milliseconds
+                            int checkInterval = 1000; // Check every second
+                            Log($"Waiting {Settings.MoveSequence.TimeToWait} seconds before re-entering the attack/cheer menu.");
+
+                            // Loop that keeps checking for lobby disbandment during the wait.
+                            while (remainingWaitTime > 0)
+                            {
+                                // Check if the lobby has disbanded.
+                                if (!await IsConnectedToLobby(token).ConfigureAwait(false))
+                                {
+                                    Log("Raid lobby disbanded! Exiting move sequence.");
+                                    return;  // Exit the function entirely, you could also use 'break' depending on your logic.
+                                }
+                                // Wait for the check interval duration.
+                                await Task.Delay(checkInterval, token).ConfigureAwait(false);
+                                remainingWaitTime -= checkInterval;
+                            }
+                        }
+
+                        moveIndex++; // Move on to the next move in the sequence
+                        Log($"Command {currentMoveEntry} executed, moving to next command in the sequence.");
+
                     }
+                    else
+                    {
+                        // Only proceed with RaidAction if still connected to the lobby
+                        if (await IsConnectedToLobby(token).ConfigureAwait(false))
+                        {
+                            // If there is no move sequence or we've completed it,
+                            // then perform the RaidAction as specified.
+                            b++;
+                            switch (Settings.LobbyOptions.Action)
+                            {
+                                case RaidAction.AFK:
+                                    await Task.Delay(3_000, token).ConfigureAwait(false);
+                                    break;
+
+                                case RaidAction.MashA:
+                                    await Click(A, 3_500, token).ConfigureAwait(false);
+                                    break;
+
+                                default:
+                                    await Task.Delay(3_000, token).ConfigureAwait(false);
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            Log("Raid lobby disbanded! Skipping RaidAction.");
+                        }
+                    }
+                    // Log status after every 10 iterations
                     if (b % 10 == 0)
+                    {
                         Log("Still in battle...");
+                    }
                 }
                 if (timedOut)
                 {
@@ -617,6 +782,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                     return; // Exit the method as we've handled the timeout scenario
                 }
                 Log("Raid lobby disbanded!");
+                await Task.Delay(5_000, token).ConfigureAwait(false);
                 await Click(B, 0_500, token).ConfigureAwait(false);
                 await Click(B, 0_500, token).ConfigureAwait(false);
                 await Click(DDOWN, 0_500, token).ConfigureAwait(false);
@@ -793,6 +959,13 @@ namespace SysBot.Pokemon.SV.BotRaid
         {
             await Task.Delay(0_050, token).ConfigureAwait(false);
 
+            // First, check if ActiveRaids is empty. If it is, no further processing is needed.
+            if (Settings.ActiveRaids.Count == 0)
+            {
+                Log("ActiveRaids is empty. Exiting SanitizeRotationCount.");
+                return;
+            }
+
             // Validate that the RotationCount is within the range of ActiveRaids.
             if (RotationCount >= Settings.ActiveRaids.Count)
             {
@@ -806,6 +979,13 @@ namespace SysBot.Pokemon.SV.BotRaid
                 Log($"Raid for {Settings.ActiveRaids[RotationCount].Species} was added via RA command and will be removed from the rotation list.");
                 Settings.ActiveRaids.RemoveAt(RotationCount);
                 // Do not increment the RotationCount here, since the next raid has now taken the index of the removed raid.
+
+                // Re-check RotationCount after removal to avoid index out-of-range errors
+                if (RotationCount >= Settings.ActiveRaids.Count)
+                {
+                    RotationCount = 0;
+                    Log($"Resetting Rotation Count to {RotationCount}");
+                }
             }
             else
             {
@@ -826,6 +1006,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 return;  // Exit early after processing random rotation
             }
 
+            // Check RotationCount again after possibly incrementing it
             if (RotationCount >= Settings.ActiveRaids.Count)
             {
                 RotationCount = 0;
@@ -838,11 +1019,11 @@ namespace SysBot.Pokemon.SV.BotRaid
                 {
                     Log($"{Settings.ActiveRaids[RotationCount].Species} is disabled. Moving to next active raid in rotation.");
                     RotationCount++;
-                }
-                if (RotationCount >= Settings.ActiveRaids.Count)
-                {
-                    RotationCount = 0;
-                    Log($"Resetting Rotation Count to {RotationCount}");
+                    if (RotationCount >= Settings.ActiveRaids.Count)
+                    {
+                        RotationCount = 0;
+                        Log($"Resetting Rotation Count to {RotationCount}");
+                    }
                 }
             }
         }
@@ -952,6 +1133,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             if (len.Length > 1 && EmptyRaid == 0)
             {
                 Log("Preparing PartyPK. Sit tight.");
+                await Task.Delay(2_500, token).ConfigureAwait(false);
                 await SetCurrentBox(0, token).ConfigureAwait(false);
                 var res = string.Join("\n", Settings.ActiveRaids[RotationCount].PartyPK);
                 if (res.Length > 4096)
@@ -1309,6 +1491,37 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
         }
 
+        // Dictionary to hold type advantages
+        Dictionary<string, string> TypeAdvantages = new Dictionary<string, string>()
+{
+    { "normal", "Fighting" },
+    { "fire", "Water, Ground, Rock" },
+    { "water", "Electric, Grass" },
+    { "grass", "Flying, Poison, Bug, Fire, Ice" },
+    { "electric", "Ground" },
+    { "ice", "Fighting, Rock, Steel, Fire" },
+    { "fighting", "Flying, Psychic, Fairy" },
+    { "poison", "Ground, Psychic" },
+    { "ground", "Water, Ice, Grass" },
+    { "flying", "Rock, Electric, Ice" },
+    { "psychic", "Bug, Ghost, Dark" },
+    { "bug", "Flying, Rock, Fire" },
+    { "rock", "Fighting, Ground, Steel, Water, Grass" },
+    { "ghost", "Ghost, Dark" },
+    { "dragon", "Ice, Dragon, Fairy" },
+    { "dark", "Fighting, Bug, Fairy" },
+    { "steel", "Fighting, Ground, Fire" },
+    { "fairy", "Poison, Steel" }
+};
+        private string GetTypeAdvantage(string teraType)
+        {
+            // Check if the type exists in the dictionary and return the corresponding advantage
+            if (TypeAdvantages.TryGetValue(teraType.ToLower(), out string advantage))
+            {
+                return advantage;
+            }
+            return "Unknown Type";  // Return "Unknown Type" if the type doesn't exist in our dictionary
+        }
 
         private async Task EnqueueEmbed(List<string>? names, string message, bool hatTrick, bool disband, bool upnext, bool raidstart, CancellationToken token)
         {
@@ -1506,7 +1719,14 @@ namespace SysBot.Pokemon.SV.BotRaid
             {
                 embed.AddField(" **__Special Rewards__**", string.IsNullOrEmpty($"{RaidEmbedInfo.SpecialRewards}") ? "No Rewards To Display" : $"{RaidEmbedInfo.SpecialRewards}", true);
             }
+            // Fetch the type advantage using the static RaidSpeciesTeraType from RaidEmbedInfo
+            string typeAdvantage = GetTypeAdvantage(RaidEmbedInfo.RaidSpeciesTeraType);
 
+            // Only include the Type Advantage if not posting 'upnext' embed with the 'Preparing Raid' title and if the raid isn't starting or disbanding
+            if (!disband && !upnext && !raidstart && Settings.EmbedToggles.IncludeTypeAdvantage)
+            {
+                embed.AddField(" **__Type Advantage__**", typeAdvantage, true);
+            }
             if (!disband && names is not null && !upnext)
             {
                 var players = string.Empty;

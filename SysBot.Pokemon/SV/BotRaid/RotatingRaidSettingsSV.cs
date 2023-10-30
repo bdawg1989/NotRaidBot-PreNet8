@@ -39,6 +39,9 @@ namespace SysBot.Pokemon
         [Category(Hosting), Description("Settings related to Events."), Browsable(true)]
         public EventSettingsCategory EventSettings { get; set; } = new();
 
+        [Category(Hosting), Description("Settings related to Move Sequence."), Browsable(true)]
+        public MoveSequenceCategory MoveSequence { get; set; } = new();
+
         [Category(Hosting), Description("RotatingRaid Preset Filters"), DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         public RotatingRaidPresetFiltersCategory EmbedToggles { get; set; } = new();
 
@@ -133,6 +136,7 @@ namespace SysBot.Pokemon
             public string[] PartyPK { get; set; } = Array.Empty<string>();
             public bool SpriteAlternateArt { get; set; } = false;
             public string Seed { get; set; } = "0";
+            public string MoveSequence { get; set; } = string.Empty;
             public string Title { get; set; } = string.Empty;
             [Browsable(false)]
             public bool AddedByRACommand { get; set; } = false;
@@ -154,6 +158,15 @@ namespace SysBot.Pokemon
             [Category(Hosting), Description("Set this value to the value of the event den location (Event Index) from Tera Finder.  Make sure you are at this location if you plan to host event raids.  -1 means No Event.")]
             public int RaidDeliveryGroupID { get; set; } = -1;
         }
+        [Category(Hosting), TypeConverter(typeof(CategoryConverter<MoveSequenceCategory>))]
+        public class MoveSequenceCategory
+        {
+            public override string ToString() => "Move Sequence Settings";
+
+            [Category(Hosting), Description("Adjust the time in seconds it takes for us to re-enter the battle menu and execute an attack/cheer. [16 seconds is default]")]
+            public int TimeToWait { get; set; } = 16;
+
+        }
 
         [Category(Hosting), TypeConverter(typeof(CategoryConverter<RotatingRaidPresetFiltersCategory>))]
         public class RotatingRaidPresetFiltersCategory
@@ -172,11 +185,14 @@ namespace SysBot.Pokemon
             [Category(Hosting), Description("Raid embed description.")]
             public string[] RaidEmbedDescription { get; set; } = Array.Empty<string>();
 
-            [Category(Hosting), Description("If true, the bot will append the moves to the preset Description.")]
+            [Category(Hosting), Description("If true, the bot will show Moves on embeds.")]
             public bool IncludeMoves { get; set; } = true;
 
-            [Category(Hosting), Description("If true, the bot will append the Special Rewards to the preset Description.")]
+            [Category(Hosting), Description("If true, the bot will show Special Rewards on embeds.")]
             public bool IncludeRewards { get; set; } = true;
+
+            [Category(Hosting), Description("If true, the bot will show Type Advantages on embeds.")]
+            public bool IncludeTypeAdvantage { get; set; } = true;
         }
 
         [Category(Hosting), TypeConverter(typeof(CategoryConverter<LobbyFiltersCategory>))]

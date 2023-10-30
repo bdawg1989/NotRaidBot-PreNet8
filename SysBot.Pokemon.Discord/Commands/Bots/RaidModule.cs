@@ -374,6 +374,51 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             }
         }
 
+        [Command("ms")]
+        [Summary("Sets the Move Sequence for the user's current Raid in Queue.")]
+        public async Task SetMoveSequence([Summary("Move Sequence")][Remainder] string sequence)
+        {
+            // Find the user's raid
+            var userId = Context.User.Id;
+            var raidParameters = Hub.Config.RotatingRaidSV.ActiveRaids;
+            var raidToUpdate = raidParameters.FirstOrDefault(r => r.RequestedByUserID == userId);
+
+            // Check if the user has a raid in queue
+            if (raidToUpdate != null)
+            {
+                // Count the number of distinct moves for each Pokémon in the party
+                int numberOfMoves = 0;
+                foreach (var pkInfo in raidToUpdate.PartyPK)
+                {
+                    numberOfMoves = Math.Max(numberOfMoves, pkInfo.Split('-').Length - 1);
+                }
+
+                // Validate the move sequence
+                var moveSlotsInSequence = sequence.Split(',')
+                                                  .Select(s => s.Split('-')[0].Trim())
+                                                  .Distinct()
+                                                  .Count();
+
+                if (moveSlotsInSequence > numberOfMoves)
+                {
+                    await ReplyAsync($"The provided move sequence references more distinct move slots ({moveSlotsInSequence}) than the Pokémon has available ({numberOfMoves}).").ConfigureAwait(false);
+                    return;
+                }
+
+                // Update the move sequence for this user's raid
+                raidToUpdate.MoveSequence = sequence;
+
+                // Confirm update
+                await ReplyAsync($"Move sequence updated for your raid: {sequence}").ConfigureAwait(false);
+            }
+            else
+            {
+                // No raid found for this user
+                await ReplyAsync("You don't have a raid in queue!").ConfigureAwait(false);
+            }
+        }
+
+
         [Command("rqs")]
         [Summary("Checks the number of raids before the user's request and gives an ETA.")]
         public async Task CheckQueueStatus()
