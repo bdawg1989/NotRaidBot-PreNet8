@@ -207,7 +207,7 @@ namespace SysBot.Pokemon.Discord
             return false; // Reached max number of retries without success.
         }
 
-        private static async Task<bool> RaidEmbedAsync(ISocketMessageChannel c, byte[] bytes, string fileName, EmbedBuilder embed, int maxRetries = 3)
+        private static async Task<bool> RaidEmbedAsync(ISocketMessageChannel c, byte[] bytes, string fileName, EmbedBuilder embed, int maxRetries = 2)
         {
             int retryCount = 0;
             while (retryCount < maxRetries)
@@ -228,11 +228,13 @@ namespace SysBot.Pokemon.Discord
                 {
                     LogUtil.LogError($"Failed to send embed to channel '{c.Name}' (Attempt {retryCount + 1}): {ex.Message}", nameof(AddEchoChannel));
                     retryCount++;
-                    await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false); // Wait for a second before retrying.
+                    if (retryCount < maxRetries)
+                        await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false); // Wait for a second before retrying.
                 }
             }
             return false; // Reached max number of retries without success.
         }
+
 
         private static void AddEchoChannel(ISocketMessageChannel c, ulong cid)
         {
