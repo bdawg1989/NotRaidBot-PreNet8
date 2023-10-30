@@ -638,11 +638,11 @@ namespace SysBot.Pokemon.SV.BotRaid
                         break;
                     }
 
-                    // Uh-oh Spaghetti-o! If there's no move sequence, let's just skip ahead.
+                    // If there's no more world to conquer, break out of the loop!
                     if (moveSequence == null)
                     {
-                        Log("Move sequence is null, skipping validation and execution.");
-                        continue;  // Skip the rest of the loop
+                        Log("Move sequence is null, exiting the loop.");
+                        break;
                     }
 
                     // Check if we haven't reached the end of the move sequence
