@@ -402,7 +402,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 (partyReady, lobbyTrainers) = await ReadTrainers(token).ConfigureAwait(false);
                 if (!partyReady)
                 {
-                    if (LostRaid >= Settings.LobbyOptions.SkipRaidLimit && Settings.LobbyOptions.LobbyMethodOptions == LobbyMethodOptions.SkipRaid)
+                    if (LostRaid >= Settings.LobbyOptions.SkipRaidLimit && Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.SkipRaid)
                     {
                         await SkipRaidOnLosses(token).ConfigureAwait(false);
                         continue;
@@ -618,12 +618,12 @@ namespace SysBot.Pokemon.SV.BotRaid
                     // If MyActionMethod hasn't been executed yet, we introduce the delay, execute it, and then set the flag to true.
                     if (!hasPerformedAction1)
                     {
-                        // Introduce the delay for Action1 here
-                        int action1DelayInMilliseconds = Settings.ActiveRaids[RotationCount].Action1Delay * 1000; // Convert seconds to milliseconds
+                        int action1DelayInSeconds = Settings.ActiveRaids[RotationCount].Action1Delay;
+                        int action1DelayInMilliseconds = action1DelayInSeconds * 1000; // Convert seconds to milliseconds
+                        Log($"Waiting {action1DelayInSeconds} seconds to execute Action1.");
                         await Task.Delay(action1DelayInMilliseconds, token).ConfigureAwait(false);
-
                         await MyActionMethod(token).ConfigureAwait(false);
-
+                        Log($"Action1 has been executed.");
                         hasPerformedAction1 = true;
                     }
                     else
@@ -631,13 +631,14 @@ namespace SysBot.Pokemon.SV.BotRaid
                         // Look ma! No more hardcoded delay! We're going pro.
                         if (Settings.ActiveRaids[RotationCount].Terastallize && timeInBattle.TotalSeconds >= Settings.ActiveRaids[RotationCount].TerastallizeDelay && !hasTerastallized)
                         {
+                            Log("Trying to Terastallize...");
                             await Click(DLEFT, 500, token).ConfigureAwait(false);
                             await Click(A, 500, token).ConfigureAwait(false);
                             await Click(DRIGHT, 500, token).ConfigureAwait(false);
                             await Click(A, 500, token).ConfigureAwait(false);
                             await Click(A, 500, token).ConfigureAwait(false);
-
-                            hasTerastallized = true; // We've done the Terastallize dance, let's not repeat it!
+                            
+                            hasTerastallized = true; 
                             await Task.Delay(6_000, token).ConfigureAwait(false);
                         }
 
@@ -648,11 +649,17 @@ namespace SysBot.Pokemon.SV.BotRaid
                                 break;
 
                             case RaidAction.MashA:
-                                if (!hasTerastallized && await IsConnectedToLobby(token).ConfigureAwait(false)) // Check if we're still battling the beast before mashing A
+                                if (!hasTerastallized) // Check if we haven't performed the Terastallize action yet
                                 {
-                                    await Click(A, 2_500, token).ConfigureAwait(false);
+                                    if (await IsConnectedToLobby(token).ConfigureAwait(false)) // Check if we're still in the lobby
+                                    {
+                                        LobbyFiltersCategory settings = new LobbyFiltersCategory();
+                                        int mashADelayInMilliseconds = (int)(settings.MashADelay * 1000);  // Convert seconds to milliseconds
+                                        await Click(A, mashADelayInMilliseconds, token).ConfigureAwait(false);
+                                    }
                                 }
                                 break;
+
                         }
 
                         if (b % 10 == 0)
@@ -682,7 +689,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 await EnqueueEmbed(null, "", false, false, true, false, token).ConfigureAwait(false);
                 ready = true;
 
-                if (Settings.LobbyOptions.LobbyMethodOptions == LobbyMethodOptions.SkipRaid)
+                if (Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.SkipRaid)
                 {
                     Log($"Lost/Empty Lobbies: {LostRaid}/{Settings.LobbyOptions.SkipRaidLimit}");
 
@@ -1122,10 +1129,10 @@ namespace SysBot.Pokemon.SV.BotRaid
                 Log("First Run detected. Opening Lobby up to all to start raid rotation.");
                 await Click(DDOWN, 1_000, token).ConfigureAwait(false);
             }
-            else if (!Settings.ActiveRaids[RotationCount].IsCoded || Settings.ActiveRaids[RotationCount].IsCoded && EmptyRaid == Settings.LobbyOptions.EmptyRaidLimit && Settings.LobbyOptions.LobbyMethodOptions == LobbyMethodOptions.OpenLobby)
+            else if (!Settings.ActiveRaids[RotationCount].IsCoded || Settings.ActiveRaids[RotationCount].IsCoded && EmptyRaid == Settings.LobbyOptions.EmptyRaidLimit && Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.OpenLobby)
             {
                 // If not the first run, then apply the Settings logic
-                if (Settings.ActiveRaids[RotationCount].IsCoded && EmptyRaid == Settings.LobbyOptions.EmptyRaidLimit && Settings.LobbyOptions.LobbyMethodOptions == LobbyMethodOptions.OpenLobby)
+                if (Settings.ActiveRaids[RotationCount].IsCoded && EmptyRaid == Settings.LobbyOptions.EmptyRaidLimit && Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.OpenLobby)
                     Log($"We had {Settings.LobbyOptions.EmptyRaidLimit} empty raids.. Opening this raid to all!");
                 await Click(DDOWN, 1_000, token).ConfigureAwait(false);
             }
@@ -1268,9 +1275,9 @@ namespace SysBot.Pokemon.SV.BotRaid
                 EmptyRaid++;
                 LostRaid++;
                 Log($"Nobody joined the raid, recovering...");
-                if (Settings.LobbyOptions.LobbyMethodOptions == LobbyMethodOptions.OpenLobby)
+                if (Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.OpenLobby)
                     Log($"Empty Raid Count #{EmptyRaid}");
-                if (Settings.LobbyOptions.LobbyMethodOptions == LobbyMethodOptions.SkipRaid)
+                if (Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.SkipRaid)
                     Log($"Lost/Empty Lobbies: {LostRaid}/{Settings.LobbyOptions.SkipRaidLimit}");
 
                 return (false, lobbyTrainers);
@@ -1492,7 +1499,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             string code = string.Empty;
             if (names is null && !upnext)
             {
-                if (Settings.LobbyOptions.LobbyMethodOptions == LobbyMethodOptions.OpenLobby)
+                if (Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.OpenLobby)
                 {
                     code = $"**{(Settings.ActiveRaids[RotationCount].IsCoded && EmptyRaid < Settings.LobbyOptions.EmptyRaidLimit ? await GetRaidCode(token).ConfigureAwait(false) : "Free For All")}**";
                 }
@@ -1502,7 +1509,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 }
             }
 
-            if (EmptyRaid == Settings.LobbyOptions.EmptyRaidLimit && Settings.LobbyOptions.LobbyMethodOptions == LobbyMethodOptions.OpenLobby)
+            if (EmptyRaid == Settings.LobbyOptions.EmptyRaidLimit && Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.OpenLobby)
                 EmptyRaid = 0;
 
             if (disband) // Wait for trainer to load before disband

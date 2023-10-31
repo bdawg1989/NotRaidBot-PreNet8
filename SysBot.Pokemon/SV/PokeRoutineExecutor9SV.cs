@@ -139,8 +139,18 @@ namespace SysBot.Pokemon
                 await Click(DUP, 0_600, token).ConfigureAwait(false);
                 await Click(A, 1_000 + timing.ExtraTimeLoadProfile, token).ConfigureAwait(false);
             }
+            if (timing.ProfilePosition > 1)
+            {
+                for (int i = 1; i < timing.ProfilePosition; i++)
+                {
+                    await Click(DRIGHT, 1_000, token).ConfigureAwait(false);
+                    await Task.Delay(1_000).ConfigureAwait(false); // Wait for 1 second
+                }
+            }
 
-            await Click(A, 1_000 + timing.ExtraTimeCheckDLC, token).ConfigureAwait(false);
+            await Click(A, 1_000 + timing.ExtraTimeCheckDLC, token).ConfigureAwait(false); // Now we are on the Profile Screen
+                                                                                           // Navigate to the desired profile position
+
             // If they have DLC on the system and can't use it, requires an UP + A to start the game.
             // Should be harmless otherwise since they'll be in loading screen.
             await Click(DUP, 0_600, token).ConfigureAwait(false);

@@ -145,9 +145,9 @@ namespace SysBot.Pokemon
             public bool SpriteAlternateArt { get; set; } = false;
             public string Seed { get; set; } = "0";
             public Action1Type Action1 { get; set; } = Action1Type.GoAllOut;
-            public int Action1Delay { get; set; } = 5; // Default delay of 5 seconds
+            public int Action1Delay { get; set; } = 8; // Default delay of 8 seconds
             public bool Terastallize { get; set; } = true;
-            public int TerastallizeDelay { get; set; } = 120;
+            public int TerastallizeDelay { get; set; } = 70;
             public string Title { get; set; } = string.Empty;
             [Browsable(false)]
             public bool AddedByRACommand { get; set; } = false;
@@ -204,7 +204,7 @@ namespace SysBot.Pokemon
             public override string ToString() => "Lobby Filters";
 
             [Category(Hosting), Description("OpenLobby - Opens the Lobby after x Empty Lobbies\nSkipRaid - Moves on after x losses/empty Lobbies\nContinue - Continues hosting the raid")]
-            public LobbyMethodOptions LobbyMethodOptions { get; set; } = LobbyMethodOptions.SkipRaid;
+            public LobbyMethodOptions LobbyMethod { get; set; } = LobbyMethodOptions.SkipRaid; // Changed the property name here
 
             [Category(Hosting), Description("Empty raid limit per parameter before the bot hosts an uncoded raid. Default is 3 raids.")]
             public int EmptyRaidLimit { get; set; } = 3;
@@ -213,8 +213,12 @@ namespace SysBot.Pokemon
             public int SkipRaidLimit { get; set; } = 3;
 
             [Category(FeatureToggle), Description("Set the action you would want your bot to perform. 'AFK' will make the bot idle, while 'MashA' presses A every 2.5s")]
-            public RaidAction Action { get; set; } = RaidAction.AFK;
+            public RaidAction Action { get; set; } = RaidAction.MashA;
+
+            [Category(FeatureToggle), Description("Delay for the 'MashA' action in seconds.  [3.5 is default]")]
+            public double MashADelay { get; set; } = 3.5;  // Default value set to 3.5 seconds
         }
+
 
         public class CategoryConverter<T> : TypeConverter
         {
