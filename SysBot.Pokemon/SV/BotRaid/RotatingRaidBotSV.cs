@@ -601,6 +601,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 }
 
                 DateTime battleStartTime = DateTime.Now;
+                bool hasPerformedAction1 = false; // Add this flag to check if MyActionMethod has been executed once.
 
                 while (await IsConnectedToLobby(token).ConfigureAwait(false))
                 {
@@ -612,15 +613,51 @@ namespace SysBot.Pokemon.SV.BotRaid
                         timedOut = true;
                         break;
                     }
-
+                    bool hasTerastallized = false; // To track if we have already performed the Terastallize action
                     b++;
-                    switch (Settings.LobbyOptions.Action)
+                    // If MyActionMethod hasn't been executed yet, we introduce the delay, execute it, and then set the flag to true.
+                    if (!hasPerformedAction1)
                     {
-                        case RaidAction.AFK: await Task.Delay(3_000, token).ConfigureAwait(false); break;
-                        case RaidAction.MashA: await Click(A, 3_500, token).ConfigureAwait(false); break;
+                        // Introduce the delay for Action1 here
+                        int action1DelayInMilliseconds = Settings.ActiveRaids[RotationCount].Action1Delay * 1000; // Convert seconds to milliseconds
+                        await Task.Delay(action1DelayInMilliseconds, token).ConfigureAwait(false);
+
+                        await MyActionMethod(token).ConfigureAwait(false);
+
+                        hasPerformedAction1 = true;
                     }
-                    if (b % 10 == 0)
-                        Log("Still in battle...");
+                    else
+                    {
+                        // Look ma! No more hardcoded delay! We're going pro.
+                        if (Settings.ActiveRaids[RotationCount].Terastallize && timeInBattle.TotalSeconds >= Settings.ActiveRaids[RotationCount].TerastallizeDelay && !hasTerastallized)
+                        {
+                            await Click(DLEFT, 500, token).ConfigureAwait(false);
+                            await Click(A, 500, token).ConfigureAwait(false);
+                            await Click(DRIGHT, 500, token).ConfigureAwait(false);
+                            await Click(A, 500, token).ConfigureAwait(false);
+                            await Click(A, 500, token).ConfigureAwait(false);
+
+                            hasTerastallized = true; // We've done the Terastallize dance, let's not repeat it!
+                            await Task.Delay(6_000, token).ConfigureAwait(false);
+                        }
+
+                        switch (Settings.LobbyOptions.Action)
+                        {
+                            case RaidAction.AFK:
+                                await Task.Delay(3_000, token).ConfigureAwait(false);
+                                break;
+
+                            case RaidAction.MashA:
+                                if (!hasTerastallized && await IsConnectedToLobby(token).ConfigureAwait(false)) // Check if we're still battling the beast before mashing A
+                                {
+                                    await Click(A, 2_500, token).ConfigureAwait(false);
+                                }
+                                break;
+                        }
+
+                        if (b % 10 == 0)
+                            Log("Still in battle...");
+                    }
                 }
                 if (timedOut)
                 {
@@ -634,6 +671,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                     return; // Exit the method as we've handled the timeout scenario
                 }
                 Log("Raid lobby disbanded!");
+                await Task.Delay(1_500, token).ConfigureAwait(false);
                 await Click(B, 0_500, token).ConfigureAwait(false);
                 await Click(B, 0_500, token).ConfigureAwait(false);
                 await Click(DDOWN, 0_500, token).ConfigureAwait(false);
@@ -689,6 +727,66 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             if (Settings.KeepDaySeed)
                 await OverrideTodaySeed(token).ConfigureAwait(false);
+        }
+        public async Task MyActionMethod(CancellationToken token)
+        {
+            // Let's rock 'n roll with these moves!
+            switch (Settings.ActiveRaids[RotationCount].Action1)
+            {
+                case Action1Type.GoAllOut:
+                    await Click(DDOWN, 0_500, token).ConfigureAwait(false);
+                    await Click(A, 0_500, token).ConfigureAwait(false);
+                    for (int i = 0; i < 3; i++)
+                    {
+                        await Click(A, 0_500, token).ConfigureAwait(false);
+                    }
+                    break;
+
+                case Action1Type.HangTough:
+                case Action1Type.HealUp:
+                    await Click(DDOWN, 0_500, token).ConfigureAwait(false);
+                    await Click(A, 0_500, token).ConfigureAwait(false);
+                    int ddownTimes = Settings.ActiveRaids[RotationCount].Action1 == Action1Type.HangTough ? 1 : 2;
+                    for (int i = 0; i < ddownTimes; i++)
+                    {
+                        await Click(DDOWN, 0_500, token).ConfigureAwait(false);
+                    }
+                    for (int i = 0; i < 3; i++)
+                    {
+                        await Click(A, 0_500, token).ConfigureAwait(false);
+                    }
+                    break;
+
+                case Action1Type.Move1:
+                    await Click(A, 0_500, token).ConfigureAwait(false);
+                    for (int i = 0; i < 3; i++)
+                    {
+                        await Click(A, 0_500, token).ConfigureAwait(false);
+                    }
+                    break;
+
+                case Action1Type.Move2:
+                case Action1Type.Move3:
+                case Action1Type.Move4:
+                    await Click(A, 0_500, token).ConfigureAwait(false);
+                    int moveDdownTimes = Settings.ActiveRaids[RotationCount].Action1 == Action1Type.Move2 ? 1 : Settings.ActiveRaids[RotationCount].Action1 == Action1Type.Move3 ? 2 : 3;
+                    for (int i = 0; i < moveDdownTimes; i++)
+                    {
+                        await Click(DDOWN, 0_500, token).ConfigureAwait(false);
+                    }
+                    for (int i = 0; i < 3; i++)
+                    {
+                        await Click(A, 0_500, token).ConfigureAwait(false);
+                    }
+                    break;
+
+                default:
+                    Console.WriteLine("Unknown action, what's the move?");
+                    throw new InvalidOperationException("Unknown action type!");
+            }
+
+            // Check for Action2, if defined.
+            // TODO: Implement Action2 logic here.
         }
 
         private async Task CountRaids(List<(ulong, RaidMyStatus)>? trainers, CancellationToken token)

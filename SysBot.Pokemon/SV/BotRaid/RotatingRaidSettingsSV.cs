@@ -19,6 +19,17 @@ namespace SysBot.Pokemon
             Icon1, // Use special set
             Icon2 // Use boring set
         }
+        // Action1 dropdown enum
+        public enum Action1Type
+        {
+            GoAllOut,
+            HangTough,
+            HealUp,
+            Move1,
+            Move2,
+            Move3,
+            Move4
+        }
         public override string ToString() => "RotatingRaidSV Settings";
 
         [Category(Hosting), Description("When enabled, the bot will attempt to auto-generate your raids from the \"raidsv.txt\" file on botstart.")]
@@ -133,7 +144,10 @@ namespace SysBot.Pokemon
             public string[] PartyPK { get; set; } = Array.Empty<string>();
             public bool SpriteAlternateArt { get; set; } = false;
             public string Seed { get; set; } = "0";
-            public string MoveSequence { get; set; } = string.Empty;
+            public Action1Type Action1 { get; set; } = Action1Type.GoAllOut;
+            public int Action1Delay { get; set; } = 5; // Default delay of 5 seconds
+            public bool Terastallize { get; set; } = true;
+            public int TerastallizeDelay { get; set; } = 120;
             public string Title { get; set; } = string.Empty;
             [Browsable(false)]
             public bool AddedByRACommand { get; set; } = false;
@@ -198,7 +212,7 @@ namespace SysBot.Pokemon
             [Category(Hosting), Description("Empty/Lost raid limit per parameter before the bot moves on to the next one. Default is 3 raids.")]
             public int SkipRaidLimit { get; set; } = 3;
 
-            [Category(FeatureToggle), Description("Set the action you would want your bot to perform. 'AFK' will make the bot idle, while 'MashA' presses A every 3.5s")]
+            [Category(FeatureToggle), Description("Set the action you would want your bot to perform. 'AFK' will make the bot idle, while 'MashA' presses A every 2.5s")]
             public RaidAction Action { get; set; } = RaidAction.AFK;
         }
 
