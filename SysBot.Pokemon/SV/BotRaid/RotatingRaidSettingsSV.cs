@@ -39,9 +39,6 @@ namespace SysBot.Pokemon
         [Category(Hosting), Description("Settings related to Events."), Browsable(true)]
         public EventSettingsCategory EventSettings { get; set; } = new();
 
-        [Category(Hosting), Description("Settings related to Move Sequence."), Browsable(true)]
-        public MoveSequenceCategory MoveSequence { get; set; } = new();
-
         [Category(Hosting), Description("RotatingRaid Preset Filters"), DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         public RotatingRaidPresetFiltersCategory EmbedToggles { get; set; } = new();
 
@@ -158,15 +155,7 @@ namespace SysBot.Pokemon
             [Category(Hosting), Description("Set this value to the value of the event den location (Event Index) from Tera Finder.  Make sure you are at this location if you plan to host event raids.  -1 means No Event.")]
             public int RaidDeliveryGroupID { get; set; } = -1;
         }
-        [Category(Hosting), TypeConverter(typeof(CategoryConverter<MoveSequenceCategory>))]
-        public class MoveSequenceCategory
-        {
-            public override string ToString() => "Move Sequence Settings";
 
-            [Category(Hosting), Description("Adjust the time in seconds it takes for us to re-enter the battle menu and execute an attack/cheer. [16 seconds is default]")]
-            public int TimeToWait { get; set; } = 16;
-
-        }
 
         [Category(Hosting), TypeConverter(typeof(CategoryConverter<RotatingRaidPresetFiltersCategory>))]
         public class RotatingRaidPresetFiltersCategory
