@@ -638,72 +638,54 @@ namespace SysBot.Pokemon.SV.BotRaid
                         break;
                     }
 
-                    // If there's no more world to conquer, break out of the loop!
-                    if (moveSequence == null)
+                    // Check if we have a move sequence and haven't reached the end of it
+                    if (moveSequence != null && moveIndex < moveSequence.Length)
                     {
-                        Log("Move sequence is null, exiting the loop.");
-                        break;
-                    }
-
-                    // Check if we haven't reached the end of the move sequence
-                    if (moveIndex < moveSequence.Length)
-                    {
-                        // Let's get our current move and make sure it's all neat and trim!
                         string currentMoveEntry = moveSequence[moveIndex].Trim();
 
-                        // Wait a sec, does this move even have a '-'? No? Invalid!
+                        // Check that the entry has the expected format (contains '-')
                         if (!currentMoveEntry.Contains('-'))
                         {
-                            Log($"Invalid move sequence format for entry {currentMoveEntry}. Skipping.");
+                            // Invalid move sequence format for entry. Skipping.
                             continue;
                         }
 
                         string moveLetter = currentMoveEntry.Split('-')[0];
                         int repeatTimes = int.Parse(currentMoveEntry.Split('-')[1]);
 
-                        Log($"Preparing to execute command: {currentMoveEntry}");
-
                         // Check if the current move is a Cheer
                         if (moveLetter.StartsWith("Cheer"))
                         {
                             // Enter Cheer menu: DDown once and then A
-                            Log("Pressing Down to reach the cheer menu.");
                             await Click(DDOWN, 500, token).ConfigureAwait(false);
 
-                            Log("Pressing A to enter the cheer menu.");
                             await Click(A, 1_000, token).ConfigureAwait(false);
 
                             // Determine which Cheer to execute
                             int cheerNumber = int.Parse(moveLetter.Substring(5));
-                            Log($"Need to press Down {cheerNumber - 1} times to reach cheer {cheerNumber}");
 
                             // Press Down to reach the correct cheer
                             for (int i = 0; i < cheerNumber - 1; i++)
                             {
-                                Log($"Pressing Down to reach the cheer ({i + 1}/{cheerNumber - 1})");
                                 await Click(DDOWN, 500, token).ConfigureAwait(false);
                             }
                         }
                         else
                         {
                             // Enter move menu: just A
-                            Log("Pressing A to enter the move menu.");
                             await Click(A, 500, token).ConfigureAwait(false);
 
                             // Determine the number of Down presses needed to reach the move.
                             int downPresses = moveLetter[0] - 'A';
-                            Log($"Need to press Down {downPresses} times to reach move {moveLetter}");
 
                             // Press Down to reach the correct move
                             for (int i = 0; i < downPresses; i++)
                             {
-                                Log($"Pressing Down to reach the move ({i + 1}/{downPresses})");
                                 await Click(DDOWN, 500, token).ConfigureAwait(false);
                             }
                         }
 
                         // Execute the command 'repeatTimes' number of times
-                        Log($"Executing command {currentMoveEntry} {repeatTimes} times");
                         for (int i = 0; i < repeatTimes; i++)
                         {
                             if (lobbyDisbanded) // Check the flag here
@@ -1663,7 +1645,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
 
             if (Settings.ActiveRaids[RotationCount].Species is 0)
-                turl = "https://i.imgur.com/uHSaGGJ.png";
+                turl = "https://genpkm.com/images/combat.png";
 
             // Fetch the dominant color from the image only AFTER turl is assigned
             (int R, int G, int B) dominantColor = RaidExtensions<PK9>.GetDominantColor(turl);

@@ -386,30 +386,57 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             // Check if the user has a raid in queue
             if (raidToUpdate != null)
             {
-                // Count the number of distinct moves for each Pokémon in the party
-                int numberOfMoves = 0;
-                foreach (var pkInfo in raidToUpdate.PartyPK)
-                {
-                    numberOfMoves = Math.Max(numberOfMoves, pkInfo.Split('-').Length - 1);
-                }
+                List<string> formattedSequenceList = new List<string>();
+                var partyPK = raidToUpdate.PartyPK;
 
-                // Validate the move sequence
-                var moveSlotsInSequence = sequence.Split(',')
-                                                  .Select(s => s.Split('-')[0].Trim())
-                                                  .Distinct()
-                                                  .Count();
+                // Collect all moves in the party
+                var moves = partyPK.Where(line => line.StartsWith("- ")).Select(line => line.Substring(2)).ToArray();
 
-                if (moveSlotsInSequence > numberOfMoves)
+                var moveEntries = sequence.Split(',');
+                foreach (var entry in moveEntries)
                 {
-                    await ReplyAsync($"The provided move sequence references more distinct move slots ({moveSlotsInSequence}) than the Pokémon has available ({numberOfMoves}).").ConfigureAwait(false);
-                    return;
+                    var parts = entry.Split('-');
+                    var moveCode = parts[0].Trim();
+                    var moveRepeat = parts[1].Trim();
+
+                    if (moveCode.StartsWith("Cheer"))
+                    {
+                        int cheerNumber = int.Parse(moveCode.Substring(5));
+                        string cheerName = cheerNumber switch
+                        {
+                            1 => "Go All Out!",
+                            2 => "Hang Tough",
+                            3 => "Hang In There!",
+                            _ => "Invalid Cheer",
+                        };
+                        formattedSequenceList.Add($"{cheerName} x {moveRepeat}");
+                    }
+                    else
+                    {
+                        // Convert 'A' to 0, 'B' to 1, etc.
+                        int moveIndex = moveCode[0] - 'A';
+                        string actualMoveName = moveIndex < moves.Length ? moves[moveIndex] : "Invalid Move";
+                        formattedSequenceList.Add($"{actualMoveName} x {moveRepeat}");
+                    }
                 }
 
                 // Update the move sequence for this user's raid
                 raidToUpdate.MoveSequence = sequence;
 
-                // Confirm update
-                await ReplyAsync($"Move sequence updated for your raid: {sequence}").ConfigureAwait(false);
+                // Prepare the embed
+                var embedBuilder = new EmbedBuilder()
+                    .WithTitle($"{Context.User.Username}'s Move Sequence Updated")
+                    .WithColor(Color.Green)
+                    .WithFooter("Disclaimer: Some moves may not be executed due to timing constrictions.")
+                    .WithThumbnailUrl("https://genpkm.com/images/combat.png");  // Adding thumbnail
+
+                foreach (var formattedMove in formattedSequenceList)
+                {
+                    embedBuilder.AddField("\u200B", formattedMove);  // \u200B is a zero-width space
+                }
+
+                // Send the embed
+                await ReplyAsync("", false, embedBuilder.Build()).ConfigureAwait(false);
             }
             else
             {
