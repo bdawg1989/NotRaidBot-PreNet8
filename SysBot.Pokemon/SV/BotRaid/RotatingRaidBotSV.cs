@@ -699,7 +699,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                             // Click the 'A' button 7 times consecutively, each with a 2 second delay
                             for (int clickCount = 0; clickCount < 7; clickCount++)
                             {
-                                await Click(A, 2_000, token).ConfigureAwait(false);
+                                await Click(A, 500, token).ConfigureAwait(false);
                             }
 
                             // If we have more repeats to perform, wait before executing the same command again
@@ -829,7 +829,10 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
 
             Log("Returning to overworld...");
-
+            await Task.Delay(3_500, token).ConfigureAwait(false);
+            await Click(B, 1_000, token).ConfigureAwait(false);
+            await Click(B, 1_000, token).ConfigureAwait(false);
+            await Click(B, 1_000, token).ConfigureAwait(false);
             while (!await IsOnOverworld(OverworldOffset, token).ConfigureAwait(false))
                 await Click(A, 1_000, token).ConfigureAwait(false);
             await CountRaids(trainers, token).ConfigureAwait(false);
