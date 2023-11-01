@@ -612,69 +612,55 @@ namespace SysBot.Pokemon.SV.BotRaid
                 }
 
                 DateTime battleStartTime = DateTime.Now;
-                bool hasPerformedAction1 = false; // Add this flag to check if MyActionMethod has been executed once.
+                bool hasPerformedAction1 = false; // Because once is enough!
 
                 while (await IsConnectedToLobby(token).ConfigureAwait(false))
                 {
                     TimeSpan timeInBattle = DateTime.Now - battleStartTime;
 
+                    // I mean, if the battle goes on for 10 minutes, even I'd get bored.
                     if (timeInBattle.TotalMinutes >= 10)
                     {
-                        Log("Battle timed out after 10 minutes. Exiting...");
+                        Log("Battle timed out after 10 minutes. Even Netflix asked if I was still watching...");
                         timedOut = true;
                         break;
                     }
-                    bool hasTerastallized = false; // To track if we have already performed the Terastallize action
+
                     b++;
-                    // If MyActionMethod hasn't been executed yet, we introduce the delay, execute it, and then set the flag to true.
+
+                    // That first action? Let's not rush it.
                     if (!hasPerformedAction1)
                     {
                         int action1DelayInSeconds = Settings.ActiveRaids[RotationCount].Action1Delay;
-                        int action1DelayInMilliseconds = action1DelayInSeconds * 1000; // Convert seconds to milliseconds
-                        Log($"Waiting {action1DelayInSeconds} seconds to execute Action1.");
+                        int action1DelayInMilliseconds = action1DelayInSeconds * 1000; // Because time flies, but in milliseconds.
+                        Log($"Waiting {action1DelayInSeconds} seconds. No rush, we're chilling.");
                         await Task.Delay(action1DelayInMilliseconds, token).ConfigureAwait(false);
                         await MyActionMethod(token).ConfigureAwait(false);
-                        Log($"Action1 has been executed.");
+                        Log($"Action1 done. Wasn't that fun?");
                         hasPerformedAction1 = true;
                     }
                     else
                     {
-                        // Look ma! No more hardcoded delay! We're going pro.
-                        if (Settings.ActiveRaids[RotationCount].Terastallize && timeInBattle.TotalSeconds >= Settings.ActiveRaids[RotationCount].TerastallizeDelay && !hasTerastallized)
-                        {
-                            Log("Trying to Terastallize...");
-                            await Click(DLEFT, 500, token).ConfigureAwait(false);
-                            await Click(A, 500, token).ConfigureAwait(false);
-                            await Click(DRIGHT, 500, token).ConfigureAwait(false);
-                            await Click(A, 500, token).ConfigureAwait(false);
-                            await Click(A, 500, token).ConfigureAwait(false);
-                            
-                            hasTerastallized = true; 
-                            await Task.Delay(6_000, token).ConfigureAwait(false);
-                        }
-
+                        // What to do, what to do...
                         switch (Settings.LobbyOptions.Action)
                         {
                             case RaidAction.AFK:
-                                await Task.Delay(3_000, token).ConfigureAwait(false);
+                                await Task.Delay(3_000, token).ConfigureAwait(false); // Let's play the waiting game.
                                 break;
 
                             case RaidAction.MashA:
-                                if (!hasTerastallized) // Check if we haven't performed the Terastallize action yet
+                                if (await IsConnectedToLobby(token).ConfigureAwait(false)) // Still here?
                                 {
-                                    if (await IsConnectedToLobby(token).ConfigureAwait(false)) // Check if we're still in the lobby
-                                    {
-                                        LobbyFiltersCategory settings = new LobbyFiltersCategory();
-                                        int mashADelayInMilliseconds = (int)(settings.MashADelay * 1000);  // Convert seconds to milliseconds
-                                        await Click(A, mashADelayInMilliseconds, token).ConfigureAwait(false);
-                                    }
+                                    LobbyFiltersCategory settings = new LobbyFiltersCategory();
+                                    int mashADelayInMilliseconds = (int)(settings.MashADelay * 1000);  // MashA, but with style.
+                                    await Click(A, mashADelayInMilliseconds, token).ConfigureAwait(false);
                                 }
                                 break;
-
                         }
 
+                        // A little update never hurt.
                         if (b % 10 == 0)
-                            Log("Still in battle...");
+                            Log("Still in battle... Just letting you know I'm still here.");
                     }
                 }
                 if (timedOut)
