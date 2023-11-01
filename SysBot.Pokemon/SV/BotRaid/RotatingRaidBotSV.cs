@@ -526,26 +526,37 @@ namespace SysBot.Pokemon.SV.BotRaid
                     // Loop through trainers again in case someone disconnected.
                     for (int i = 0; i < 3; i++)
                     {
-                        var player = i + 2;
-                        var nidOfs = TeraNIDOffsets[i];
-                        var data = await SwitchConnection.ReadBytesAbsoluteAsync(nidOfs, 8, token).ConfigureAwait(false);
-                        var nid = BitConverter.ToUInt64(data, 0);
+                        try
+                        {
+                            var player = i + 2;
+                            var nidOfs = TeraNIDOffsets[i];
+                            var data = await SwitchConnection.ReadBytesAbsoluteAsync(nidOfs, 8, token).ConfigureAwait(false);
+                            var nid = BitConverter.ToUInt64(data, 0);
 
-                        if (nid == 0)
-                            continue;
+                            if (nid == 0)
+                                continue;
 
-                        List<long> ptr = new(Offsets.Trader2MyStatusPointer);
-                        ptr[2] += i * 0x30;
-                        var trainer = await GetTradePartnerMyStatus(ptr, token).ConfigureAwait(false);
+                            List<long> ptr = new(Offsets.Trader2MyStatusPointer);
+                            ptr[2] += i * 0x30;
+                            var trainer = await GetTradePartnerMyStatus(ptr, token).ConfigureAwait(false);
 
-                        if (string.IsNullOrWhiteSpace(trainer.OT) || HostSAV.OT == trainer.OT)
-                            continue;
+                            if (string.IsNullOrWhiteSpace(trainer.OT) || HostSAV.OT == trainer.OT)
+                                continue;
 
-                        lobbyTrainersFinal.Add((nid, trainer));
-                        var tr = trainers.FirstOrDefault(x => x.Item2.OT == trainer.OT);
-                        if (tr != default)
-                            Log($"Player {i + 2} matches lobby check for {trainer.OT}.");
-                        else Log($"New Player {i + 2}: {trainer.OT} | TID: {trainer.DisplayTID} | NID: {nid}.");
+                            lobbyTrainersFinal.Add((nid, trainer));
+                            var tr = trainers.FirstOrDefault(x => x.Item2.OT == trainer.OT);
+                            if (tr != default)
+                                Log($"Player {i + 2} matches lobby check for {trainer.OT}.");
+                            else Log($"New Player {i + 2}: {trainer.OT} | TID: {trainer.DisplayTID} | NID: {nid}.");
+                        }
+                        catch (IndexOutOfRangeException ex)
+                        {
+                            Log($"Index out of range exception caught: {ex.Message}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Log($"An unknown error occurred: {ex.Message}");
+                        }
                     }
                     var nidDupe = lobbyTrainersFinal.Select(x => x.Item1).ToList();
                     var dupe = lobbyTrainersFinal.Count > 1 && nidDupe.Distinct().Count() == 1;
