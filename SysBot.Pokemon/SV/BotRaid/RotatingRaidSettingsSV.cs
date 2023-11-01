@@ -145,7 +145,7 @@ namespace SysBot.Pokemon
             public bool SpriteAlternateArt { get; set; } = false;
             public string Seed { get; set; } = "0";
             public Action1Type Action1 { get; set; } = Action1Type.GoAllOut;
-            public int Action1Delay { get; set; } = 8; // Default delay of 8 seconds
+            public int Action1Delay { get; set; } = 5; // Default delay of 5 seconds
             public string Title { get; set; } = string.Empty;
             [Browsable(false)]
             public bool AddedByRACommand { get; set; } = false;

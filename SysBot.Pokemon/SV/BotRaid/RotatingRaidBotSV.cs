@@ -632,11 +632,12 @@ namespace SysBot.Pokemon.SV.BotRaid
                     if (!hasPerformedAction1)
                     {
                         int action1DelayInSeconds = Settings.ActiveRaids[RotationCount].Action1Delay;
+                        var action1Name = Settings.ActiveRaids[RotationCount].Action1;
                         int action1DelayInMilliseconds = action1DelayInSeconds * 1000; // Because time flies, but in milliseconds.
                         Log($"Waiting {action1DelayInSeconds} seconds. No rush, we're chilling.");
                         await Task.Delay(action1DelayInMilliseconds, token).ConfigureAwait(false);
                         await MyActionMethod(token).ConfigureAwait(false);
-                        Log($"Action1 done. Wasn't that fun?");
+                        Log($"{action1Name} done. Wasn't that fun?");
                         hasPerformedAction1 = true;
                     }
                     else
@@ -679,6 +680,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 await Click(B, 0_500, token).ConfigureAwait(false);
                 await Click(B, 0_500, token).ConfigureAwait(false);
                 await Click(DDOWN, 0_500, token).ConfigureAwait(false);
+                await Click(A, 0_500, token).ConfigureAwait(false);
 
                 if (Settings.ActiveRaids.Count > 1)
                     await SanitizeRotationCount(token).ConfigureAwait(false);
@@ -1795,7 +1797,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 Log("Seed override completed.");
                 // Call UpdateGameProgress
                 await UpdateGameProgress(token).ConfigureAwait(false);
-                await Task.Delay(3_000 + timing.ExtraTimeLoadGame, token).ConfigureAwait(false);
+                await Task.Delay(5_000 + timing.ExtraTimeInjectSeed, token).ConfigureAwait(false);
             }
 
             for (int i = 0; i < 8; i++)
