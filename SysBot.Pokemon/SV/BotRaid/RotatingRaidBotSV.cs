@@ -487,6 +487,7 @@ namespace SysBot.Pokemon.SV.BotRaid
         {
             bool ready = false;
             List<(ulong, RaidMyStatus)> lobbyTrainersFinal = new();
+            LobbyFiltersCategory settings = new LobbyFiltersCategory();
             if (await IsConnectedToLobby(token).ConfigureAwait(false))
             {
                 int b = 0;
@@ -652,7 +653,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                             case RaidAction.MashA:
                                 if (await IsConnectedToLobby(token).ConfigureAwait(false)) // Still here?
                                 {
-                                    LobbyFiltersCategory settings = new LobbyFiltersCategory();
+                                    
                                     int mashADelayInMilliseconds = (int)(settings.MashADelay * 1000);  // MashA, but with style.
                                     await Click(A, mashADelayInMilliseconds, token).ConfigureAwait(false);
                                 }
@@ -676,7 +677,8 @@ namespace SysBot.Pokemon.SV.BotRaid
                     return; // Exit the method as we've handled the timeout scenario
                 }
                 Log("Raid lobby disbanded!");
-                await Task.Delay(1_500, token).ConfigureAwait(false);
+                
+                await Task.Delay(1_500 + settings.ExtraTimeLobbyDisband, token).ConfigureAwait(false);
                 await Click(B, 0_500, token).ConfigureAwait(false);
                 await Click(B, 0_500, token).ConfigureAwait(false);
                 await Click(DDOWN, 0_500, token).ConfigureAwait(false);

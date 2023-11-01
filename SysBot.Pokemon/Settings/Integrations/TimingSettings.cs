@@ -22,7 +22,7 @@ namespace SysBot.Pokemon
         [Category(OpenGame), Description("Extra time in milliseconds to wait before clicking A in title screen.")]
         public int ExtraTimeLoadGame { get; set; } = 5000;
 
-        [Category(OpenGame), Description("Extra time in milliseconds to wait before clicking A in title screen.")]
+        [Category(OpenGame), Description("Extra time in milliseconds to wait after the seed and storyprogress are injected before clicking A.")]
         public int ExtraTimeInjectSeed { get; set; } = 0;
 
         [Category(OpenGame), Description("[BDSP] Extra time in milliseconds to wait for the overworld to load after the title screen.")]

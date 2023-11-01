@@ -215,6 +215,9 @@ namespace SysBot.Pokemon
 
             [Category(FeatureToggle), Description("Delay for the 'MashA' action in seconds.  [3.5 is default]")]
             public double MashADelay { get; set; } = 3.5;  // Default value set to 3.5 seconds
+
+            [Category(FeatureToggle), Description("Extra time in milliseconds to wait after Lobby Disbands in Raid before deciding to not capture the raidmon.")]
+            public int ExtraTimeLobbyDisband { get; set; } = 0;
         }
 
 
