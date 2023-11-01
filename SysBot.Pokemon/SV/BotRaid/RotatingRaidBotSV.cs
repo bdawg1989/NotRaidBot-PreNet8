@@ -1017,7 +1017,7 @@ namespace SysBot.Pokemon.SV.BotRaid
         private async Task<bool> PrepareForRaid(CancellationToken token)
         {
             Log("Preparing lobby...");
-
+            LobbyFiltersCategory settings = new LobbyFiltersCategory();
             int attempts = 0;  // Counter to track the number of connection attempts.
             int maxAttempts = 5;  // Maximum allowed connection attempts before considering it a softban.
 
@@ -1090,7 +1090,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             if (len.Length > 1 && EmptyRaid == 0)
             {
                 Log("Preparing PartyPK. Sit tight.");
-                await Task.Delay(2_500, token).ConfigureAwait(false);
+                await Task.Delay(2_500 + settings.ExtraTimeLobbyDisband, token).ConfigureAwait(false);
                 await SetCurrentBox(0, token).ConfigureAwait(false);
                 var res = string.Join("\n", Settings.ActiveRaids[RotationCount].PartyPK);
                 if (res.Length > 4096)

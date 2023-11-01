@@ -218,6 +218,9 @@ namespace SysBot.Pokemon
 
             [Category(FeatureToggle), Description("Extra time in milliseconds to wait after Lobby Disbands in Raid before deciding to not capture the raidmon.")]
             public int ExtraTimeLobbyDisband { get; set; } = 0;
+
+            [Category(FeatureToggle), Description("Extra time in milliseconds to wait before changing partypk.")]
+            public int ExtraTimePartyPK { get; set; } = 0;
         }
 
 
