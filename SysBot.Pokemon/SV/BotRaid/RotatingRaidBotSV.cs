@@ -405,6 +405,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                     if (LostRaid >= Settings.LobbyOptions.SkipRaidLimit && Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.SkipRaid)
                     {
                         await SkipRaidOnLosses(token).ConfigureAwait(false);
+                        EmptyRaid = 0;
                         continue;
                     }
 
