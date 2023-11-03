@@ -201,11 +201,6 @@ namespace SysBot.Pokemon.Discord
             }
             if (!mgr.CanUseCommandChannel(msg.Channel.Id) && msg.Author.Id != mgr.Owner)
             {
-                if (msg.Content.Contains("next") || msg.Content.Contains("ps") || msg.Content.Contains("permuteseed") || msg.Content.Contains("spawnerseed") || msg.Content.Contains("spawnsample") || msg.Content.Contains("multieevee") || msg.Content.Contains("multicombee") || msg.Content.Contains("multihippo") || msg.Content.Contains("multikarp") || msg.Content.Contains("multisample") || msg.Content.Contains("multibascu"))
-                {
-                    await _commands.ExecuteAsync(context, pos, _services).ConfigureAwait(false);
-                    return true;
-                }
                 await msg.Channel.SendMessageAsync("You can't use that command here.").ConfigureAwait(false);
                 return true;
             }
