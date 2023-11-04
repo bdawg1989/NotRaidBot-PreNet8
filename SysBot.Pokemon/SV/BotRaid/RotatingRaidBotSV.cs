@@ -670,10 +670,8 @@ namespace SysBot.Pokemon.SV.BotRaid
                 {
 
                     // Execute the logic to locate seed index and then close and restart the game
-                    await LocateSeedIndex(token).ConfigureAwait(false);
                     await Task.Delay(0_500, token).ConfigureAwait(false);
-                    await CloseGame(Hub.Config, token).ConfigureAwait(false);
-                    await StartGameRaid(Hub.Config, token).ConfigureAwait(false);
+                    await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
 
                     return; // Exit the method as we've handled the timeout scenario
                 }
@@ -1070,8 +1068,11 @@ namespace SysBot.Pokemon.SV.BotRaid
                 if (attempts >= maxAttempts)
                 {
                     Log("Reached maximum connection attempts. Assuming softban. Waiting for 31 minutes...");
-                    await Task.Delay(1860000, token).ConfigureAwait(false);  // Wait for 1,860,000ms / 31 minutes
-                    continue;  // Continue the outer loop to try connecting again
+                    await Task.Delay(TimeSpan.FromMinutes(31), token).ConfigureAwait(false);  // Using TimeSpan for clarity
+
+                    // Assuming ReOpenGame is an async method you have defined somewhere
+                    await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
+                    Log("Game reopening process has been initiated.");
                 }
 
                 // If we've successfully connected, break out of the outer loop.
@@ -1219,7 +1220,8 @@ namespace SysBot.Pokemon.SV.BotRaid
 
         private async Task<(bool, List<(ulong, RaidMyStatus)>)> ReadTrainers(CancellationToken token)
         {
-            await EnqueueEmbed(null, "", false, false, false, false, token).ConfigureAwait(false);
+            // Initial call to EnqueueEmbed for starting the process (assuming the definition exists elsewhere in your code)
+            await EnqueueEmbed(null, "Starting trainer check...", false, false, false, false, token).ConfigureAwait(false);
 
             List<(ulong, RaidMyStatus)> lobbyTrainers = new();
             var wait = TimeSpan.FromSeconds(Settings.TimeToWait);
@@ -1238,7 +1240,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                     var nid = BitConverter.ToUInt64(data, 0);
                     while (nid == 0 && DateTime.Now < endTime)
                     {
-                        await Task.Delay(0_500, token).ConfigureAwait(false);
+                        await Task.Delay(500, token).ConfigureAwait(false);
                         data = await SwitchConnection.ReadBytesAbsoluteAsync(nidOfs, 8, token).ConfigureAwait(false);
                         nid = BitConverter.ToUInt64(data, 0);
                     }
@@ -1249,7 +1251,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
                     while (trainer.OT.Length == 0 && DateTime.Now < endTime)
                     {
-                        await Task.Delay(0_500, token).ConfigureAwait(false);
+                        await Task.Delay(500, token).ConfigureAwait(false);
                         trainer = await GetTradePartnerMyStatus(ptr, token).ConfigureAwait(false);
                     }
 
@@ -1257,6 +1259,17 @@ namespace SysBot.Pokemon.SV.BotRaid
                     {
                         if (await CheckIfTrainerBanned(trainer, nid, player, token).ConfigureAwait(false))
                             return (false, lobbyTrainers);
+
+                        // Check for duplicates
+                        if (RaidTracker.ContainsKey(nid))
+                        {
+                            Log($"Duplicate NID found for Player {player}: {trainer.OT} | NID: {nid}");
+                            continue; // Skip this iteration if a duplicate NID is found.
+                        }
+                        else
+                        {
+                            RaidTracker.Add(nid, player);
+                        }
                     }
 
                     if (lobbyTrainers.FirstOrDefault(x => x.Item1 == nid) != default && trainer.OT.Length > 0)
@@ -1270,13 +1283,13 @@ namespace SysBot.Pokemon.SV.BotRaid
                 }
             }
 
-            await Task.Delay(5_000, token).ConfigureAwait(false);
+            await Task.Delay(5000, token).ConfigureAwait(false);
 
             if (lobbyTrainers.Count == 0)
             {
                 EmptyRaid++;
                 LostRaid++;
-                Log($"Nobody joined the raid, recovering...");
+                Log("Nobody joined the raid, recovering...");
                 if (Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.OpenLobby)
                     Log($"Empty Raid Count #{EmptyRaid}");
                 if (Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.SkipRaid)
@@ -1289,8 +1302,8 @@ namespace SysBot.Pokemon.SV.BotRaid
             Log($"Raid #{RaidCount} is starting!");
             if (EmptyRaid != 0)
                 EmptyRaid = 0;
-            return (true, lobbyTrainers);
 
+            return (true, lobbyTrainers);
         }
 
         private async Task<bool> IsConnectedToLobby(CancellationToken token)
