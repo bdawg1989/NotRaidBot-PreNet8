@@ -1239,7 +1239,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                     var nid = BitConverter.ToUInt64(data, 0);
                     while (nid == 0 && DateTime.Now < endTime)
                     {
-                        await Task.Delay(500, token).ConfigureAwait(false);
+                        await Task.Delay(0_500, token).ConfigureAwait(false);
                         data = await SwitchConnection.ReadBytesAbsoluteAsync(nidOfs, 8, token).ConfigureAwait(false);
                         nid = BitConverter.ToUInt64(data, 0);
                     }
@@ -1250,7 +1250,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
                     while (trainer.OT.Length == 0 && DateTime.Now < endTime)
                     {
-                        await Task.Delay(500, token).ConfigureAwait(false);
+                        await Task.Delay(0_500, token).ConfigureAwait(false);
                         trainer = await GetTradePartnerMyStatus(ptr, token).ConfigureAwait(false);
                     }
 
@@ -1258,22 +1258,17 @@ namespace SysBot.Pokemon.SV.BotRaid
                     {
                         if (await CheckIfTrainerBanned(trainer, nid, player, token).ConfigureAwait(false))
                             return (false, lobbyTrainers);
-
-                        // Check for duplicates
-                        if (RaidTracker.ContainsKey(nid))
-                        {
-                            Log($"Duplicate NID found for Player {player}: {trainer.OT} | NID: {nid}");
-                            continue; // Skip this iteration if a duplicate NID is found.
-                        }
-                        else
-                        {
-                            RaidTracker.Add(nid, player);
-                        }
                     }
 
-                    if (lobbyTrainers.FirstOrDefault(x => x.Item1 == nid) != default && trainer.OT.Length > 0)
-                        lobbyTrainers[i] = (nid, trainer);
-                    else if (nid > 0 && trainer.OT.Length > 0)
+                    // Check if the NID is already in the list to prevent duplicates
+                    if (lobbyTrainers.Any(x => x.Item1 == nid))
+                    {
+                        Log($"Duplicate NID detected: {nid}. Skipping...");
+                        continue; // Skip adding this NID if it's a duplicate
+                    }
+
+                    // If NID is not a duplicate and has a valid trainer OT, add to the list
+                    if (nid > 0 && trainer.OT.Length > 0)
                         lobbyTrainers.Add((nid, trainer));
 
                     full = lobbyTrainers.Count == 3;
@@ -1282,13 +1277,13 @@ namespace SysBot.Pokemon.SV.BotRaid
                 }
             }
 
-            await Task.Delay(5000, token).ConfigureAwait(false);
+            await Task.Delay(5_000, token).ConfigureAwait(false);
 
             if (lobbyTrainers.Count == 0)
             {
                 EmptyRaid++;
                 LostRaid++;
-                Log("Nobody joined the raid, recovering...");
+                Log($"Nobody joined the raid, recovering...");
                 if (Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.OpenLobby)
                     Log($"Empty Raid Count #{EmptyRaid}");
                 if (Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.SkipRaid)
@@ -1301,7 +1296,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             Log($"Raid #{RaidCount} is starting!");
             if (EmptyRaid != 0)
                 EmptyRaid = 0;
-
             return (true, lobbyTrainers);
         }
 
