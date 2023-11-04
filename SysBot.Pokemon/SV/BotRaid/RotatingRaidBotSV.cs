@@ -1220,8 +1220,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
         private async Task<(bool, List<(ulong, RaidMyStatus)>)> ReadTrainers(CancellationToken token)
         {
-            // Initial call to EnqueueEmbed for starting the process (assuming the definition exists elsewhere in your code)
-            await EnqueueEmbed(null, "Starting trainer check...", false, false, false, false, token).ConfigureAwait(false);
+            await EnqueueEmbed(null, "", false, false, false, false, token).ConfigureAwait(false);
 
             List<(ulong, RaidMyStatus)> lobbyTrainers = new();
             var wait = TimeSpan.FromSeconds(Settings.TimeToWait);
