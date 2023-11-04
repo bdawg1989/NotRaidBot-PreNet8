@@ -315,6 +315,7 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
                 4 => GameProgress.Unlocked4Stars,
                 3 => GameProgress.Unlocked3Stars,
                 2 => GameProgress.UnlockedTeraRaids,
+                1 => GameProgress.UnlockedTeraRaids,
                 _ => GameProgress.Unlocked6Stars
             };
         }
