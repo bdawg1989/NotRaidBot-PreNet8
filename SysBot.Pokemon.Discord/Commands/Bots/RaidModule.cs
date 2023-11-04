@@ -90,7 +90,7 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
 
             var c = bot.Bot.Connection;
             c.Reset();
-            var bytes = Task.Run(async () => await c.PixelPeek(token).ConfigureAwait(false)).Result ?? Array.Empty<byte>();
+            var bytes = await c.PixelPeek(token).ConfigureAwait(false) ?? Array.Empty<byte>();
             MemoryStream ms = new(bytes);
             var img = "cap.jpg";
             var embed = new EmbedBuilder { ImageUrl = $"attachment://{img}", Color = Color.Purple }.WithFooter(new EmbedFooterBuilder { Text = $"Captured image from bot at address {address}." });
@@ -315,8 +315,8 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
                 4 => GameProgress.Unlocked4Stars,
                 3 => GameProgress.Unlocked3Stars,
                 2 => GameProgress.UnlockedTeraRaids,
-                1 => GameProgress.Beginning,
-                _ => GameProgress.None,
+                1 => GameProgress.UnlockedTeraRaids,
+                _ => GameProgress.Unlocked6Stars
             };
         }
 
