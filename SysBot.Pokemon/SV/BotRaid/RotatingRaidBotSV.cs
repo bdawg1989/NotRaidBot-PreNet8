@@ -429,7 +429,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                     }
                     continue;
                 }
-                await CompleteRaid(lobbyTrainers, token).ConfigureAwait(false);
+                await CompleteRaid(token).ConfigureAwait(false);
                 raidsHosted++;
                 if (raidsHosted == Settings.TotalRaidsToHost && Settings.TotalRaidsToHost > 0)
                     break;
@@ -484,237 +484,282 @@ namespace SysBot.Pokemon.SV.BotRaid
             Log($"Index not located.");
         }
 
-        private async Task CompleteRaid(List<(ulong, RaidMyStatus)> trainers, CancellationToken token)
+        private async Task CompleteRaid(CancellationToken token)
         {
-            bool ready = false;
-            List<(ulong, RaidMyStatus)> lobbyTrainersFinal = new();
-            LobbyFiltersCategory settings = new LobbyFiltersCategory();
+            var trainers = new List<(ulong, RaidMyStatus)>();
+
+            // Ensure connection to lobby and log status
+            if (!await CheckIfConnectedToLobbyAndLog(token))
+                return;
+
+            // Ensure in raid
+            if (!await EnsureInRaid(token))
+                return;
+
+            // Update final list of lobby trainers
+            var lobbyTrainersFinal = new List<(ulong, RaidMyStatus)>();
+            if (!await UpdateLobbyTrainersFinal(lobbyTrainersFinal, trainers, token))
+                return;
+
+            // Handle duplicates and embeds
+            if (!await HandleDuplicatesAndEmbeds(lobbyTrainersFinal, token))
+                return;
+
+            // Process battle actions
+            if (!await ProcessBattleActions(token))
+                return;
+
+            // Handle end of raid actions
+            bool ready = await HandleEndOfRaidActions(token);
+
+            // Finalize raid completion
+            await FinalizeRaidCompletion(trainers, ready, token);
+        }
+
+
+
+        private async Task<bool> CheckIfConnectedToLobbyAndLog(CancellationToken token)
+        {
             if (await IsConnectedToLobby(token).ConfigureAwait(false))
             {
-                int b = 0;
                 Log("Preparing for battle!");
-                // Initialize a CancellationTokenSource with a 5-minute timeout
-                using (var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5)))
+                return true;
+            }
+            return false;
+        }
+        private async Task<bool> EnsureInRaid(CancellationToken linkedToken)
+        {
+            while (!await IsInRaid(linkedToken).ConfigureAwait(false))
+            {
+                if (linkedToken.IsCancellationRequested)
                 {
-                    // Create a linked token so that we can handle either the 5-minute timeout or external cancellation
-                    using (var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(token, cts.Token))
-                    {
-                        CancellationToken linkedToken = linkedTokenSource.Token;
-
-                        // Existing loop to check if you are in the raid
-                        while (!await IsInRaid(token).ConfigureAwait(false))
-                        {
-                            if (linkedToken.IsCancellationRequested)
-                            {
-                                Log("Oops! Something went wrong, resetting to recover.");
-                                // Logic to reset and recover
-                                await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
-                                return;
-                            }
-
-                            await Click(A, 1_000, token).ConfigureAwait(false);
-                        }
-                    }
+                    Log("Oops! Something went wrong, resetting to recover.");
+                    await ReOpenGame(Hub.Config, linkedToken).ConfigureAwait(false);
+                    return false;
                 }
-                while (!await IsInRaid(token).ConfigureAwait(false))
-                    await Click(A, 1_000, token).ConfigureAwait(false);
+                await Click(A, 1_000, linkedToken).ConfigureAwait(false);
+            }
+            return true;
+        }
+        private async Task<bool> UpdateLobbyTrainersFinal(List<(ulong, RaidMyStatus)> lobbyTrainersFinal, List<(ulong, RaidMyStatus)> trainers, CancellationToken token)
+        {
+            // Clear NIDs to refresh player check.
+            await SwitchConnection.WriteBytesAbsoluteAsync(new byte[32], TeraNIDOffsets[0], token).ConfigureAwait(false);
+            await Task.Delay(5_000, token).ConfigureAwait(false);
 
-                if (await IsInRaid(token).ConfigureAwait(false))
+            // Loop through trainers again in case someone disconnected.
+            for (int i = 0; i < 3; i++)
+            {
+                try
                 {
-                    // Clear NIDs to refresh player check.
-                    await SwitchConnection.WriteBytesAbsoluteAsync(new byte[32], TeraNIDOffsets[0], token).ConfigureAwait(false);
-                    await Task.Delay(5_000, token).ConfigureAwait(false);
+                    var player = i + 2;
+                    var nidOfs = TeraNIDOffsets[i];
+                    var data = await SwitchConnection.ReadBytesAbsoluteAsync(nidOfs, 8, token).ConfigureAwait(false);
+                    var nid = BitConverter.ToUInt64(data, 0);
 
-                    // Loop through trainers again in case someone disconnected.
-                    for (int i = 0; i < 3; i++)
-                    {
-                        try
-                        {
-                            var player = i + 2;
-                            var nidOfs = TeraNIDOffsets[i];
-                            var data = await SwitchConnection.ReadBytesAbsoluteAsync(nidOfs, 8, token).ConfigureAwait(false);
-                            var nid = BitConverter.ToUInt64(data, 0);
+                    if (nid == 0)
+                        continue;
 
-                            if (nid == 0)
-                                continue;
+                    List<long> ptr = new(Offsets.Trader2MyStatusPointer);
+                    ptr[2] += i * 0x30;
+                    var trainer = await GetTradePartnerMyStatus(ptr, token).ConfigureAwait(false);
 
-                            List<long> ptr = new(Offsets.Trader2MyStatusPointer);
-                            ptr[2] += i * 0x30;
-                            var trainer = await GetTradePartnerMyStatus(ptr, token).ConfigureAwait(false);
+                    if (string.IsNullOrWhiteSpace(trainer.OT) || HostSAV.OT == trainer.OT)
+                        continue;
 
-                            if (string.IsNullOrWhiteSpace(trainer.OT) || HostSAV.OT == trainer.OT)
-                                continue;
-
-                            lobbyTrainersFinal.Add((nid, trainer));
-                            var tr = trainers.FirstOrDefault(x => x.Item2.OT == trainer.OT);
-                            if (tr != default)
-                                Log($"Player {i + 2} matches lobby check for {trainer.OT}.");
-                            else Log($"New Player {i + 2}: {trainer.OT} | TID: {trainer.DisplayTID} | NID: {nid}.");
-                        }
-                        catch (IndexOutOfRangeException ex)
-                        {
-                            Log($"Index out of range exception caught: {ex.Message}");
-                        }
-                        catch (Exception ex)
-                        {
-                            Log($"An unknown error occurred: {ex.Message}");
-                        }
-                    }
-                    var nidDupe = lobbyTrainersFinal.Select(x => x.Item1).ToList();
-                    var dupe = lobbyTrainersFinal.Count > 1 && nidDupe.Distinct().Count() == 1;
-                    if (dupe)
-                    {
-                        // We read bad data, reset game to end early and recover.
-                        var msg = "Oops! Something went wrong, resetting to recover.";
-                        bool success = false;
-                        for (int attempt = 1; attempt <= 3; attempt++)
-                        {
-                            try
-                            {
-                                await EnqueueEmbed(null, "", false, false, false, false, token).ConfigureAwait(false);
-                                success = true;
-                                break;
-                            }
-                            catch (Exception ex)
-                            {
-                                Log($"Attempt {attempt} failed with error: {ex.Message}");
-                                if (attempt == 3)
-                                {
-                                    Log("All attempts failed. Continuing without sending embed.");
-                                }
-                            }
-                        }
-
-                        await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
-                        return;
-                    }
-
-                    var names = lobbyTrainersFinal.Select(x => x.Item2.OT).ToList();
-                    bool hatTrick = lobbyTrainersFinal.Count == 3 && names.Distinct().Count() == 1;
-
-                    await Task.Delay(15_000, token).ConfigureAwait(false);
-                    bool embedSuccess = false;
-                    for (int attempt = 1; attempt <= 3; attempt++)
-                    {
-                        try
-                        {
-                            await EnqueueEmbed(names, "", hatTrick, false, false, true, token).ConfigureAwait(false);
-                            embedSuccess = true;
-                            break;
-                        }
-                        catch (Exception ex)
-                        {
-                            Log($"Attempt {attempt} failed with error: {ex.Message}");
-                            if (attempt == 3)
-                            {
-                                Log("All attempts failed. Continuing without sending embed.");
-                            }
-                        }
-                    }
+                    lobbyTrainersFinal.Add((nid, trainer));
+                    var tr = trainers.FirstOrDefault(x => x.Item2.OT == trainer.OT);
+                    if (tr != default)
+                        Log($"Player {i + 2} matches lobby check for {trainer.OT}.");
+                    else Log($"New Player {i + 2}: {trainer.OT} | TID: {trainer.DisplayTID} | NID: {nid}.");
                 }
-
-                DateTime battleStartTime = DateTime.Now;
-                bool hasPerformedAction1 = false; // Because once is enough!
-
-                while (await IsConnectedToLobby(token).ConfigureAwait(false))
+                catch (IndexOutOfRangeException ex)
                 {
-                    TimeSpan timeInBattle = DateTime.Now - battleStartTime;
-
-                    // I mean, if the battle goes on for 10 minutes, even I'd get bored.
-                    if (timeInBattle.TotalMinutes >= 10)
+                    Log($"Index out of range exception caught: {ex.Message}");
+                    return false;
+                }
+                catch (Exception ex)
+                {
+                    Log($"An unknown error occurred: {ex.Message}");
+                    return false;
+                }
+            }
+            return true;
+        }
+        private async Task<bool> HandleDuplicatesAndEmbeds(List<(ulong, RaidMyStatus)> lobbyTrainersFinal, CancellationToken token)
+        {
+            var nidDupe = lobbyTrainersFinal.Select(x => x.Item1).ToList();
+            var dupe = lobbyTrainersFinal.Count > 1 && nidDupe.Distinct().Count() == 1;
+            if (dupe)
+            {
+                // We read bad data, reset game to end early and recover.
+                var msg = "Oops! Something went wrong, resetting to recover.";
+                bool success = false;
+                for (int attempt = 1; attempt <= 3; attempt++)
+                {
+                    try
                     {
-                        Log("Battle timed out after 10 minutes. Even Netflix asked if I was still watching...");
-                        timedOut = true;
+                        await EnqueueEmbed(null, "", false, false, false, false, token).ConfigureAwait(false);
+                        success = true;
                         break;
                     }
-
-                    b++;
-
-                    // That first action? Let's not rush it.
-                    if (!hasPerformedAction1)
+                    catch (Exception ex)
                     {
-                        int action1DelayInSeconds = Settings.ActiveRaids[RotationCount].Action1Delay;
-                        var action1Name = Settings.ActiveRaids[RotationCount].Action1;
-                        int action1DelayInMilliseconds = action1DelayInSeconds * 1000; // Because time flies, but in milliseconds.
-                        Log($"Waiting {action1DelayInSeconds} seconds. No rush, we're chilling.");
-                        await Task.Delay(action1DelayInMilliseconds, token).ConfigureAwait(false);
-                        await MyActionMethod(token).ConfigureAwait(false);
-                        Log($"{action1Name} done. Wasn't that fun?");
-                        hasPerformedAction1 = true;
-                    }
-                    else
-                    {
-                        // What to do, what to do...
-                        switch (Settings.LobbyOptions.Action)
+                        Log($"Attempt {attempt} failed with error: {ex.Message}");
+                        if (attempt == 3)
                         {
-                            case RaidAction.AFK:
-                                await Task.Delay(3_000, token).ConfigureAwait(false); // Let's play the waiting game.
-                                break;
-
-                            case RaidAction.MashA:
-                                if (await IsConnectedToLobby(token).ConfigureAwait(false)) // Still here?
-                                {
-                                    
-                                    int mashADelayInMilliseconds = (int)(settings.MashADelay * 1000);  // MashA, but with style.
-                                    await Click(A, mashADelayInMilliseconds, token).ConfigureAwait(false);
-                                }
-                                break;
+                            Log("All attempts failed. Continuing without sending embed.");
                         }
-
-                        // A little update never hurt.
-                        if (b % 10 == 0)
-                            Log("Still in battle... Just letting you know I'm still here.");
                     }
                 }
-                if (timedOut)
-                {
 
-                    // Execute the logic to locate seed index and then close and restart the game
-                    await Task.Delay(0_500, token).ConfigureAwait(false);
+                if (!success)
+                {
                     await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
-
-                    return; // Exit the method as we've handled the timeout scenario
+                    return false;
                 }
-                Log("Raid lobby disbanded!");
-                
-                await Task.Delay(1_500 + settings.ExtraTimeLobbyDisband, token).ConfigureAwait(false);
-                await Click(B, 0_500, token).ConfigureAwait(false);
-                await Click(B, 0_500, token).ConfigureAwait(false);
-                await Click(DDOWN, 0_500, token).ConfigureAwait(false);
-                await Click(A, 0_500, token).ConfigureAwait(false);
+            }
 
-                if (Settings.ActiveRaids.Count > 1)
-                    await SanitizeRotationCount(token).ConfigureAwait(false);
+            var names = lobbyTrainersFinal.Select(x => x.Item2.OT).ToList();
+            bool hatTrick = lobbyTrainersFinal.Count == 3 && names.Distinct().Count() == 1;
 
-                await EnqueueEmbed(null, "", false, false, true, false, token).ConfigureAwait(false);
-                ready = true;
-
-                if (Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.SkipRaid)
+            bool embedSuccess = false;
+            for (int attempt = 1; attempt <= 3; attempt++)
+            {
+                try
                 {
-                    Log($"Lost/Empty Lobbies: {LostRaid}/{Settings.LobbyOptions.SkipRaidLimit}");
-
-                    if (LostRaid >= Settings.LobbyOptions.SkipRaidLimit)
+                    await EnqueueEmbed(names, "", hatTrick, false, false, true, token).ConfigureAwait(false);
+                    embedSuccess = true;
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Log($"Attempt {attempt} failed with error: {ex.Message}");
+                    if (attempt == 3)
                     {
-                        Log($"We had {Settings.LobbyOptions.SkipRaidLimit} lost/empty raids.. Moving on!");
-                        await SanitizeRotationCount(token).ConfigureAwait(false);
-                        await EnqueueEmbed(null, "", false, false, true, false, token).ConfigureAwait(false);
-                        ready = true;
+                        Log("All attempts failed. Continuing without sending embed.");
                     }
                 }
             }
 
+            return embedSuccess;
+        }
+        private async Task<bool> ProcessBattleActions(CancellationToken token)
+        {
+            DateTime battleStartTime = DateTime.Now;
+            bool hasPerformedAction1 = false;
+            bool timedOut = false;
+            bool hasLoggedInitial = false;
+
+            while (await IsConnectedToLobby(token).ConfigureAwait(false))
+            {
+                TimeSpan timeInBattle = DateTime.Now - battleStartTime;
+
+                // Check for battle timeout
+                if (timeInBattle.TotalMinutes >= 10)
+                {
+                    Log("Battle timed out after 10 minutes. Even Netflix asked if I was still watching...");
+                    timedOut = true;
+                    break;
+                }
+
+                // Handle the first action with a delay
+                if (!hasPerformedAction1)
+                {
+                    int action1DelayInSeconds = Settings.ActiveRaids[RotationCount].Action1Delay;
+                    var action1Name = Settings.ActiveRaids[RotationCount].Action1;
+                    int action1DelayInMilliseconds = action1DelayInSeconds * 1000;
+                    Log($"Waiting {action1DelayInSeconds} seconds. No rush, we're chilling.");
+                    await Task.Delay(action1DelayInMilliseconds, token).ConfigureAwait(false);
+                    await MyActionMethod(token).ConfigureAwait(false);
+                    Log($"{action1Name} done. Wasn't that fun?");
+                    hasPerformedAction1 = true;
+                }
+                else
+                {
+                    // Execute raid actions based on configuration
+                    switch (Settings.LobbyOptions.Action)
+                    {
+                        case RaidAction.AFK:
+                            await Task.Delay(3_000, token).ConfigureAwait(false);
+                            break;
+
+                        case RaidAction.MashA:
+                            if (await IsConnectedToLobby(token).ConfigureAwait(false))
+                            {
+                                int mashADelayInMilliseconds = (int)(Settings.LobbyOptions.MashADelay * 1000);
+                                await Click(A, mashADelayInMilliseconds, token).ConfigureAwait(false);
+                            }
+                            break;
+                    }
+                }
+
+                // Initial battle status log after 3 minutes
+                if (!hasLoggedInitial && timeInBattle.TotalMinutes >= 3)
+                {
+                    Log("We are still in battle...");
+                    hasLoggedInitial = true;
+                }
+
+                // Periodic battle status log every 15 seconds after initial 3 minutes
+                if (hasLoggedInitial && timeInBattle.TotalSeconds % 15 == 0)
+                {
+                    Log("Still in battle... Just letting you know I'm still here.");
+                }
+            }
+
+            return !timedOut;
+        }
+
+        private async Task<bool> HandleEndOfRaidActions(CancellationToken token)
+        {
+            LobbyFiltersCategory settings = new LobbyFiltersCategory(); 
+
+            Log("Raid lobby disbanded!");
+            await Task.Delay(1_500 + settings.ExtraTimeLobbyDisband, token).ConfigureAwait(false);
+            await Click(B, 0_500, token).ConfigureAwait(false);
+            await Click(B, 0_500, token).ConfigureAwait(false);
+            await Click(DDOWN, 0_500, token).ConfigureAwait(false);
+            await Click(A, 0_500, token).ConfigureAwait(false);
+
+            if (Settings.ActiveRaids.Count > 1)
+            {
+                await SanitizeRotationCount(token).ConfigureAwait(false);
+            }
+
+            await EnqueueEmbed(null, "", false, false, true, false, token).ConfigureAwait(false);
+            bool ready = true;
+
+            if (Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.SkipRaid)
+            {
+                Log($"Lost/Empty Lobbies: {LostRaid}/{Settings.LobbyOptions.SkipRaidLimit}");
+
+                if (LostRaid >= Settings.LobbyOptions.SkipRaidLimit)
+                {
+                    Log($"We had {Settings.LobbyOptions.SkipRaidLimit} lost/empty raids.. Moving on!");
+                    await SanitizeRotationCount(token).ConfigureAwait(false);
+                    await EnqueueEmbed(null, "", false, false, true, false, token).ConfigureAwait(false);
+                    ready = true;
+                }
+            }
+
+            return ready;
+        }
+        private async Task FinalizeRaidCompletion(List<(ulong, RaidMyStatus)> trainers, bool ready, CancellationToken token)
+        {
             Log("Returning to overworld...");
 
             while (!await IsOnOverworld(OverworldOffset, token).ConfigureAwait(false))
                 await Click(A, 1_000, token).ConfigureAwait(false);
+
             await CountRaids(trainers, token).ConfigureAwait(false);
             await LocateSeedIndex(token).ConfigureAwait(false);
             await Task.Delay(0_500, token).ConfigureAwait(false);
             await CloseGame(Hub.Config, token).ConfigureAwait(false);
+
             if (ready)
                 await StartGameRaid(Hub.Config, token).ConfigureAwait(false);
-
-            else if (!ready)
+            else
             {
                 if (Settings.ActiveRaids.Count > 1)
                 {
@@ -735,6 +780,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             if (Settings.KeepDaySeed)
                 await OverrideTodaySeed(token).ConfigureAwait(false);
         }
+
         public async Task MyActionMethod(CancellationToken token)
         {
             // Let's rock 'n roll with these moves!
