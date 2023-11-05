@@ -1741,7 +1741,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 uptimeFormatted = uptimeFormatted.Trim();
                 embed.WithFooter(new EmbedFooterBuilder()
                 {
-                    Text = $"Seeds: {raidsInRotationCount} | Raids: {RaidCount} (W: {WinCount} | L: {LossCount})\nHost: {HostSAV.OT} | Uptime: {uptimeFormatted}\n" + disclaimer,
+                    Text = $"In Rotation: {raidsInRotationCount} | Completed: {RaidCount} (W: {WinCount} | L: {LossCount})\n🕛 Uptime: {uptimeFormatted}\n" + disclaimer,
                     IconUrl = programIconUrl
                 });
             }
