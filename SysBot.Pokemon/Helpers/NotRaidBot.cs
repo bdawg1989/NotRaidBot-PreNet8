@@ -2,6 +2,6 @@
 
 public static class NotRaidBot
 {
-    public const string Version = "v5.1 Black Edition";
+    public const string Version = "v5.2";
     public const string Attribution = "https://notpaldea.net";
 }

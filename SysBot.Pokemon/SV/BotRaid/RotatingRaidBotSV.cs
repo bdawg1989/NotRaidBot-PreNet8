@@ -1,4 +1,5 @@
 using Discord;
+using Newtonsoft.Json;
 using PKHeX.Core;
 using RaidCrawler.Core.Structures;
 using SysBot.Base;
@@ -57,6 +58,13 @@ namespace SysBot.Pokemon.SV.BotRaid
         public static RaidContainer? container;
         private static int attemptCount = 0;
         public static bool IsKitakami = false;
+        public class PlayerInfo
+        {
+            public string OT { get; set; }
+            public int RaidCount { get; set; }
+        }
+
+
         public override async Task MainLoop(CancellationToken token)
         {
 
@@ -104,6 +112,33 @@ namespace SysBot.Pokemon.SV.BotRaid
             Log($"Ending {nameof(RotatingRaidBotSV)} loop.");
             await HardStop().ConfigureAwait(false);
         }
+        public class PlayerDataStorage
+        {
+            private readonly string filePath;
+
+            public PlayerDataStorage(string baseDirectory)
+            {
+                var directoryPath = Path.Combine(baseDirectory, "raidfilessv");
+                Directory.CreateDirectory(directoryPath);
+                filePath = Path.Combine(directoryPath, "player_data.json");
+
+                if (!File.Exists(filePath))
+                    File.WriteAllText(filePath, "{}"); // Create a new JSON file if it does not exist.
+            }
+
+            public Dictionary<ulong, PlayerInfo> LoadPlayerData()
+            {
+                string json = File.ReadAllText(filePath);
+                return JsonConvert.DeserializeObject<Dictionary<ulong, PlayerInfo>>(json) ?? new Dictionary<ulong, PlayerInfo>();
+            }
+
+            public void SavePlayerData(Dictionary<ulong, PlayerInfo> data)
+            {
+                string json = JsonConvert.SerializeObject(data, Formatting.Indented);
+                File.WriteAllText(filePath, json);
+            }
+        }
+
 
         private void GenerateSeedsFromFile()
         {
@@ -541,8 +576,12 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
             return true;
         }
-        private async Task<bool> UpdateLobbyTrainersFinal(List<(ulong, RaidMyStatus)> lobbyTrainersFinal, List<(ulong, RaidMyStatus)> trainers, CancellationToken token)
+        public async Task<bool> UpdateLobbyTrainersFinal(List<(ulong, RaidMyStatus)> lobbyTrainersFinal, List<(ulong, RaidMyStatus)> trainers, CancellationToken token)
         {
+            var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            var storage = new PlayerDataStorage(baseDirectory);
+            var playerData = storage.LoadPlayerData();
+
             // Clear NIDs to refresh player check.
             await SwitchConnection.WriteBytesAbsoluteAsync(new byte[32], TeraNIDOffsets[0], token).ConfigureAwait(false);
             await Task.Delay(5_000, token).ConfigureAwait(false);
@@ -552,7 +591,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             {
                 try
                 {
-                    var player = i + 2;
                     var nidOfs = TeraNIDOffsets[i];
                     var data = await SwitchConnection.ReadBytesAbsoluteAsync(nidOfs, 8, token).ConfigureAwait(false);
                     var nid = BitConverter.ToUInt64(data, 0);
@@ -568,10 +606,20 @@ namespace SysBot.Pokemon.SV.BotRaid
                         continue;
 
                     lobbyTrainersFinal.Add((nid, trainer));
-                    var tr = trainers.FirstOrDefault(x => x.Item2.OT == trainer.OT);
-                    if (tr != default)
-                        Log($"Player {i + 2} matches lobby check for {trainer.OT}.");
-                    else Log($"New Player {i + 2}: {trainer.OT} | TID: {trainer.DisplayTID} | NID: {nid}.");
+
+                    if (!playerData.TryGetValue(nid, out var info))
+                    {
+                        // New player
+                        playerData[nid] = new PlayerInfo { OT = trainer.OT, RaidCount = 1 };
+                        Log($"New Player: {trainer.OT} | TID: {trainer.DisplayTID} | NID: {nid}.");
+                    }
+                    else
+                    {
+                        // Returning player
+                        info.RaidCount++;
+                        playerData[nid] = info; // Update the info back to the dictionary.
+                        Log($"Returning Player: {trainer.OT} | TID: {trainer.DisplayTID} | NID: {nid} | Raids: {info.RaidCount}");
+                    }
                 }
                 catch (IndexOutOfRangeException ex)
                 {
@@ -584,6 +632,9 @@ namespace SysBot.Pokemon.SV.BotRaid
                     return false;
                 }
             }
+
+            // Save player data after processing all players.
+            storage.SavePlayerData(playerData);
             return true;
         }
         private async Task<bool> HandleDuplicatesAndEmbeds(List<(ulong, RaidMyStatus)> lobbyTrainersFinal, CancellationToken token)
@@ -599,6 +650,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 {
                     try
                     {
+                        await Task.Delay(10_000, token).ConfigureAwait(false);
                         await EnqueueEmbed(null, "", false, false, false, false, token).ConfigureAwait(false);
                         success = true;
                         break;
@@ -650,7 +702,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             DateTime battleStartTime = DateTime.Now;
             bool hasPerformedAction1 = false;
             bool timedOut = false;
-            bool hasLoggedInitial = false;
 
             while (await IsConnectedToLobby(token).ConfigureAwait(false))
             {
@@ -1244,7 +1295,6 @@ namespace SysBot.Pokemon.SV.BotRaid
 
         private async Task<bool> CheckIfTrainerBanned(RaidMyStatus trainer, ulong nid, int player, CancellationToken token)
         {
-            Log($"Player {player}: {trainer.OT} | TID: {trainer.DisplayTID} | NID: {nid}");
             if (!RaidTracker.ContainsKey(nid))
                 RaidTracker.Add(nid, 0);
 
@@ -1580,7 +1630,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 }
 
             string disclaimer = Settings.ActiveRaids.Count > 1
-                                ? $"NotRaidBot {NotRaidBot.Version} by Gengar & Kai\nhttps://notpaldea.net"
+                                ? $"NRB {NotRaidBot.Version}\nhttps://notpaldea.net"
                                 : "";
 
 
