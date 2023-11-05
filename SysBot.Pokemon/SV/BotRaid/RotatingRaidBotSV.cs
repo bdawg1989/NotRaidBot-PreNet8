@@ -646,6 +646,7 @@ namespace SysBot.Pokemon.SV.BotRaid
         }
         private async Task<bool> ProcessBattleActions(CancellationToken token)
         {
+            int nextUpdateMinute = 2;
             DateTime battleStartTime = DateTime.Now;
             bool hasPerformedAction1 = false;
             bool timedOut = false;
@@ -694,18 +695,15 @@ namespace SysBot.Pokemon.SV.BotRaid
                     }
                 }
 
-                // Initial battle status log after 3 minutes
-                if (!hasLoggedInitial && timeInBattle.TotalMinutes >= 3)
+                // Periodic battle status log at 2-minute intervals
+                if (timeInBattle.TotalMinutes >= nextUpdateMinute)
                 {
-                    Log("We are still in battle...");
-                    hasLoggedInitial = true;
+                    Log($"{nextUpdateMinute} minutes have passed. We are still in battle...");
+                    nextUpdateMinute += 2; // Update the time for the next status update.
                 }
 
-                // Periodic battle status log every 15 seconds after initial 3 minutes
-                if (hasLoggedInitial && timeInBattle.TotalSeconds % 15 == 0)
-                {
-                    Log("Still in battle... Just letting you know I'm still here.");
-                }
+                // Make sure to wait some time before the next iteration to prevent a tight loop
+                await Task.Delay(1000, token); // Wait for a second before checking again
             }
 
             return !timedOut;
