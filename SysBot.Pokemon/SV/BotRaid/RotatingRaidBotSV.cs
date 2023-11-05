@@ -650,7 +650,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 {
                     try
                     {
-                        await Task.Delay(10_000, token).ConfigureAwait(false);
+                        await Task.Delay(20_000, token).ConfigureAwait(false);
                         await EnqueueEmbed(null, "", false, false, false, false, token).ConfigureAwait(false);
                         success = true;
                         break;
@@ -1630,9 +1630,8 @@ namespace SysBot.Pokemon.SV.BotRaid
                 }
 
             string disclaimer = Settings.ActiveRaids.Count > 1
-                                ? $"NRB {NotRaidBot.Version}\nhttps://notpaldea.net"
+                                ? $"NRB {NotRaidBot.Version} - notpaldea.net"
                                 : "";
-
 
             var turl = string.Empty;
             var form = string.Empty;
@@ -1714,10 +1713,35 @@ namespace SysBot.Pokemon.SV.BotRaid
             if (!(upnext && Settings.TotalRaidsToHost == 0))
             {
                 string programIconUrl = $"https://genpkm.com/images/icon4.png";
+                int raidsInRotationCount = Hub.Config.RotatingRaidSV.ActiveRaids.Count(r => !r.AddedByRACommand);
+                // Calculate uptime
+                TimeSpan uptime = DateTime.Now - StartTime;
 
+                // Check for singular or plural days/hours
+                string dayLabel = uptime.Days == 1 ? "day" : "days";
+                string hourLabel = uptime.Hours == 1 ? "hour" : "hours";
+                string minuteLabel = uptime.Minutes == 1 ? "minute" : "minutes";
+
+                // Format the uptime string, omitting the part if the value is 0
+                string uptimeFormatted = "";
+                if (uptime.Days > 0)
+                {
+                    uptimeFormatted += $"{uptime.Days} {dayLabel} ";
+                }
+                if (uptime.Hours > 0 || uptime.Days > 0) // Show hours if there are any hours, or if there are days even if hours are 0
+                {
+                    uptimeFormatted += $"{uptime.Hours} {hourLabel} ";
+                }
+                if (uptime.Minutes > 0 || uptime.Hours > 0 || uptime.Days > 0) // Show minutes if there are any minutes, or if there are hours/days even if minutes are 0
+                {
+                    uptimeFormatted += $"{uptime.Minutes} {minuteLabel}";
+                }
+
+                // Trim any excess whitespace from the string
+                uptimeFormatted = uptimeFormatted.Trim();
                 embed.WithFooter(new EmbedFooterBuilder()
                 {
-                    Text = $"Raids: {RaidCount} | Wins: {WinCount} | Losses: {LossCount}\n" + disclaimer,
+                    Text = $"Seeds: {raidsInRotationCount} | Raids: {RaidCount} (W: {WinCount} | L: {LossCount})\nHost: {HostSAV.OT} | Uptime: {uptimeFormatted}\n" + disclaimer,
                     IconUrl = programIconUrl
                 });
             }
