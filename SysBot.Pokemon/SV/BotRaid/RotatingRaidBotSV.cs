@@ -36,7 +36,8 @@ namespace SysBot.Pokemon.SV.BotRaid
         private int WinCount;
         private int LossCount;
         private int SeedIndexToReplace = -1;
-        public static int StoryProgress;
+        public static GameProgress GameProgress;
+        public int StoryProgress;
         private int EventProgress;
         private int EmptyRaid = 0;
         private int LostRaid = 0;
@@ -57,6 +58,7 @@ namespace SysBot.Pokemon.SV.BotRaid
         public static RaidContainer? container;
         private static int attemptCount = 0;
         public static bool IsKitakami = false;
+
         public override async Task MainLoop(CancellationToken token)
         {
 
@@ -143,6 +145,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             DirectorySearch(rotationpath, data);
         }
+
         private void SaveSeeds()
         {
             // Exit the function if saving seeds to file is not enabled
@@ -187,7 +190,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             // Write the built string to the file
             File.WriteAllText(savePath, sb.ToString());
         }
-
 
         private void DirectorySearch(string sDir, string data)
         {
@@ -737,6 +739,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             if (Settings.KeepDaySeed)
                 await OverrideTodaySeed(token).ConfigureAwait(false);
         }
+
         public async Task MyActionMethod(CancellationToken token)
         {
             // Let's rock 'n roll with these moves!
@@ -883,9 +886,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             if (currcrystal != crystal)
                 await SwitchConnection.PointerPoke(crystal, ptr2, token).ConfigureAwait(false);
         }
-
-        // Asynchronously checks whether the den at the given index is active or inactive.
-        // Returns true if the den is active, false otherwise.
 
         private async Task<bool> DenStatus(int index, CancellationToken token)
         {
@@ -1304,6 +1304,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             var data = await SwitchConnection.ReadBytesMainAsync(Offsets.LoadedIntoDesiredState, 1, token).ConfigureAwait(false);
             return data[0] == 0x02; // 2 when in raid, 1 when not
         }
+
         private async Task AdvanceDaySV(CancellationToken token)
         {
             var scrollroll = Settings.DateTimeFormat switch
@@ -1418,6 +1419,8 @@ namespace SysBot.Pokemon.SV.BotRaid
             ConnectedOffset = await SwitchConnection.PointerAll(Offsets.IsConnectedPointer, token).ConfigureAwait(false);
             RaidBlockPointerP = await SwitchConnection.PointerAll(Offsets.RaidBlockPointerP, token).ConfigureAwait(false);
             RaidBlockPointerK = await SwitchConnection.PointerAll(Offsets.RaidBlockPointerK, token).ConfigureAwait(false);
+            GameProgress = await ReadGameProgress(token).ConfigureAwait(false);
+            Log($"Current Game Progress identified as {GameProgress}.");
 
             var nidPointer = new long[] { Offsets.LinkTradePartnerNIDPointer[0], Offsets.LinkTradePartnerNIDPointer[1], Offsets.LinkTradePartnerNIDPointer[2] };
             for (int p = 0; p < TeraNIDOffsets.Length; p++)
@@ -1449,7 +1452,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
         }
 
-        // Dictionary to hold type advantages
         Dictionary<string, string> TypeAdvantages = new Dictionary<string, string>()
 {
     { "normal", "Fighting" },
@@ -1471,6 +1473,7 @@ namespace SysBot.Pokemon.SV.BotRaid
     { "steel", "Fighting, Ground, Fire" },
     { "fairy", "Poison, Steel" }
 };
+
         private string GetTypeAdvantage(string teraType)
         {
             // Check if the type exists in the dictionary and return the corresponding advantage
@@ -1779,6 +1782,12 @@ namespace SysBot.Pokemon.SV.BotRaid
         {
             var timing = config.Timings;
             await Click(A, 1_000 + timing.ExtraTimeLoadProfile, token).ConfigureAwait(false);
+
+            if (timing.CheckGameDelay)
+            {
+                await Task.Delay(3_000, token).ConfigureAwait(false);
+            }
+
             if (timing.AvoidSystemUpdate)
             {
                 await Click(DUP, 0_600, token).ConfigureAwait(false);
@@ -1795,12 +1804,25 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             if (Settings.ActiveRaids.Count > 1)
             {
-                Log($"Rotation for {Settings.ActiveRaids[RotationCount].Species} has been found.\nAttempting to override seed.");
+                Log($"Rotation for {Settings.ActiveRaids[RotationCount].Species} has been found.");
+                Log($"Checking Current Game Progress Level.");
+
+                var desiredProgress = (GameProgress)Settings.ActiveRaids[RotationCount].StoryProgressLevel;
+                if (GameProgress != desiredProgress)
+                {
+                    Log($"Updating game progress level to: {desiredProgress}");
+                    await WriteProgressLive(desiredProgress).ConfigureAwait(false);
+                    GameProgress = desiredProgress;
+                    Log($"Done.");
+                }
+                else
+                {
+                    Log($"Game progress level is already {GameProgress}. No update needed.");
+                }
+
+                Log($"Attempting to override seed for {Settings.ActiveRaids[RotationCount].Species}.");
                 await OverrideSeedIndex(SeedIndexToReplace, token).ConfigureAwait(false);
-                Log("Seed override completed.");
-                // Call UpdateGameProgress
-                await UpdateGameProgress(token).ConfigureAwait(false);
-                await Task.Delay(5_000 + timing.ExtraTimeInjectSeed, token).ConfigureAwait(false);
+                Log("Seed override completed.");                
             }
 
             for (int i = 0; i < 8; i++)
@@ -1873,42 +1895,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             {
                 var toexpect = (bool?)await ReadBlock(RaidDataBlocks.KUnlockedRaidDifficulty6, CancellationToken.None);
                 await WriteBlock(false, RaidDataBlocks.KUnlockedRaidDifficulty6, CancellationToken.None, toexpect);
-            }
-        }
-
-        public async Task UpdateGameProgress(CancellationToken token)
-        {
-            // Obtain the desired game progress level from the StoryProgressLevel property
-            var desiredProgressLevel = Settings.ActiveRaids[RotationCount].StoryProgressLevel;
-
-            // Convert the integer StoryProgressLevel to a GameProgress enum value
-            var desiredProgress = (GameProgress)desiredProgressLevel;
-
-            // Skip updating if the desired progress is "Beginning" (0) or "None" (6)
-            if (desiredProgress == GameProgress.Beginning || desiredProgress == GameProgress.None)
-            {
-                Log($"Desired game progress is set to {desiredProgress}. Skipping update.");
-                return;
-            }
-
-            Log($"Desired game progress level: {desiredProgress}");
-
-            // Call ReadGameProgress to obtain the current game progress level
-            var currentProgress = await ReadGameProgress(token).ConfigureAwait(false);
-
-            Log($"Current game progress level: {currentProgress}");
-
-            // Compare the current game progress level to the desired game progress level
-            if (currentProgress != desiredProgress)
-            {
-                Log($"Updating game progress level to: {desiredProgress}");
-                // If they are different, call WriteProgressLive to update the game progress level
-                await WriteProgressLive(desiredProgress).ConfigureAwait(false);
-                Log($"Done.");
-            }
-            else
-            {
-                Log("Game progress level is already at the desired level. No update needed.");
             }
         }
 
@@ -2207,13 +2193,7 @@ namespace SysBot.Pokemon.SV.BotRaid
         }
         #endregion
 
-        public static (PK9, Embed) RaidInfoCommand(
-            string seedValue,
-            int contentType,
-            TeraRaidMapParent map,
-            int storyProgressLevel,
-            int raidDeliveryGroupID,
-            bool isEvent = false) // new isEvent parameter
+        public static (PK9, Embed) RaidInfoCommand(string seedValue, int contentType, TeraRaidMapParent map, int storyProgressLevel, int raidDeliveryGroupID, bool isEvent = false)
         {
             byte[] enabled = StringToByteArray("00000001");
             byte[] area = StringToByteArray("00000001");
