@@ -1713,7 +1713,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             if (!(upnext && Settings.TotalRaidsToHost == 0))
             {
                 string programIconUrl = $"https://genpkm.com/images/icon4.png";
-                int raidsInRotationCount = Hub.Config.RotatingRaidSV.ActiveRaids.Count(r => !r.AddedByRACommand);
+                
                 // Calculate uptime
                 TimeSpan uptime = DateTime.Now - StartTime;
 
@@ -1741,7 +1741,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 uptimeFormatted = uptimeFormatted.Trim();
                 embed.WithFooter(new EmbedFooterBuilder()
                 {
-                    Text = $"In Rotation: {raidsInRotationCount} | Completed: {RaidCount} (W: {WinCount} | L: {LossCount})\n🕛 Uptime: {uptimeFormatted}\n" + disclaimer,
+                    Text = $"Completed Raids: {RaidCount} (W: {WinCount} | L: {LossCount})\nUptime: {uptimeFormatted}\n" + disclaimer,
                     IconUrl = programIconUrl
                 });
             }
