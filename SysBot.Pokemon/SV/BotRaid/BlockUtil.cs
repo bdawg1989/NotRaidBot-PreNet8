@@ -9,17 +9,6 @@ namespace SysBot.Pokemon.SV.BotRaid
 {
     public static class BlockUtil
     {
-        public static SCBlock CreateObjectBlock(uint key, ReadOnlySpan<byte> data)
-        {
-            var block = (SCBlock)FormatterServices.GetUninitializedObject(typeof(SCBlock));
-            var keyInfo = typeof(SCBlock).GetField("Key", BindingFlags.Instance | BindingFlags.Public)!;
-            keyInfo.SetValue(block, key);
-            var typeInfo = typeof(SCBlock).GetProperty("Type")!;
-            typeInfo.SetValue(block, SCTypeCode.Object);
-            var dataInfo = typeof(SCBlock).GetField("Data", BindingFlags.Instance | BindingFlags.Public)!;
-            dataInfo.SetValue(block, data.ToArray());
-            return block;
-        }
 
         public static SCBlock CreateDummyBlock(uint key, SCTypeCode dummy)
         {
@@ -31,45 +20,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             var dataInfo = typeof(SCBlock).GetField("Data", BindingFlags.Instance | BindingFlags.Public)!;
             dataInfo.SetValue(block, Array.Empty<byte>());
             return block;
-        }
-
-        public static void AddBlockToFakeSAV(SAV9SV sav, SCBlock block)
-        {
-            var list = new List<SCBlock>();
-            foreach (var b in sav.Accessor.BlockInfo) list.Add(b);
-            list.Add(block);
-            var typeInfo = typeof(SAV9SV).GetField("<AllBlocks>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!;
-            typeInfo.SetValue(sav, list);
-            typeInfo = typeof(SaveBlockAccessor9SV).GetField("<BlockInfo>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!;
-            typeInfo.SetValue(sav.Blocks, list);
-        }
-
-        public static void EditBlock(SCBlock block, SCTypeCode type, ReadOnlySpan<byte> data)
-        {
-            EditBlockType(block, type);
-            var dataInfo = typeof(SCBlock).GetField("Data", BindingFlags.Instance | BindingFlags.Public)!;
-            dataInfo.SetValue(block, data.ToArray());
-        }
-
-        public static void EditBlock(SCBlock block, SCTypeCode type, uint value)
-        {
-            EditBlockType(block, type);
-            var dataInfo = typeof(SCBlock).GetField("Data", BindingFlags.Instance | BindingFlags.Public)!;
-            dataInfo.SetValue(block, BitConverter.GetBytes(value));
-        }
-
-        public static void EditBlock(SCBlock block, SCTypeCode type, int value)
-        {
-            EditBlockType(block, type);
-            var dataInfo = typeof(SCBlock).GetField("Data", BindingFlags.Instance | BindingFlags.Public)!;
-            dataInfo.SetValue(block, BitConverter.GetBytes(value));
-        }
-
-        public static void EditBlock(SCBlock block, SCTypeCode type, byte value)
-        {
-            EditBlockType(block, type);
-            var dataInfo = typeof(SCBlock).GetField("Data", BindingFlags.Instance | BindingFlags.Public)!;
-            dataInfo.SetValue(block, new byte[] { value });
         }
 
         public static void EditBlockType(SCBlock block, SCTypeCode type)
@@ -166,7 +116,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             public static readonly DataBlock KWildSpawnsEnabled = new()
             {
-                Name = "KUnlockedRaidDifficulty6",
+                Name = "KWildSpawnsEnabled",
                 Key = 0xC812EDC7,
                 Type = SCTypeCode.Bool1,
                 Pointer = SaveBlockKeyPointer,
