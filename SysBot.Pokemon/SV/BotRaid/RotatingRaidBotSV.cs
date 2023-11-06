@@ -1948,18 +1948,17 @@ namespace SysBot.Pokemon.SV.BotRaid
 
                 if (Settings.DisableOverworldSpawns)
                 {
-                    Log("Checking current state of Overworld Spawns before attempting to disable.");
+                    Log("Checking current state of Overworld Spawns.");
                     var currentSpawnsEnabled = (bool?)await ReadBlock(RaidDataBlocks.KWildSpawnsEnabled, CancellationToken.None);
                     if (currentSpawnsEnabled.HasValue)
                     {
                         Log($"Current Overworld Spawns state: {currentSpawnsEnabled.Value}");
 
-                        // If the spawns are already disabled, no need to write `false` again
                         if (currentSpawnsEnabled.Value)
                         {
                             Log("Overworld Spawns are enabled, attempting to disable.");
-                            var toexpect = currentSpawnsEnabled;
-                            await WriteBlock(false, RaidDataBlocks.KWildSpawnsEnabled, CancellationToken.None, toexpect);
+                            await WriteBlock(false, RaidDataBlocks.KWildSpawnsEnabled, CancellationToken.None, currentSpawnsEnabled);
+                            Log("Overworld Spawns successfully disabled.");
                         }
                         else
                         {
@@ -1968,9 +1967,34 @@ namespace SysBot.Pokemon.SV.BotRaid
                     }
                     else
                     {
-                        Log("Could not read the current state of Overworld Spawns. Skipping the disable action.");
+                        Log("Could not read the current state of Overworld Spawns.");
                     }
                 }
+                else // When Settings.DisableOverworldSpawns is false, ensure Overworld spawns are enabled
+                {
+                    Log("Settings indicate Overworld Spawns should be enabled. Checking current state.");
+                    var currentSpawnsEnabled = (bool?)await ReadBlock(RaidDataBlocks.KWildSpawnsEnabled, CancellationToken.None);
+                    if (currentSpawnsEnabled.HasValue)
+                    {
+                        Log($"Current Overworld Spawns state: {currentSpawnsEnabled.Value}");
+
+                        if (!currentSpawnsEnabled.Value)
+                        {
+                            Log("Overworld Spawns are disabled, attempting to enable.");
+                            await WriteBlock(true, RaidDataBlocks.KWildSpawnsEnabled, CancellationToken.None, currentSpawnsEnabled);
+                            Log("Overworld Spawns successfully enabled.");
+                        }
+                        else
+                        {
+                            Log("Overworld Spawns are already enabled, no action needed.");
+                        }
+                    }
+                    else
+                    {
+                        Log("Could not determine the current state of Overworld Spawns. Skipping enabling action.");
+                    }
+                }
+
 
                 Log($"Attempting to override seed for {Settings.ActiveRaids[RotationCount].Species}.");
                 await OverrideSeedIndex(SeedIndexToReplace, token).ConfigureAwait(false);
