@@ -163,6 +163,16 @@ namespace SysBot.Pokemon.SV.BotRaid
                 IsEncrypted = true,
                 Size = 1,
             };
+
+            public static readonly DataBlock KWildSpawnsEnabled = new()
+            {
+                Name = "KUnlockedRaidDifficulty6",
+                Key = 0xC812EDC7,
+                Type = SCTypeCode.Bool1,
+                Pointer = SaveBlockKeyPointer,
+                IsEncrypted = true,
+                Size = 1,
+            };
         }
     }
 }

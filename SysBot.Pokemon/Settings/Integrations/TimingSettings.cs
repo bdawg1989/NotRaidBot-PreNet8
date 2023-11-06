@@ -53,5 +53,8 @@ namespace SysBot.Pokemon
 
         [Category(Misc), Description("Enable this to decline incoming system updates.")]
         public bool AvoidSystemUpdate { get; set; }
+
+        [Category(Misc), Description("Enable this to add a delay for \"Checking if Game Can be Played\" Pop-up.")]
+        public bool CheckGameDelay { get; set; } = false;
     }
 }

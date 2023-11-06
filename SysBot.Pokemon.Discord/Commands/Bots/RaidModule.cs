@@ -121,11 +121,6 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
 
             // Convert StoryProgressLevel to GameProgress enum value
             var gameProgress = ConvertToGameProgress(storyProgressLevel);
-            if (gameProgress == GameProgress.None)
-            {
-                await ReplyAsync("Invalid Story Progress Level. Please enter a value between 1 and 6.").ConfigureAwait(false);
-                return;
-            }
 
             // Get the settings object from Hub
             var settings = Hub.Config.RotatingRaidSV;
