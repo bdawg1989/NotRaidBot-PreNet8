@@ -1787,7 +1787,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             if (!disband && !upnext && !raidstart && Settings.EmbedToggles.IncludeMoves)
             {
                 embed.AddField("**__Moves__**", string.IsNullOrEmpty($"{RaidEmbedInfo.ExtraMoves}") ? string.IsNullOrEmpty($"{RaidEmbedInfo.Moves}") ? "No Moves To Display" : $"{RaidEmbedInfo.Moves}" : $"{RaidEmbedInfo.Moves}\n**Extra Moves:**\n{RaidEmbedInfo.ExtraMoves}", true);
-
+                RaidEmbedInfo.ExtraMoves = string.Empty;
             }
 
             if (!disband && !upnext && !raidstart && !Settings.EmbedToggles.IncludeMoves)
