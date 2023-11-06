@@ -5,6 +5,7 @@ using SysBot.Base;
 using SysBot.Pokemon.SV.BotRaid.Helpers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -1419,8 +1420,11 @@ namespace SysBot.Pokemon.SV.BotRaid
             ConnectedOffset = await SwitchConnection.PointerAll(Offsets.IsConnectedPointer, token).ConfigureAwait(false);
             RaidBlockPointerP = await SwitchConnection.PointerAll(Offsets.RaidBlockPointerP, token).ConfigureAwait(false);
             RaidBlockPointerK = await SwitchConnection.PointerAll(Offsets.RaidBlockPointerK, token).ConfigureAwait(false);
-            GameProgress = await ReadGameProgress(token).ConfigureAwait(false);
-            Log($"Current Game Progress identified as {GameProgress}.");
+            if (firstRun)
+            {
+                GameProgress = await ReadGameProgress(token).ConfigureAwait(false);
+                Log($"Current Game Progress identified as {GameProgress}.");
+            }
 
             var nidPointer = new long[] { Offsets.LinkTradePartnerNIDPointer[0], Offsets.LinkTradePartnerNIDPointer[1], Offsets.LinkTradePartnerNIDPointer[2] };
             for (int p = 0; p < TeraNIDOffsets.Length; p++)
@@ -1818,6 +1822,13 @@ namespace SysBot.Pokemon.SV.BotRaid
                 else
                 {
                     Log($"Game progress level is already {GameProgress}. No update needed.");
+                }
+
+                if (Settings.DisableOverworldSpawns)
+                {
+                    Log($"Attempting to disable Overworld Spawns.");
+                    var toexpect = (bool?)await ReadBlock(RaidDataBlocks.KWildSpawnsEnabled, CancellationToken.None);
+                    await WriteBlock(true, RaidDataBlocks.KWildSpawnsEnabled, CancellationToken.None, toexpect);
                 }
 
                 Log($"Attempting to override seed for {Settings.ActiveRaids[RotationCount].Species}.");

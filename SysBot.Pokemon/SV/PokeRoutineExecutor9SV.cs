@@ -631,23 +631,19 @@ namespace SysBot.Pokemon
 
         public async Task<GameProgress> ReadGameProgress(CancellationToken token)
         {
-
             var Unlocked6Stars = await ReadEncryptedBlockBool(RaidDataBlocks.KUnlockedRaidDifficulty6, token).ConfigureAwait(false);
             if (Unlocked6Stars)
                 return GameProgress.Unlocked6Stars;
 
             var Unlocked5Stars = await ReadEncryptedBlockBool(RaidDataBlocks.KUnlockedRaidDifficulty5, token).ConfigureAwait(false);
-
             if (Unlocked5Stars)
                 return GameProgress.Unlocked5Stars;
 
             var Unlocked4Stars = await ReadEncryptedBlockBool(RaidDataBlocks.KUnlockedRaidDifficulty4, token).ConfigureAwait(false);
-
             if (Unlocked4Stars)
                 return GameProgress.Unlocked4Stars;
 
             var Unlocked3Stars = await ReadEncryptedBlockBool(RaidDataBlocks.KUnlockedRaidDifficulty3, token).ConfigureAwait(false);
-
             if (Unlocked3Stars)
                 return GameProgress.Unlocked3Stars;
 

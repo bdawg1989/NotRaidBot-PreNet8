@@ -44,6 +44,9 @@ namespace SysBot.Pokemon
         [Category(Hosting), Description("When true, no one will be able to request raids.")]
         public bool DisableRequests { get; set; } = false;
 
+        [Category(FeatureToggle), Description("When enabled, Overworld spawns will be disabled to prevent accidental battling.")]
+        public bool DisableOverworldSpawns { get; set; } = true;
+
         [Category(FeatureToggle), Description("Choose the TeraType Icon set to use in the author area of the embed.  Icon1 are custom, Icon2 is not.")]
         public TeraIconType SelectedTeraIconType { get; set; } = TeraIconType.Icon1;
 
@@ -168,7 +171,6 @@ namespace SysBot.Pokemon
             public int RaidDeliveryGroupID { get; set; } = -1;
         }
 
-
         [Category(Hosting), TypeConverter(typeof(CategoryConverter<RotatingRaidPresetFiltersCategory>))]
         public class RotatingRaidPresetFiltersCategory
         {
@@ -222,7 +224,6 @@ namespace SysBot.Pokemon
             [Category(FeatureToggle), Description("Extra time in milliseconds to wait before changing partypk.")]
             public int ExtraTimePartyPK { get; set; } = 0;
         }
-
 
         public class CategoryConverter<T> : TypeConverter
         {
