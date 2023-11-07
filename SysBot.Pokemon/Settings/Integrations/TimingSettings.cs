@@ -13,11 +13,6 @@ namespace SysBot.Pokemon
         // Opening the game.
         [Category(OpenGame), Description("Extra time in milliseconds to wait for profiles to load when starting the game.")]
         public int ExtraTimeLoadProfile { get; set; }
-        [Category(OpenGame), Description("Put the position number of the profile you wish to open.")]
-        public int ProfilePosition { get; set; } = 1;
-
-        [Category(OpenGame), Description("Extra time in milliseconds to wait to check if DLC is usable.")]
-        public int ExtraTimeCheckDLC { get; set; }
 
         [Category(OpenGame), Description("Extra time in milliseconds to wait before clicking A in title screen.")]
         public int ExtraTimeLoadGame { get; set; } = 5000;

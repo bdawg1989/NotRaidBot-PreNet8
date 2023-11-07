@@ -1909,20 +1909,19 @@ namespace SysBot.Pokemon.SV.BotRaid
             var timing = config.Timings;
             await Click(A, 1_000 + timing.ExtraTimeLoadProfile, token).ConfigureAwait(false);
 
-            if (timing.CheckGameDelay)
-            {
-                await Task.Delay(3_000, token).ConfigureAwait(false);
-            }
-
             if (timing.AvoidSystemUpdate)
             {
                 await Click(DUP, 0_600, token).ConfigureAwait(false);
                 await Click(A, 1_000 + timing.ExtraTimeLoadProfile, token).ConfigureAwait(false);
             }
 
-            await Click(A, 1_000 + timing.ExtraTimeCheckDLC, token).ConfigureAwait(false);
-            await Click(DUP, 0_600, token).ConfigureAwait(false);
-            await Click(A, 0_600, token).ConfigureAwait(false);
+            if (timing.CheckGameDelay)
+            {
+                await Task.Delay(3_000, token).ConfigureAwait(false);
+            }
+
+            await Click(A, 1_000, token).ConfigureAwait(false); // Now we are on the Profile Screen
+            await Click(A, 1_000, token).ConfigureAwait(false); // Select the profile
 
             Log("Restarting the game!");
 
