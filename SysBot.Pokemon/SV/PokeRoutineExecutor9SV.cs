@@ -107,6 +107,7 @@ namespace SysBot.Pokemon
             await CloseGame(config, token).ConfigureAwait(false);
             await StartGame(config, token).ConfigureAwait(false);
         }
+
         public async Task GoHome(PokeRaidHubConfig config, CancellationToken token)
         {
             var timing = config.Timings;
@@ -115,6 +116,7 @@ namespace SysBot.Pokemon
             await Click(HOME, 2_000 + timing.ExtraTimeReturnHome, token).ConfigureAwait(false);
             Log("Went to Home Screen");
         }
+
         public async Task CloseGame(PokeRaidHubConfig config, CancellationToken token)
         {
             var timing = config.Timings;
@@ -122,36 +124,50 @@ namespace SysBot.Pokemon
             await Click(B, 0_500, token).ConfigureAwait(false);
             await Click(HOME, 2_000 + timing.ExtraTimeReturnHome, token).ConfigureAwait(false);
             await Click(X, 1_000, token).ConfigureAwait(false);
-            await Click(A, 5_000 + timing.ExtraTimeCloseGame, token).ConfigureAwait(false);
+            await Click(A, 5_000 + timing.RestartGameSettings.ExtraTimeCloseGame, token).ConfigureAwait(false);
             Log("Closed out of the game!");
         }
 
         public async Task StartGame(PokeRaidHubConfig config, CancellationToken token)
         {
             var timing = config.Timings;
-            // Open game.
-            await Click(A, 1_000 + timing.ExtraTimeLoadProfile, token).ConfigureAwait(false);
+            var loadPro = timing.RestartGameSettings.ProfileSelectSettings.ProfileSelectionRequired ? timing.RestartGameSettings.ProfileSelectSettings.ExtraTimeLoadProfile : 0;
 
-            // Menus here can go in the order: Update Prompt -> Profile -> DLC check -> Unable to use DLC.
-            //  The user can optionally turn on the setting if they know of a breaking system update incoming.
-            if (timing.AvoidSystemUpdate)
+            // Menus here can go in the order: System Update Prompt -> Profile -> Checking if Game can be played (Digital Only) -> DLC check -> Unable to use DLC
+            await Click(A, 1_000 + loadPro, token).ConfigureAwait(false); // Initial "A" Press to start the Game + a delay if needed for profiles to load
+
+            // Really Shouldn't keep this but we will for now
+            if (timing.RestartGameSettings.AvoidSystemUpdate)
+            {
+                await Task.Delay(0_500, token).ConfigureAwait(false); // Delay bc why not
+                await Click(DUP, 0_600, token).ConfigureAwait(false); // Highlight "Start Software"
+                await Click(A, 1_000 + loadPro, token).ConfigureAwait(false); // Select "Sttart Software" + delay if Profile selection is needed
+            }
+
+            // Only send extra Presses if we need to
+            if (timing.RestartGameSettings.ProfileSelectSettings.ProfileSelectionRequired)
+            {
+                await Click(A, 1_000, token).ConfigureAwait(false); // Now we are on the Profile Screen
+                await Click(A, 1_000, token).ConfigureAwait(false); // Select the profile
+            }
+
+            // Digital game copies take longer to load
+            if (timing.RestartGameSettings.CheckGameDelay)
+            {
+                await Task.Delay(2_000 + timing.RestartGameSettings.ExtraTimeCheckGame, token).ConfigureAwait(false);
+            }
+
+            // If they have DLC on the system and can't use it, requires an UP + A to start the game.
+            if (timing.RestartGameSettings.CheckForDLC)
             {
                 await Click(DUP, 0_600, token).ConfigureAwait(false);
-                await Click(A, 1_000 + timing.ExtraTimeLoadProfile, token).ConfigureAwait(false);
+                await Click(A, 0_600, token).ConfigureAwait(false);
             }
-
-            if (timing.CheckGameDelay)
-            {
-                await Task.Delay(3_000, token).ConfigureAwait(false);
-            }
-
-            await Click(A, 1_000, token).ConfigureAwait(false); // Now we are on the Profile Screen
-            await Click(A, 1_000, token).ConfigureAwait(false); // Select the profile
 
             Log("Restarting the game!");
 
             // Switch Logo and game load screen
-            await Task.Delay(12_000 + timing.ExtraTimeLoadGame, token).ConfigureAwait(false);
+            await Task.Delay(15_000 + timing.RestartGameSettings.ExtraTimeLoadGame, token).ConfigureAwait(false); 
 
             for (int i = 0; i < 8; i++)
                 await Click(A, 1_000, token).ConfigureAwait(false);
@@ -163,7 +179,7 @@ namespace SysBot.Pokemon
                 timer -= 1_000;
                 // We haven't made it back to overworld after a minute, so press A every 6 seconds hoping to restart the game.
                 // Don't risk it if hub is set to avoid updates.
-                if (timer <= 0 && !timing.AvoidSystemUpdate)
+                if (timer <= 0 && !timing.RestartGameSettings.AvoidSystemUpdate)
                 {
                     Log("Still not in the game, initiating rescue protocol!");
                     while (!await IsOnOverworldTitle(token).ConfigureAwait(false))

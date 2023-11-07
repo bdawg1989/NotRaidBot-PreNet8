@@ -33,12 +33,19 @@ namespace SysBot.Pokemon.SV.BotRaid
             Settings = hub.Config.RotatingRaidSV;
         }
 
+        public class PlayerInfo
+        {
+            public string OT { get; set; }
+            public int RaidCount { get; set; }
+        }
+
         private int LobbyError;
         private int RaidCount;
         private int WinCount;
         private int LossCount;
         private int SeedIndexToReplace = -1;
         public static GameProgress GameProgress;
+        public static bool? currentSpawnsEnabled;
         public int StoryProgress;
         private int EventProgress;
         private int EmptyRaid = 0;
@@ -59,13 +66,7 @@ namespace SysBot.Pokemon.SV.BotRaid
         private DateTime StartTime = DateTime.Now;
         public static RaidContainer? container;
         private static int attemptCount = 0;
-        public static bool IsKitakami = false;
-        public class PlayerInfo
-        {
-            public string OT { get; set; }
-            public int RaidCount { get; set; }
-        }
-
+        public static bool IsKitakami = false;       
 
         public override async Task MainLoop(CancellationToken token)
         {
@@ -114,6 +115,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             Log($"Ending {nameof(RotatingRaidBotSV)} loop.");
             await HardStop().ConfigureAwait(false);
         }
+
         public class PlayerDataStorage
         {
             private readonly string filePath;
@@ -140,7 +142,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                 File.WriteAllText(filePath, json);
             }
         }
-
 
         private void GenerateSeedsFromFile()
         {
@@ -553,8 +554,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             await FinalizeRaidCompletion(trainers, ready, token);
         }
 
-
-
         private async Task<bool> CheckIfConnectedToLobbyAndLog(CancellationToken token)
         {
             if (await IsConnectedToLobby(token).ConfigureAwait(false))
@@ -564,6 +563,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
             return false;
         }
+
         private async Task<bool> EnsureInRaid(CancellationToken linkedToken)
         {
             while (!await IsInRaid(linkedToken).ConfigureAwait(false))
@@ -578,6 +578,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
             return true;
         }
+
         public async Task<bool> UpdateLobbyTrainersFinal(List<(ulong, RaidMyStatus)> lobbyTrainersFinal, List<(ulong, RaidMyStatus)> trainers, CancellationToken token)
         {
             var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
@@ -639,6 +640,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             storage.SavePlayerData(playerData);
             return true;
         }
+
         private async Task<bool> HandleDuplicatesAndEmbeds(List<(ulong, RaidMyStatus)> lobbyTrainersFinal, CancellationToken token)
         {
             var nidDupe = lobbyTrainersFinal.Select(x => x.Item1).ToList();
@@ -698,6 +700,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             return embedSuccess;
         }
+
         private async Task<bool> ProcessBattleActions(CancellationToken token)
         {
             int nextUpdateMinute = 2;
@@ -796,6 +799,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             return ready;
         }
+
         private async Task FinalizeRaidCompletion(List<(ulong, RaidMyStatus)> trainers, bool ready, CancellationToken token)
         {
             Log("Returning to overworld...");
@@ -1522,6 +1526,8 @@ namespace SysBot.Pokemon.SV.BotRaid
             {
                 GameProgress = await ReadGameProgress(token).ConfigureAwait(false);
                 Log($"Current Game Progress identified as {GameProgress}.");
+                currentSpawnsEnabled = (bool?)await ReadBlock(RaidDataBlocks.KWildSpawnsEnabled, CancellationToken.None);
+                Log($"Current Overworld Spawn State {currentSpawnsEnabled}.");
             }
 
             var nidPointer = new long[] { Offsets.LinkTradePartnerNIDPointer[0], Offsets.LinkTradePartnerNIDPointer[1], Offsets.LinkTradePartnerNIDPointer[2] };
@@ -1907,25 +1913,41 @@ namespace SysBot.Pokemon.SV.BotRaid
         public async Task StartGameRaid(PokeRaidHubConfig config, CancellationToken token)
         {
             var timing = config.Timings;
-            await Click(A, 1_000 + timing.ExtraTimeLoadProfile, token).ConfigureAwait(false);
+            var loadPro = timing.RestartGameSettings.ProfileSelectSettings.ProfileSelectionRequired ? timing.RestartGameSettings.ProfileSelectSettings.ExtraTimeLoadProfile : 0;
 
-            if (timing.AvoidSystemUpdate)
+            await Click(A, 1_000 + loadPro, token).ConfigureAwait(false); // Initial "A" Press to start the Game + a delay if needed for profiles to load
+
+            // Really Shouldn't keep this but we will for now
+            if (timing.RestartGameSettings.AvoidSystemUpdate)
+            {
+                await Task.Delay(0_500, token).ConfigureAwait(false); // Delay bc why not
+                await Click(DUP, 0_600, token).ConfigureAwait(false); // Highlight "Start Software"
+                await Click(A, 1_000 + loadPro, token).ConfigureAwait(false); // Select "Sttart Software" + delay if Profile selection is needed
+            }
+
+            // Only send extra Presses if we need to
+            if(timing.RestartGameSettings.ProfileSelectSettings.ProfileSelectionRequired)
+            {
+                await Click(A, 1_000, token).ConfigureAwait(false); // Now we are on the Profile Screen
+                await Click(A, 1_000, token).ConfigureAwait(false); // Select the profile
+            }
+
+            // Digital game copies take longer to load
+            if (timing.RestartGameSettings.CheckGameDelay)
+            {
+                await Task.Delay(2_000 + timing.RestartGameSettings.ExtraTimeCheckGame, token).ConfigureAwait(false); 
+            }
+
+            // If they have DLC on the system and can't use it, requires an UP + A to start the game.
+            if (timing.RestartGameSettings.CheckForDLC)
             {
                 await Click(DUP, 0_600, token).ConfigureAwait(false);
-                await Click(A, 1_000 + timing.ExtraTimeLoadProfile, token).ConfigureAwait(false);
+                await Click(A, 0_600, token).ConfigureAwait(false);
             }
-
-            if (timing.CheckGameDelay)
-            {
-                await Task.Delay(3_000, token).ConfigureAwait(false);
-            }
-
-            await Click(A, 1_000, token).ConfigureAwait(false); // Now we are on the Profile Screen
-            await Click(A, 1_000, token).ConfigureAwait(false); // Select the profile
 
             Log("Restarting the game!");
 
-            await Task.Delay(19_000 + timing.ExtraTimeLoadGame, token).ConfigureAwait(false);
+            await Task.Delay(19_000 + timing.RestartGameSettings.ExtraTimeLoadGame, token).ConfigureAwait(false); // Wait for the game to load before writing to memory
 
             if (Settings.ActiveRaids.Count > 1)
             {
@@ -1948,7 +1970,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                 if (Settings.DisableOverworldSpawns)
                 {
                     Log("Checking current state of Overworld Spawns.");
-                    var currentSpawnsEnabled = (bool?)await ReadBlock(RaidDataBlocks.KWildSpawnsEnabled, CancellationToken.None);
                     if (currentSpawnsEnabled.HasValue)
                     {
                         Log($"Current Overworld Spawns state: {currentSpawnsEnabled.Value}");
@@ -1956,7 +1977,8 @@ namespace SysBot.Pokemon.SV.BotRaid
                         if (currentSpawnsEnabled.Value)
                         {
                             Log("Overworld Spawns are enabled, attempting to disable.");
-                            await WriteBlock(false, RaidDataBlocks.KWildSpawnsEnabled, CancellationToken.None, currentSpawnsEnabled);
+                            await WriteBlock(false, RaidDataBlocks.KWildSpawnsEnabled, token, currentSpawnsEnabled);
+                            currentSpawnsEnabled = false;
                             Log("Overworld Spawns successfully disabled.");
                         }
                         else
@@ -1964,36 +1986,24 @@ namespace SysBot.Pokemon.SV.BotRaid
                             Log("Overworld Spawns are already disabled, no action taken.");
                         }
                     }
-                    else
-                    {
-                        Log("Could not read the current state of Overworld Spawns.");
-                    }
                 }
                 else // When Settings.DisableOverworldSpawns is false, ensure Overworld spawns are enabled
                 {
                     Log("Settings indicate Overworld Spawns should be enabled. Checking current state.");
-                    var currentSpawnsEnabled = (bool?)await ReadBlock(RaidDataBlocks.KWildSpawnsEnabled, CancellationToken.None);
-                    if (currentSpawnsEnabled.HasValue)
-                    {
-                        Log($"Current Overworld Spawns state: {currentSpawnsEnabled.Value}");
+                    Log($"Current Overworld Spawns state: {currentSpawnsEnabled.Value}");
 
-                        if (!currentSpawnsEnabled.Value)
-                        {
-                            Log("Overworld Spawns are disabled, attempting to enable.");
-                            await WriteBlock(true, RaidDataBlocks.KWildSpawnsEnabled, CancellationToken.None, currentSpawnsEnabled);
-                            Log("Overworld Spawns successfully enabled.");
-                        }
-                        else
-                        {
-                            Log("Overworld Spawns are already enabled, no action needed.");
-                        }
+                    if (!currentSpawnsEnabled.Value)
+                    {
+                        Log("Overworld Spawns are disabled, attempting to enable.");
+                        await WriteBlock(true, RaidDataBlocks.KWildSpawnsEnabled, token, currentSpawnsEnabled);
+                        currentSpawnsEnabled = true;
+                        Log("Overworld Spawns successfully enabled.");
                     }
                     else
                     {
-                        Log("Could not determine the current state of Overworld Spawns. Skipping enabling action.");
+                        Log("Overworld Spawns are already enabled, no action needed.");
                     }
                 }
-
 
                 Log($"Attempting to override seed for {Settings.ActiveRaids[RotationCount].Species}.");
                 await OverrideSeedIndex(SeedIndexToReplace, token).ConfigureAwait(false);
@@ -2008,7 +2018,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             {
                 await Task.Delay(1_000, token).ConfigureAwait(false);
                 timer -= 1_000;
-                if (timer <= 0 && !timing.AvoidSystemUpdate)
+                if (timer <= 0 && !timing.RestartGameSettings.AvoidSystemUpdate)
                 {
                     Log("Still not in the game, initiating rescue protocol!");
                     while (!await IsOnOverworldTitle(token).ConfigureAwait(false))
@@ -2090,8 +2100,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             return _ = $"https://raw.githubusercontent.com/zyro670/PokeTextures/main/Placeholder_Sprites/scaled_up_sprites/Shiny/AlternateArt/" + $"{pkm.Species}{pkmform}" + ".png";
         }
 
-        #region RaidCrawler
-        // via RaidCrawler modified for this proj
         private async Task ReadRaids(bool init, CancellationToken token)
         {
 
@@ -2366,7 +2374,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                 }
             }
         }
-        #endregion
 
         public static (PK9, Embed) RaidInfoCommand(string seedValue, int contentType, TeraRaidMapParent map, int storyProgressLevel, int raidDeliveryGroupID, bool isEvent = false)
         {
