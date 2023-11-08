@@ -330,7 +330,12 @@ namespace SysBot.Pokemon.SV.BotRaid
                 {
                     var msg = "";
                     if (TodaySeed != currentSeed)
-                        msg = $"Current Today Seed {currentSeed:X8} does not match Starting Today Seed: {TodaySeed:X8}.\n ";
+                    {
+                        Log($"Current Today Seed {currentSeed:X8} does not match Starting Today Seed: {TodaySeed:X8}.\nAttempting to override Today Seed...");
+                        TodaySeed = currentSeed;  // Update the TodaySeed to the currentSeed
+                        await OverrideTodaySeed(token).ConfigureAwait(false); // Override the Today Seed in the game to match the currentSeed
+                        Log("Today Seed has been overridden with the current seed.");
+                    }
 
                     if (LobbyError >= 3)
                     {
@@ -387,8 +392,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                         await Task.Delay(0_050, token).ConfigureAwait(false);
                         if (denFound)
                         {
-                            await SVSaveGameOverworld(token).ConfigureAwait(false);
-                            await Task.Delay(0_500, token).ConfigureAwait(false);
                             await Click(B, 1_000, token).ConfigureAwait(false);
                             continue;
                         }
@@ -527,33 +530,51 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             // Ensure connection to lobby and log status
             if (!await CheckIfConnectedToLobbyAndLog(token))
+            {
+                await ReOpenGame(Hub.Config, token);
                 return;
+            }
 
             // Ensure in raid
             if (!await EnsureInRaid(token))
+            {
+                await ReOpenGame(Hub.Config, token);
                 return;
+            }
 
             // Update final list of lobby trainers
             var lobbyTrainersFinal = new List<(ulong, RaidMyStatus)>();
             if (!await UpdateLobbyTrainersFinal(lobbyTrainersFinal, trainers, token))
+            {
+                await ReOpenGame(Hub.Config, token);
                 return;
+            }
 
             // Handle duplicates and embeds
             if (!await HandleDuplicatesAndEmbeds(lobbyTrainersFinal, token))
+            {
+                await ReOpenGame(Hub.Config, token);
                 return;
+            }
 
             // Process battle actions
             if (!await ProcessBattleActions(token))
+            {
+                await ReOpenGame(Hub.Config, token);
                 return;
+            }
 
             // Handle end of raid actions
             bool ready = await HandleEndOfRaidActions(token);
+            if (!ready)
+            {
+                await ReOpenGame(Hub.Config, token);
+                return;
+            }
 
             // Finalize raid completion
             await FinalizeRaidCompletion(trainers, ready, token);
         }
-
-
 
         private async Task<bool> CheckIfConnectedToLobbyAndLog(CancellationToken token)
         {

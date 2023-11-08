@@ -44,7 +44,7 @@ namespace SysBot.Pokemon
         [Category(Hosting), Description("When true, no one will be able to request raids.")]
         public bool DisableRequests { get; set; } = false;
 
-        [Category(FeatureToggle), Description("When enabled, Overworld spawns will be disabled to prevent accidental battling.")]
+        [Category(FeatureToggle), Description("Prevent attacks.  When true, Overworld Spawns (Pokémon) are disabled on the next seed injection.  When false, Overworld Spawns (Pokémon) are enabled on the next seed injection.")]
         public bool DisableOverworldSpawns { get; set; } = true;
 
         [Category(FeatureToggle), Description("Choose the TeraType Icon set to use in the author area of the embed.  Icon1 are custom, Icon2 is not.")]
