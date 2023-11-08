@@ -167,7 +167,8 @@ namespace SysBot.Pokemon.Discord
             };
         }
 
-        [Command("aec")]
+        [Command("addEmbedChannel")]
+        [Alias("aec")]
         [Summary("Makes the bot post raid embeds to the channel.")]
         [RequireSudo]
         public async Task AddEchoAsync()

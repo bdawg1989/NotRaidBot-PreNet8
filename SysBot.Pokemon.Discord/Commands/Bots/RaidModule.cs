@@ -73,7 +73,7 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
         }
 
 
-        [Command("repeek")]
+        [Command("peek")]
         [Summary("Take and send a screenshot from the specified Switch.")]
         [RequireOwner]
         public async Task RePeek(string address)
@@ -184,7 +184,8 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             await ReplyAsync(msg, embed: raidEmbed).ConfigureAwait(false);
         }
 
-        [Command("ra")]
+        [Command("addUserRaid")]
+        [Alias("aur", "ra")]
         [Summary("Adds new raid parameter next in the queue.")]
         public async Task AddNewRaidParamNext(
             [Summary("Seed")] string seed,
@@ -315,7 +316,8 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             };
         }
 
-        [Command("rp")]
+        [Command("addRaidPK")]
+        [Alias("rp")]
         [Summary("Adds provided showdown set Pokémon to the users Raid in Queue.")]
         public async Task AddRaidPK([Summary("Showdown Set")][Remainder] string content)
         {
@@ -369,7 +371,8 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             }
         }
 
-        [Command("rqs")]
+        [Command("raidQueueStatus")]
+        [Alias("rqs")]
         [Summary("Checks the number of raids before the user's request and gives an ETA.")]
         public async Task CheckQueueStatus()
         {
@@ -449,7 +452,8 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             return effectivePosition;
         }
 
-        [Command("rqc")]
+        [Command("raidQueueClear")]
+        [Alias("rqc")]
         [Summary("Removes the raid added by the user.")]
         public async Task RemoveOwnRaidParam()
         {
