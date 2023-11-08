@@ -76,7 +76,7 @@ namespace SysBot.Pokemon
             public override string ToString() => "Profile Selection Settings";
 
             [Category(OpenGame), Description("Enable this if you need to select a profile when starting the game.")]
-            public bool ProfileSelectionRequired { get; set; } = false;
+            public bool ProfileSelectionRequired { get; set; } = true;
 
             [Category(OpenGame), Description("Extra time in milliseconds to wait for profiles to load when starting the game.")]
             public int ExtraTimeLoadProfile { get; set; } = 0;

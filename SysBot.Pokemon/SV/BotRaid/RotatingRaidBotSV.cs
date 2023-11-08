@@ -381,9 +381,8 @@ namespace SysBot.Pokemon.SV.BotRaid
                                 LobbyError = 0;
                                 denFound = true;
                                 await Click(B, 1_000, token).ConfigureAwait(false);
-                                await Task.Delay(2_000, token).ConfigureAwait(false);
-                                await Click(A, 1_000, token).ConfigureAwait(false);
-                                await Task.Delay(5_000, token).ConfigureAwait(false);
+                                await Click(B, 1_000, token).ConfigureAwait(false);
+                                await Click(B, 1_000, token).ConfigureAwait(false);
                                 await Click(B, 1_000, token).ConfigureAwait(false);
                                 await Click(B, 1_000, token).ConfigureAwait(false);
                                 await Task.Delay(1_000, token).ConfigureAwait(false);
@@ -393,6 +392,8 @@ namespace SysBot.Pokemon.SV.BotRaid
                         await Task.Delay(0_050, token).ConfigureAwait(false);
                         if (denFound)
                         {
+                            await SVSaveGameOverworld(token).ConfigureAwait(false);
+                            await Task.Delay(0_500, token).ConfigureAwait(false);
                             await Click(B, 1_000, token).ConfigureAwait(false);
                             continue;
                         }
@@ -1136,18 +1137,60 @@ namespace SysBot.Pokemon.SV.BotRaid
 
         private async Task<bool> PrepareForRaid(CancellationToken token)
         {
-            Log("Preparing lobby...");
             LobbyFiltersCategory settings = new LobbyFiltersCategory();
-            int attempts = 0;  // Counter to track the number of connection attempts.
-            int maxAttempts = 5;  // Maximum allowed connection attempts before considering it a softban.
+            int maxAttempts = 3; // Maximum allowed connection attempts before considering it a softban.
 
-            while (true)  // Outer loop to repeat the entire process after waiting for 31 minutes
+            while (true) // Outer loop to repeat the entire process after waiting if necessary
             {
-                // Initial check for online connection.
+                if (Settings.ActiveRaids[RotationCount].AddedByRACommand)
+                {
+                    var user = Settings.ActiveRaids[RotationCount].User;
+                    if (user != null)
+                    {
+                        try
+                        {
+                            await user.SendMessageAsync("Your raid is about to start!").ConfigureAwait(false);
+                        }
+                        catch (Discord.Net.HttpException ex)
+                        {
+                            // Handle exception (e.g., log the error or send a message to a logging channel)
+                            Log($"Failed to send DM to {user.Username}. They might have DMs turned off. Exception: {ex.Message}");
+                        }
+                    }
+                }
+
+                var x = 0;
+                bool isLobbyReady = false;
+                Log("Connecting to lobby...");
+
+                while (!isLobbyReady)
+                {
+                    isLobbyReady = await IsConnectedToLobby(token).ConfigureAwait(false);
+                    if (!isLobbyReady)
+                    {
+                        await Click(A, 1_000, token).ConfigureAwait(false);
+                        x++;
+                        if (x == 15)
+                        {
+                            Log("No den here! Rolling again.");
+                            return false;
+                        }
+                        if (x == 45)
+                        {
+                            Log("Failed to connect to lobby, restarting game in case we were in battle/bad connection.");
+                            await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
+                            Log("Attempting to restart routine!");
+                            return false;
+                        }
+                    }
+                }
+
+                // Now that we're connected to the lobby, we proceed to check the online status
+                Log("Lobby is ready. Checking online status...");
                 bool isConnected = await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false);
                 Log($"Initial online status check returned: {isConnected}");
 
-                attempts = 0;  // Reset the attempts counter for a fresh start.
+                int attempts = 0; // Counter to track the number of connection attempts.
 
                 while (!isConnected && attempts < maxAttempts)
                 {
@@ -1156,138 +1199,99 @@ namespace SysBot.Pokemon.SV.BotRaid
 
                     await RecoverToOverworld(token).ConfigureAwait(false);
                     if (!await ConnectToOnline(Hub.Config, token).ConfigureAwait(false))
-                        return false;
+                    {
+                        Log("Failed to connect online.");
+                        return false; // Exit if we cannot connect online after an attempt.
+                    }
 
-                    await Task.Delay(5000, token).ConfigureAwait(false);  // Wait 5 seconds to check again.
-                    await Click(B, 0_500, token).ConfigureAwait(false);
-                    await Click(B, 0_500, token).ConfigureAwait(false);
-                    await Click(B, 0_500, token).ConfigureAwait(false);
-                    await Click(B, 0_500, token).ConfigureAwait(false);
+                    await Task.Delay(5000, token).ConfigureAwait(false); // Wait 5 seconds to check again.
+
+                    // Send button presses to navigate any menus if necessary.
+                    for (int i = 0; i < 4; i++)
+                    {
+                        await Click(B, 500, token).ConfigureAwait(false);
+                    }
 
                     // Check again after attempting to connect.
                     isConnected = await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false);
                     Log($"Online status check after connection attempt returned: {isConnected}");
                 }
 
-                // Send an embed message and press 'B' button after the 5th attempt.
-                if (attempts == maxAttempts)
-                {
-                    await Click(B, 0_500, token).ConfigureAwait(false);
-                    await Click(B, 0_500, token).ConfigureAwait(false);
-
-                    // Create and send an embed notifying of technical difficulties.
-                    EmbedBuilder embed = new EmbedBuilder();
-                    embed.Title = "Experiencing Technical Difficulties";
-                    embed.Description = "The bot is experiencing issues connecting online. Please stand by as we try to resolve the issue.";
-                    embed.Color = Color.Red;
-                    embed.ThumbnailUrl = "https://genpkm.com/images/x.png";  // Setting the thumbnail URL directly
-                    EchoUtil.RaidEmbed(null, "", embed);
-                }
-
-
-                // If we've reached the maximum number of attempts, assume a softban scenario.
-                if (attempts >= maxAttempts)
-                {
-                    Log("Reached maximum connection attempts. Assuming softban. Waiting for 31 minutes...");
-                    await Task.Delay(TimeSpan.FromMinutes(31), token).ConfigureAwait(false);  // Using TimeSpan for clarity
-
-                    // Assuming ReOpenGame is an async method you have defined somewhere
-                    await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
-                    Log("Game reopening process has been initiated.");
-                }
-
-                // If we've successfully connected, break out of the outer loop.
                 if (isConnected)
                 {
-                    break;
+                    // Online is connected and lobby is ready, proceed with raid preparation.
+                    Log("Online status confirmed. Preparing for raid...");
+                    await Task.Delay(2_500, token).ConfigureAwait(false);
+                    await Click(B, 0_500, token).ConfigureAwait(false);
+
+                    // Inject PartyPK after we save the game.
+                    var len = string.Empty;
+                    foreach (var l in Settings.ActiveRaids[RotationCount].PartyPK)
+                        len += l;
+                    if (len.Length > 1 && EmptyRaid == 0)
+                    {
+                        Log("Preparing PartyPK. Sit tight.");
+                        await Task.Delay(2_500 + settings.ExtraTimeLobbyDisband, token).ConfigureAwait(false);
+                        await SetCurrentBox(0, token).ConfigureAwait(false);
+                        var res = string.Join("\n", Settings.ActiveRaids[RotationCount].PartyPK);
+                        if (res.Length > 4096)
+                            res = res[..4096];
+                        await InjectPartyPk(res, token).ConfigureAwait(false);
+
+                        await Click(X, 2_000, token).ConfigureAwait(false);
+                        await Click(DRIGHT, 0_500, token).ConfigureAwait(false);
+                        await SetStick(SwitchStick.LEFT, 0, -32000, 1_000, token).ConfigureAwait(false);
+                        await SetStick(SwitchStick.LEFT, 0, 0, 0, token).ConfigureAwait(false);
+                        for (int i = 0; i < 2; i++)
+                            await Click(DDOWN, 0_500, token).ConfigureAwait(false);
+                        await Click(A, 3_500, token).ConfigureAwait(false);
+                        await Click(Y, 0_500, token).ConfigureAwait(false);
+                        await Click(DLEFT, 0_800, token).ConfigureAwait(false);
+                        await Click(Y, 0_500, token).ConfigureAwait(false);
+                        for (int i = 0; i < 2; i++)
+                            await Click(B, 1_500, token).ConfigureAwait(false);
+                        Log("PartyPK switch successful.");
+                    }
+
+                    for (int i = 0; i < 4; i++)
+                        await Click(B, 1_000, token).ConfigureAwait(false);
+
+                    await Task.Delay(1_500, token).ConfigureAwait(false);
+
+                    // If not in the overworld, we've been attacked so quit earlier.
+                    if (!await IsOnOverworld(OverworldOffset, token).ConfigureAwait(false))
+                        return false;
+
+                    await Click(A, 3_000, token).ConfigureAwait(false);
+                    await Click(A, 3_000, token).ConfigureAwait(false);
+
+
+                    if (firstRun) // If it's the first run
+                    {
+                        Log("First Run detected. Opening Lobby up to all to start raid rotation.");
+                        await Click(DDOWN, 1_000, token).ConfigureAwait(false);
+                    }
+                    else if (!Settings.ActiveRaids[RotationCount].IsCoded || Settings.ActiveRaids[RotationCount].IsCoded && EmptyRaid == Settings.LobbyOptions.EmptyRaidLimit && Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.OpenLobby)
+                    {
+                        // If not the first run, then apply the Settings logic
+                        if (Settings.ActiveRaids[RotationCount].IsCoded && EmptyRaid == Settings.LobbyOptions.EmptyRaidLimit && Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.OpenLobby)
+                            Log($"We had {Settings.LobbyOptions.EmptyRaidLimit} empty raids.. Opening this raid to all!");
+                        await Click(DDOWN, 1_000, token).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await Click(A, 3_000, token).ConfigureAwait(false);
+                    }
+
+                    await Click(A, 8_000, token).ConfigureAwait(false);
+                    return true;
+
                 }
             }
-
-            await Task.Delay(2_500, token).ConfigureAwait(false);
-            await Click(B, 0_500, token).ConfigureAwait(false);
-
-            // Inject PartyPK after we save the game.
-            var len = string.Empty;
-            foreach (var l in Settings.ActiveRaids[RotationCount].PartyPK)
-                len += l;
-            if (len.Length > 1 && EmptyRaid == 0)
-            {
-                Log("Preparing PartyPK. Sit tight.");
-                await Task.Delay(2_500 + settings.ExtraTimeLobbyDisband, token).ConfigureAwait(false);
-                await SetCurrentBox(0, token).ConfigureAwait(false);
-                var res = string.Join("\n", Settings.ActiveRaids[RotationCount].PartyPK);
-                if (res.Length > 4096)
-                    res = res[..4096];
-                await InjectPartyPk(res, token).ConfigureAwait(false);
-
-                await Click(X, 2_000, token).ConfigureAwait(false);
-                await Click(DRIGHT, 0_500, token).ConfigureAwait(false);
-                await SetStick(SwitchStick.LEFT, 0, -32000, 1_000, token).ConfigureAwait(false);
-                await SetStick(SwitchStick.LEFT, 0, 0, 0, token).ConfigureAwait(false);
-                for (int i = 0; i < 2; i++)
-                    await Click(DDOWN, 0_500, token).ConfigureAwait(false);
-                await Click(A, 3_500, token).ConfigureAwait(false);
-                await Click(Y, 0_500, token).ConfigureAwait(false);
-                await Click(DLEFT, 0_800, token).ConfigureAwait(false);
-                await Click(Y, 0_500, token).ConfigureAwait(false);
-                for (int i = 0; i < 2; i++)
-                    await Click(B, 1_500, token).ConfigureAwait(false);
-                Log("PartyPK switch successful.");
-            }
-
-            for (int i = 0; i < 4; i++)
-                await Click(B, 1_000, token).ConfigureAwait(false);
-
-            await Task.Delay(1_500, token).ConfigureAwait(false);
-
-            // If not in the overworld, we've been attacked so quit earlier.
-            if (!await IsOnOverworld(OverworldOffset, token).ConfigureAwait(false))
-                return false;
-
-            await Click(A, 3_000, token).ConfigureAwait(false);
-            await Click(A, 3_000, token).ConfigureAwait(false);
-
-
-            if (firstRun) // If it's the first run
-            {
-                Log("First Run detected. Opening Lobby up to all to start raid rotation.");
-                await Click(DDOWN, 1_000, token).ConfigureAwait(false);
-            }
-            else if (!Settings.ActiveRaids[RotationCount].IsCoded || Settings.ActiveRaids[RotationCount].IsCoded && EmptyRaid == Settings.LobbyOptions.EmptyRaidLimit && Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.OpenLobby)
-            {
-                // If not the first run, then apply the Settings logic
-                if (Settings.ActiveRaids[RotationCount].IsCoded && EmptyRaid == Settings.LobbyOptions.EmptyRaidLimit && Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.OpenLobby)
-                    Log($"We had {Settings.LobbyOptions.EmptyRaidLimit} empty raids.. Opening this raid to all!");
-                await Click(DDOWN, 1_000, token).ConfigureAwait(false);
-            }
-            else
-            {
-                await Click(A, 3_000, token).ConfigureAwait(false);
-            }
-
-            await Click(A, 8_000, token).ConfigureAwait(false);
-            return true;
         }
 
         private async Task<bool> GetLobbyReady(bool recovery, CancellationToken token)
         {
-            if (Settings.ActiveRaids[RotationCount].AddedByRACommand)
-            {
-                var user = Settings.ActiveRaids[RotationCount].User;
-                if (user != null)
-                {
-                    try
-                    {
-                        await user.SendMessageAsync("Your raid is about to start!").ConfigureAwait(false);
-                    }
-                    catch (Discord.Net.HttpException ex)
-                    {
-                        // Handle exception (e.g., log the error or send a message to a logging channel)
-                        Log($"Failed to send DM to {user.Username}. They might have DMs turned off. Exception: {ex.Message}");
-                    }
-                }
-            }
-
             var x = 0;
             Log("Connecting to lobby...");
             while (!await IsConnectedToLobby(token).ConfigureAwait(false))
