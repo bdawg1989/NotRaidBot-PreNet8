@@ -546,8 +546,13 @@ namespace SysBot.Pokemon.SV.BotRaid
                 await ReOpenGame(Hub.Config, token);
                 return;
             }
-            await Task.Delay(600, token).ConfigureAwait(false); // Let's take a pic of the menacing raid mon here; 2 seconds takes pic of the players instead
-            // Update final list of lobby trainers
+
+            // Use the ScreenshotTiming setting for the delay before taking a screenshot in Raid
+            var screenshotDelay = Settings.RaidPresetFilters.ScreenshotTiming;
+
+            // Use the delay in milliseconds as needed
+            await Task.Delay((int)screenshotDelay, token).ConfigureAwait(false);
+
             var lobbyTrainersFinal = new List<(ulong, RaidMyStatus)>();
             if (!await UpdateLobbyTrainersFinal(lobbyTrainersFinal, trainers, token))
             {

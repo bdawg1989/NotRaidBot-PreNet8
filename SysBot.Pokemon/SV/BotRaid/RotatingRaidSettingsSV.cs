@@ -14,6 +14,7 @@ namespace SysBot.Pokemon
         private const string Hosting = nameof(Hosting);
         private const string Counts = nameof(Counts);
         private const string FeatureToggle = nameof(FeatureToggle);
+        public RotatingRaidPresetFiltersCategory RaidPresetFilters { get; set; } = new RotatingRaidPresetFiltersCategory();
         public enum TeraIconType
         {
             Icon1, // Use special set
@@ -30,6 +31,16 @@ namespace SysBot.Pokemon
             Move3,
             Move4
         }
+        public enum ScreenshotTimingOptions
+        {
+            [Description("500 milliseconds")]
+            _500 = 500, // Raid Mon SS
+            [Description("1500 milliseconds")]
+            _1500 = 1500, // Team SS
+            [Description("5000 milliseconds")]
+            _5000 = 5000 // Everything SS
+        }
+
         public override string ToString() => "RotatingRaidSV Settings";
 
         [Category(Hosting), Description("When enabled, the bot will attempt to auto-generate your raids from the \"raidsv.txt\" file on botstart.")]
@@ -196,6 +207,10 @@ namespace SysBot.Pokemon
 
             [Category(Hosting), Description("If true, the bot will show Type Advantages on embeds.")]
             public bool IncludeTypeAdvantage { get; set; } = true;
+
+            [Category(Hosting), Description("Delay in milliseconds for capturing a screenshot once in the raid.\n500 Captures Raid Mon.\n1500 Captures Players\n5000 Captures players and Raid Mon.")]
+            public ScreenshotTimingOptions ScreenshotTiming { get; set; } = ScreenshotTimingOptions._1500; // default to 1500 ms
+
         }
 
         [Category(Hosting), TypeConverter(typeof(CategoryConverter<LobbyFiltersCategory>))]
