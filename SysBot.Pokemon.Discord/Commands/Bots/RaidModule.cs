@@ -9,10 +9,12 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using static SysBot.Pokemon.RotatingRaidSettingsSV;
+using static SysBot.Pokemon.SV.BotRaid.RotatingRaidBotSV;
 
 namespace SysBot.Pokemon.Discord.Commands.Bots
 {
@@ -72,8 +74,61 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             }
         }
 
+        [Command("ban")]
+        [RequireSudo]
+        [Summary("Bans a user with the specified OT from participating in raids.")]
+        public async Task BanUserAsync(string ot)
+        {
+            // Load the player data from the file.
+            var baseDirectory = AppContext.BaseDirectory;
+            var storage = new PlayerDataStorage(baseDirectory);
+            var playerData = storage.LoadPlayerData();
 
-        [Command("peek")]
+            // Filter out player data that matches the OT.
+            var matchedPlayers = playerData.Where(pd => pd.Value.OT.Equals(ot, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            // Check if there are duplicates.
+            if (matchedPlayers.Count > 1)
+            {
+                await ReplyAsync($"Multiple players with OT '{ot}' found. Ban skipped. Please review manually.");
+                return;
+            }
+
+            // If no player is found, notify and return.
+            if (matchedPlayers.Count == 0)
+            {
+                await ReplyAsync($"No player with OT '{ot}' found.");
+                return;
+            }
+
+            // Get the player's NID to ban.
+            var playerToBan = matchedPlayers.First();
+            ulong nidToBan = playerToBan.Key;
+
+            // Check if the NID is already in the ban list.
+            if (Hub.Config.RotatingRaidSV.RaiderBanList.List.Any(x => x.ID == nidToBan))
+            {
+                await ReplyAsync($"Player with OT '{ot}' is already banned.");
+                return;
+            }
+
+            // Add the NID to the ban list.
+            var banEntry = new RemoteControlAccess
+            {
+                ID = nidToBan,
+                Name = $"{ot}",
+                Comment = "Banned on " + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") + " UTC"
+            };
+
+            Hub.Config.RotatingRaidSV.RaiderBanList.List.Add(banEntry);
+
+            // Optionally, save the ban list to persist the changes
+            // SaveBanListMethod(Hub.Config.RaiderBanList);
+
+            // Notify the command issuer that the ban was successful.
+            await ReplyAsync($"Player with OT '{ot}' has been banned.");
+        }
+        [Command("repeek")]
         [Summary("Take and send a screenshot from the specified Switch.")]
         [RequireOwner]
         public async Task RePeek(string address)
@@ -602,7 +657,7 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             var embed = new EmbedBuilder();
             List<string> cmds = new()
             {
-                "$crb - Clear all in raider ban list.\n",
+                "$ban - Ban a user from raids via NID. [Command] [OT] - Sudo only command.\n",
                 "$vrl - View all raids in the list.\n",
                 "$arp - Add parameter to the collection.\nEx: [Command] [Index] [Species] [Difficulty]\n",
                 "$rrp - Remove parameter from the collection.\nEx: [Command] [Index]\n",
