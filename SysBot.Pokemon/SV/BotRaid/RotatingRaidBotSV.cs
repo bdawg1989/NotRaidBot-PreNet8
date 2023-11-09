@@ -548,10 +548,10 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
 
             // Use the ScreenshotTiming setting for the delay before taking a screenshot in Raid
-            var screenshotDelay = Settings.RaidPresetFilters.ScreenshotTiming;
+            var screenshotDelay = (int)Settings.RaidPresetFilters.ScreenshotTiming;
 
             // Use the delay in milliseconds as needed
-            await Task.Delay((int)screenshotDelay, token).ConfigureAwait(false);
+            await Task.Delay(screenshotDelay, token).ConfigureAwait(false);
 
             var lobbyTrainersFinal = new List<(ulong, RaidMyStatus)>();
             if (!await UpdateLobbyTrainersFinal(lobbyTrainersFinal, trainers, token))
@@ -560,13 +560,35 @@ namespace SysBot.Pokemon.SV.BotRaid
                 return;
             }
 
-            // Handle duplicates and embeds
-            if (!await HandleDuplicatesAndEmbeds(lobbyTrainersFinal, token))
+            // If screenshotDelay is exactly 22000 ms, handle duplicates and embeds before processing battle actions
+            if (screenshotDelay == (int)ScreenshotTimingOptions._22000)
             {
-                await ReOpenGame(Hub.Config, token);
-                return;
+                // Handle duplicates and embeds
+                if (!await HandleDuplicatesAndEmbeds(lobbyTrainersFinal, token))
+                {
+                    await ReOpenGame(Hub.Config, token);
+                    return;
+                }
+
+                // No additional delay before processing battle actions
             }
-            await Task.Delay(10_000, token).ConfigureAwait(false);
+            else
+            {
+                // If screenshotDelay is not greater than 1500ms, keep the 10 second delay
+                if (screenshotDelay <= (int)ScreenshotTimingOptions._1500)
+                {
+                    // Delay to start ProcessBattleActions
+                    await Task.Delay(10000, token).ConfigureAwait(false);
+                }
+
+                // Handle duplicates and embeds
+                if (!await HandleDuplicatesAndEmbeds(lobbyTrainersFinal, token))
+                {
+                    await ReOpenGame(Hub.Config, token);
+                    return;
+                }
+            }
+
             // Process battle actions
             if (!await ProcessBattleActions(token))
             {
@@ -585,6 +607,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             // Finalize raid completion
             await FinalizeRaidCompletion(trainers, ready, token);
         }
+
 
         private async Task<bool> CheckIfConnectedToLobbyAndLog(CancellationToken token)
         {
