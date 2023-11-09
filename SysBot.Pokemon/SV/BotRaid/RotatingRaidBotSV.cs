@@ -546,7 +546,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 await ReOpenGame(Hub.Config, token);
                 return;
             }
-
+            await Task.Delay(600, token).ConfigureAwait(false); // Let's take a pic of the menacing raid mon here; 2 seconds takes pic of the players instead
             // Update final list of lobby trainers
             var lobbyTrainersFinal = new List<(ulong, RaidMyStatus)>();
             if (!await UpdateLobbyTrainersFinal(lobbyTrainersFinal, trainers, token))
@@ -561,7 +561,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 await ReOpenGame(Hub.Config, token);
                 return;
             }
-            await Task.Delay(15_000, token).ConfigureAwait(false);
+            await Task.Delay(10_000, token).ConfigureAwait(false);
             // Process battle actions
             if (!await ProcessBattleActions(token))
             {
