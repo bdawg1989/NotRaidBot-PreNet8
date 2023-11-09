@@ -10,9 +10,11 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using static SysBot.Pokemon.RotatingRaidSettingsSV;
 using static SysBot.Pokemon.SV.BotRaid.RotatingRaidBotSV;
 
@@ -74,7 +76,8 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             }
         }
 
-        [Command("ban")]
+        [Command("banOT")]
+        [Alias("ban")]
         [RequireSudo]
         [Summary("Bans a user with the specified OT from participating in raids.")]
         public async Task BanUserAsync(string ot)
@@ -112,15 +115,7 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
                 return;
             }
 
-            // Add the NID to the ban list.
-            var banEntry = new RemoteControlAccess
-            {
-                ID = nidToBan,
-                Name = $"{ot}",
-                Comment = "Banned on " + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") + " UTC"
-            };
-
-            Hub.Config.RotatingRaidSV.RaiderBanList.List.Add(banEntry);
+            Hub.Config.RotatingRaidSV.RaiderBanList.AddIfNew(new[] { GetReference(nidToBan, ot, "") });
 
             // Optionally, save the ban list to persist the changes
             // SaveBanListMethod(Hub.Config.RaiderBanList);
@@ -128,6 +123,31 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             // Notify the command issuer that the ban was successful.
             await ReplyAsync($"Player with OT '{ot}' has been banned.");
         }
+
+        [Command("banNID")]
+        [Alias("ban")]
+        [RequireSudo]
+        [Summary("Bans a user with the specified NID from participating in raids.")]
+        public async Task BanUserAsync(ulong nid, [Remainder] string comment)
+        {
+            var ot = string.Empty;
+            try
+            {
+                var baseDirectory = AppContext.BaseDirectory;
+                var storage = new PlayerDataStorage(baseDirectory);
+                var playerData = storage.LoadPlayerData();
+                var matchedNID = playerData.Where(pd => pd.Key.Equals(nid));
+                ot = matchedNID.First().Value.OT;
+            }
+            catch
+            {
+                ot = "Unknown";
+            }
+
+            Hub.Config.RotatingRaidSV.RaiderBanList.AddIfNew(new[] { GetReference(nid, ot, comment) });
+            await ReplyAsync("Done.").ConfigureAwait(false);
+        }
+
         [Command("repeek")]
         [Summary("Take and send a screenshot from the specified Switch.")]
         [RequireOwner]
@@ -692,5 +712,12 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
                 }
             await ReplyAsync(msg).ConfigureAwait(false);
         }
+
+        private RemoteControlAccess GetReference(ulong id, string name, string comment) => new()
+        {
+            ID = id,
+            Name = name,
+            Comment = "Banned on " + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") + " UTC" + $"({comment })"
+        };
     }
 }
