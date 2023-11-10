@@ -33,8 +33,6 @@ namespace SysBot.Pokemon
         }
         public enum ScreenshotTimingOptions
         {
-            [Description("300 milliseconds")]
-            _300 = 300, // Raid Mon SS
             [Description("1500 milliseconds")]
             _1500 = 1500, // Team SS
             [Description("22000 milliseconds")]
@@ -99,6 +97,9 @@ namespace SysBot.Pokemon
 
         [Category(Hosting), Description("When enabled, the bot will inject the current day seed to tomorrow's day seed.")]
         public bool KeepDaySeed { get; set; } = true;
+
+        [Category(FeatureToggle), Description("When enabled, the bot will roll back the time by 5 hours to keep your day from changing.  Be sure that when you start the bot the Switch Time is past 12:01am and before 7:00pm.")]
+        public bool EnableTimeRollBack { get; set; } = false;
 
         [Category(FeatureToggle), Description("Set your Switch Date/Time format in the Date/Time settings. The day will automatically rollback by 1 if the Date changes.")]
         public DTFormat DateTimeFormat { get; set; } = DTFormat.MMDDYY;

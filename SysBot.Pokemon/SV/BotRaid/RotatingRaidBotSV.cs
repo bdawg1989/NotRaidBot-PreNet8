@@ -66,7 +66,8 @@ namespace SysBot.Pokemon.SV.BotRaid
         private DateTime StartTime = DateTime.Now;
         public static RaidContainer? container;
         private static int attemptCount = 0;
-        public static bool IsKitakami = false;       
+        public static bool IsKitakami = false;
+        private DateTime TimeForRollBackCheck = DateTime.Now;
 
         public override async Task MainLoop(CancellationToken token)
         {
@@ -308,6 +309,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             var raidsHosted = 0;
             while (!token.IsCancellationRequested)
             {
+
                 // Initialize offsets at the start of the routine and cache them.
                 await InitializeSessionOffsets(token).ConfigureAwait(false);
                 if (RaidCount == 0)
@@ -587,12 +589,8 @@ namespace SysBot.Pokemon.SV.BotRaid
                     return;
                 }
 
-                // If the screenshotDelay is less than or equal to 1500ms, then delay ProcessBattleActions
-                if (screenshotDelay <= (int)ScreenshotTimingOptions._1500)
-                {
-                    // Delay to start ProcessBattleActions
-                    await Task.Delay(10000, token).ConfigureAwait(false);
-                }
+                // Delay to start ProcessBattleActions
+                await Task.Delay(10_000, token).ConfigureAwait(false);
 
                 // Process battle actions
                 if (!await ProcessBattleActions(token))
@@ -1175,6 +1173,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
         private async Task<bool> PrepareForRaid(CancellationToken token)
         {
+
             if (Settings.ActiveRaids[RotationCount].AddedByRACommand)
             {
                 var user = Settings.ActiveRaids[RotationCount].User;
@@ -1192,6 +1191,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 }
             }
             Log("Preparing lobby...");
+
             LobbyFiltersCategory settings = new LobbyFiltersCategory();
             int attempts = 0;  // Counter to track the number of connection attempts.
             int maxAttempts = 5;  // Maximum allowed connection attempts before considering it a softban.
@@ -1323,6 +1323,49 @@ namespace SysBot.Pokemon.SV.BotRaid
             return true;
         }
 
+        private async Task RollBackTime(CancellationToken token)
+        {
+            for (int i = 0; i < 2; i++)
+                await Click(B, 0_150, token).ConfigureAwait(false);
+
+            for (int i = 0; i < 2; i++)
+                await Click(DRIGHT, 0_150, token).ConfigureAwait(false);
+            await Click(DDOWN, 0_150, token).ConfigureAwait(false);
+            await Click(DRIGHT, 0_150, token).ConfigureAwait(false);
+            await Click(A, 1_250, token).ConfigureAwait(false); // Enter settings
+
+            await PressAndHold(DDOWN, 2_000, 0_250, token).ConfigureAwait(false); // Scroll to system settings
+            await Click(A, 1_250, token).ConfigureAwait(false);
+
+            if (Settings.UseOvershoot)
+            {
+                await PressAndHold(DDOWN, Settings.HoldTimeForRollover, 1_000, token).ConfigureAwait(false);
+                await Click(DUP, 0_500, token).ConfigureAwait(false);
+            }
+            else if (!Settings.UseOvershoot)
+            {
+                for (int i = 0; i < 39; i++)
+                    await Click(DDOWN, 0_100, token).ConfigureAwait(false);
+            }
+
+            await Click(A, 1_250, token).ConfigureAwait(false);
+            for (int i = 0; i < 2; i++)
+                await Click(DDOWN, 0_150, token).ConfigureAwait(false);
+            await Click(A, 0_500, token).ConfigureAwait(false);
+
+            for (int i = 0; i < 3; i++) // Navigate to the hour setting
+                await Click(DRIGHT, 0_200, token).ConfigureAwait(false);
+
+            for (int i = 0; i < 5; i++) // Roll back the hour by 5
+                await Click(DDOWN, 0_200, token).ConfigureAwait(false);
+
+            for (int i = 0; i < 8; i++) // Mash DRIGHT to confirm
+                await Click(DRIGHT, 0_200, token).ConfigureAwait(false);
+
+            await Click(A, 0_200, token).ConfigureAwait(false); // Confirm date/time change
+            await Click(HOME, 1_000, token).ConfigureAwait(false); // Back to title screen
+        }
+
         private async Task<bool> GetLobbyReady(bool recovery, CancellationToken token)
         {
             var x = 0;
@@ -1380,79 +1423,67 @@ namespace SysBot.Pokemon.SV.BotRaid
             await EnqueueEmbed(null, "", false, false, false, false, token).ConfigureAwait(false);
 
             List<(ulong, RaidMyStatus)> lobbyTrainers = new();
-            Dictionary<int, ulong> playerNIDs = new Dictionary<int, ulong>(); // Track player number to NID.
             var wait = TimeSpan.FromSeconds(Settings.TimeToWait);
             var endTime = DateTime.Now + wait;
-            HashSet<ulong> leftNIDs = new HashSet<ulong>();
+            bool full = false;
 
-            while (DateTime.Now < endTime)
+            while (!full && DateTime.Now < endTime)
             {
                 for (int i = 0; i < 3; i++)
                 {
                     var player = i + 2;
+                    Log($"Waiting for Player {player} to load...");
 
                     var nidOfs = TeraNIDOffsets[i];
                     var data = await SwitchConnection.ReadBytesAbsoluteAsync(nidOfs, 8, token).ConfigureAwait(false);
                     var nid = BitConverter.ToUInt64(data, 0);
-
-                    // Check if the player has left the lobby.
-                    if (playerNIDs.TryGetValue(player, out var oldNid) && nid != oldNid)
+                    while (nid == 0 && DateTime.Now < endTime)
                     {
-                        if (oldNid != 0 && !leftNIDs.Contains(oldNid))
-                        {
-                            Log($"{playerNIDs.FirstOrDefault(x => x.Value == oldNid).Key} ({lobbyTrainers.FirstOrDefault(x => x.Item1 == oldNid).Item2.OT}) with NID {oldNid} has left the lobby.");
-                            lobbyTrainers.RemoveAll(x => x.Item1 == oldNid);
-                            leftNIDs.Add(oldNid); // Add to the HashSet so it's not logged again
-                        }
-                        playerNIDs[player] = nid; // Update the NID, even if it's now 0
+                        await Task.Delay(0_500, token).ConfigureAwait(false);
+                        data = await SwitchConnection.ReadBytesAbsoluteAsync(nidOfs, 8, token).ConfigureAwait(false);
+                        nid = BitConverter.ToUInt64(data, 0);
                     }
 
-                    // If we have a new non-zero NID for the player, proceed to check their status.
-                    if (nid != 0 && (!playerNIDs.ContainsKey(player) || playerNIDs[player] == 0))
+                    List<long> ptr = new(Offsets.Trader2MyStatusPointer);
+                    ptr[2] += i * 0x30;
+                    var trainer = await GetTradePartnerMyStatus(ptr, token).ConfigureAwait(false);
+
+                    while (trainer.OT.Length == 0 && DateTime.Now < endTime)
                     {
-                        List<long> ptr = new(Offsets.Trader2MyStatusPointer);
-                        ptr[2] += i * 0x30;
-                        var trainer = await GetTradePartnerMyStatus(ptr, token).ConfigureAwait(false);
-
-                        while (trainer.OT.Length == 0 && DateTime.Now < endTime)
-                        {
-                            await Task.Delay(0_500, token).ConfigureAwait(false);
-                            trainer = await GetTradePartnerMyStatus(ptr, token).ConfigureAwait(false);
-                        }
-
-                        if (!string.IsNullOrWhiteSpace(trainer.OT))
-                        {
-                            if (await CheckIfTrainerBanned(trainer, nid, player, token).ConfigureAwait(false))
-                                return (false, lobbyTrainers); // Exit if the trainer is banned.
-
-                            lobbyTrainers.Add((nid, trainer)); // Add the player to the lobby.
-                            playerNIDs[player] = nid; // Update this player's NID.
-                            Log($"{trainer.OT} with NID {nid} has joined the lobby.");
-                        }
+                        await Task.Delay(0_500, token).ConfigureAwait(false);
+                        trainer = await GetTradePartnerMyStatus(ptr, token).ConfigureAwait(false);
                     }
-                }
 
-                // Log the lobby status after each iteration
-                if (lobbyTrainers.Count == 3)
-                {
-                   // Lobby is currently full.
-                }
-                else if (lobbyTrainers.Count < 3)
-                {
-                  // Lobby is not full, waiting for more players.
-                }
+                    if (nid != 0 && !string.IsNullOrWhiteSpace(trainer.OT))
+                    {
+                        if (await CheckIfTrainerBanned(trainer, nid, player, token).ConfigureAwait(false))
+                            return (false, lobbyTrainers);
+                    }
 
-                await Task.Delay(1_000, token).ConfigureAwait(false); // Delay to prevent rapid checks
+                    // Check if the NID is already in the list to prevent duplicates
+                    if (lobbyTrainers.Any(x => x.Item1 == nid))
+                    {
+                        Log($"Duplicate NID detected: {nid}. Skipping...");
+                        continue; // Skip adding this NID if it's a duplicate
+                    }
+
+                    // If NID is not a duplicate and has a valid trainer OT, add to the list
+                    if (nid > 0 && trainer.OT.Length > 0)
+                        lobbyTrainers.Add((nid, trainer));
+
+                    full = lobbyTrainers.Count == 3;
+                    if (full || DateTime.Now >= endTime)
+                        break;
+                }
             }
 
-            // After the waiting loop, proceed based on the lobby status
+            await Task.Delay(5_000, token).ConfigureAwait(false);
+
             if (lobbyTrainers.Count == 0)
             {
-                // Handle the case where the lobby isn't full when the time expires.
                 EmptyRaid++;
                 LostRaid++;
-                Log($"Not enough players joined the raid, recovering...");
-
+                Log($"Nobody joined the raid, recovering...");
                 if (Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.OpenLobby)
                     Log($"Empty Raid Count #{EmptyRaid}");
                 if (Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.SkipRaid)
@@ -1461,14 +1492,12 @@ namespace SysBot.Pokemon.SV.BotRaid
                 return (false, lobbyTrainers);
             }
 
-            // If the lobby is full at the end of the waiting period
-            RaidCount++;
+            RaidCount++; // Increment RaidCount only when a raid is actually starting.
+            Log($"Raid #{RaidCount} is starting!");
             if (EmptyRaid != 0)
                 EmptyRaid = 0;
-            Log($"Time expired. Starting Raid #{RaidCount} with {lobbyTrainers.Count} players.");
             return (true, lobbyTrainers);
         }
-
 
 
         private async Task<bool> IsConnectedToLobby(CancellationToken token)
@@ -1995,6 +2024,17 @@ namespace SysBot.Pokemon.SV.BotRaid
 
         public async Task StartGameRaid(PokeRaidHubConfig config, CancellationToken token)
         {
+            // First, check if the time rollback feature is enabled
+            if (Settings.EnableTimeRollBack && DateTime.Now - TimeForRollBackCheck >= TimeSpan.FromHours(5))
+            {
+                Log("Rolling Time back 5 hours.");
+                // Call the RollBackTime function
+                await RollBackTime(token).ConfigureAwait(false);
+                await Click(A, 1_500, token).ConfigureAwait(false);
+                // Reset TimeForRollBackCheck
+                TimeForRollBackCheck = DateTime.Now;
+            }
+
             var timing = config.Timings;
             var loadPro = timing.RestartGameSettings.ProfileSelectSettings.ProfileSelectionRequired ? timing.RestartGameSettings.ProfileSelectSettings.ExtraTimeLoadProfile : 0;
 
