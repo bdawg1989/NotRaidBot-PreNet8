@@ -1920,27 +1920,35 @@ namespace SysBot.Pokemon.SV.BotRaid
 
         private async Task<bool> ConnectToOnline(PokeRaidHubConfig config, CancellationToken token)
         {
-            if (await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false))
-                return true;
+            int attemptCount = 0;
+            const int maxAttempt = 5;
+            const int waitTime = 31; // time in minutes to wait after max attempts
 
-            await Click(X, 3_000, token).ConfigureAwait(false);
-            await Click(L, 5_000 + config.Timings.ExtraTimeConnectOnline, token).ConfigureAwait(false);
-
-            // Try one more time.
-            if (!await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false))
-            {
-                Log("Failed to connect the first time, trying again...");
-                await RecoverToOverworld(token).ConfigureAwait(false);
-                await Click(X, 3_000, token).ConfigureAwait(false);
-                await Click(L, 5_000 + config.Timings.ExtraTimeConnectOnline, token).ConfigureAwait(false);
-            }
-
-            var wait = 0;
             while (!await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false))
             {
+                if (attemptCount >= maxAttempt)
+                {
+                    Log($"Failed to connect after {maxAttempt} attempts, waiting for {waitTime} minutes before retrying...");
+                    await Task.Delay(TimeSpan.FromMinutes(waitTime), token).ConfigureAwait(false); // Wait for 31 minutes before retrying
+                    attemptCount = 0; // Reset attempts after waiting
+                }
+
+                attemptCount++;
+                Log($"Attempt to connect: {attemptCount}");
+
+                await Click(X, 3_000, token).ConfigureAwait(false);
+                await Click(L, 5_000 + config.Timings.ExtraTimeConnectOnline, token).ConfigureAwait(false);
+
+                if (attemptCount < maxAttempt && !await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false))
+                {
+                    Log("Failed to connect, trying again...");
+                    await RecoverToOverworld(token).ConfigureAwait(false);
+                    await Click(X, 3_000, token).ConfigureAwait(false);
+                    await Click(L, 5_000 + config.Timings.ExtraTimeConnectOnline, token).ConfigureAwait(false);
+                }
+
+                // Wait a bit before checking the connection status again
                 await Task.Delay(0_500, token).ConfigureAwait(false);
-                if (++wait > 30) // More than 15 seconds without a connection.
-                    return false;
             }
 
             // There are several seconds after connection is established before we can dismiss the menu.
