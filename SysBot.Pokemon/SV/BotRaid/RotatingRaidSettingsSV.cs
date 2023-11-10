@@ -37,7 +37,7 @@ namespace SysBot.Pokemon
             _500 = 500, // Raid Mon SS
             [Description("1500 milliseconds")]
             _1500 = 1500, // Team SS
-            [Description("20000 milliseconds")]
+            [Description("22000 milliseconds")]
             _22000 = 22000 // Everything SS
         }
 
@@ -208,7 +208,7 @@ namespace SysBot.Pokemon
             [Category(Hosting), Description("If true, the bot will show Type Advantages on embeds.")]
             public bool IncludeTypeAdvantage { get; set; } = true;
 
-            [Category(Hosting), Description("Delay in milliseconds for capturing a screenshot once in the raid.\n500 Captures Raid Mon.\n1500 Captures Players\n22000 Captures players and Raid Mon.")]
+            [Category(Hosting), Description("Delay in milliseconds for capturing a screenshot once in the raid.\n500 Captures Raid Mon.\n1500 Captures Players Only.\n22000 Captures players and Raid Mon.")]
             public ScreenshotTimingOptions ScreenshotTiming { get; set; } = ScreenshotTimingOptions._1500; // default to 1500 ms
 
         }

@@ -560,40 +560,46 @@ namespace SysBot.Pokemon.SV.BotRaid
                 return;
             }
 
-            // If screenshotDelay is exactly 22000 ms, handle duplicates and embeds before processing battle actions
+            // If screenshotDelay is exactly 22000 ms, process battle actions first
             if (screenshotDelay == (int)ScreenshotTimingOptions._22000)
             {
-                // Handle duplicates and embeds
+                await Task.Delay(10000, token).ConfigureAwait(false);
+                // Process battle actions
+                if (!await ProcessBattleActions(token))
+                {
+                    await ReOpenGame(Hub.Config, token);
+                    return;
+                }
+
+                // Then handle duplicates and embeds
+                if (!await HandleDuplicatesAndEmbeds(lobbyTrainersFinal, token))
+                {
+                    await ReOpenGame(Hub.Config, token);
+                    return;
+                }
+            }
+            else
+            {
+                // For any other delay, handle duplicates and embeds first
                 if (!await HandleDuplicatesAndEmbeds(lobbyTrainersFinal, token))
                 {
                     await ReOpenGame(Hub.Config, token);
                     return;
                 }
 
-                // No additional delay before processing battle actions
-            }
-            else
-            {
-                // If screenshotDelay is not greater than 1500ms, keep the 10 second delay
+                // If the screenshotDelay is less than or equal to 1500ms, then delay ProcessBattleActions
                 if (screenshotDelay <= (int)ScreenshotTimingOptions._1500)
                 {
                     // Delay to start ProcessBattleActions
                     await Task.Delay(10000, token).ConfigureAwait(false);
                 }
 
-                // Handle duplicates and embeds
-                if (!await HandleDuplicatesAndEmbeds(lobbyTrainersFinal, token))
+                // Process battle actions
+                if (!await ProcessBattleActions(token))
                 {
                     await ReOpenGame(Hub.Config, token);
                     return;
                 }
-            }
-
-            // Process battle actions
-            if (!await ProcessBattleActions(token))
-            {
-                await ReOpenGame(Hub.Config, token);
-                return;
             }
 
             // Handle end of raid actions
@@ -607,6 +613,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             // Finalize raid completion
             await FinalizeRaidCompletion(trainers, ready, token);
         }
+
 
 
         private async Task<bool> CheckIfConnectedToLobbyAndLog(CancellationToken token)
@@ -1373,67 +1380,79 @@ namespace SysBot.Pokemon.SV.BotRaid
             await EnqueueEmbed(null, "", false, false, false, false, token).ConfigureAwait(false);
 
             List<(ulong, RaidMyStatus)> lobbyTrainers = new();
+            Dictionary<int, ulong> playerNIDs = new Dictionary<int, ulong>(); // Track player number to NID.
             var wait = TimeSpan.FromSeconds(Settings.TimeToWait);
             var endTime = DateTime.Now + wait;
-            bool full = false;
+            HashSet<ulong> leftNIDs = new HashSet<ulong>();
 
-            while (!full && DateTime.Now < endTime)
+            while (DateTime.Now < endTime)
             {
                 for (int i = 0; i < 3; i++)
                 {
                     var player = i + 2;
-                    Log($"Waiting for Player {player} to load...");
 
                     var nidOfs = TeraNIDOffsets[i];
                     var data = await SwitchConnection.ReadBytesAbsoluteAsync(nidOfs, 8, token).ConfigureAwait(false);
                     var nid = BitConverter.ToUInt64(data, 0);
-                    while (nid == 0 && DateTime.Now < endTime)
+
+                    // Check if the player has left the lobby.
+                    if (playerNIDs.TryGetValue(player, out var oldNid) && nid != oldNid)
                     {
-                        await Task.Delay(0_500, token).ConfigureAwait(false);
-                        data = await SwitchConnection.ReadBytesAbsoluteAsync(nidOfs, 8, token).ConfigureAwait(false);
-                        nid = BitConverter.ToUInt64(data, 0);
+                        if (oldNid != 0 && !leftNIDs.Contains(oldNid))
+                        {
+                            Log($"{playerNIDs.FirstOrDefault(x => x.Value == oldNid).Key} ({lobbyTrainers.FirstOrDefault(x => x.Item1 == oldNid).Item2.OT}) with NID {oldNid} has left the lobby.");
+                            lobbyTrainers.RemoveAll(x => x.Item1 == oldNid);
+                            leftNIDs.Add(oldNid); // Add to the HashSet so it's not logged again
+                        }
+                        playerNIDs[player] = nid; // Update the NID, even if it's now 0
                     }
 
-                    List<long> ptr = new(Offsets.Trader2MyStatusPointer);
-                    ptr[2] += i * 0x30;
-                    var trainer = await GetTradePartnerMyStatus(ptr, token).ConfigureAwait(false);
-
-                    while (trainer.OT.Length == 0 && DateTime.Now < endTime)
+                    // If we have a new non-zero NID for the player, proceed to check their status.
+                    if (nid != 0 && (!playerNIDs.ContainsKey(player) || playerNIDs[player] == 0))
                     {
-                        await Task.Delay(0_500, token).ConfigureAwait(false);
-                        trainer = await GetTradePartnerMyStatus(ptr, token).ConfigureAwait(false);
+                        List<long> ptr = new(Offsets.Trader2MyStatusPointer);
+                        ptr[2] += i * 0x30;
+                        var trainer = await GetTradePartnerMyStatus(ptr, token).ConfigureAwait(false);
+
+                        while (trainer.OT.Length == 0 && DateTime.Now < endTime)
+                        {
+                            await Task.Delay(0_500, token).ConfigureAwait(false);
+                            trainer = await GetTradePartnerMyStatus(ptr, token).ConfigureAwait(false);
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(trainer.OT))
+                        {
+                            if (await CheckIfTrainerBanned(trainer, nid, player, token).ConfigureAwait(false))
+                                return (false, lobbyTrainers); // Exit if the trainer is banned.
+
+                            lobbyTrainers.Add((nid, trainer)); // Add the player to the lobby.
+                            playerNIDs[player] = nid; // Update this player's NID.
+                            Log($"{trainer.OT} with NID {nid} has joined the lobby.");
+                        }
                     }
-
-                    if (nid != 0 && !string.IsNullOrWhiteSpace(trainer.OT))
-                    {
-                        if (await CheckIfTrainerBanned(trainer, nid, player, token).ConfigureAwait(false))
-                            return (false, lobbyTrainers);
-                    }
-
-                    // Check if the NID is already in the list to prevent duplicates
-                    if (lobbyTrainers.Any(x => x.Item1 == nid))
-                    {
-                        Log($"Duplicate NID detected: {nid}. Skipping...");
-                        continue; // Skip adding this NID if it's a duplicate
-                    }
-
-                    // If NID is not a duplicate and has a valid trainer OT, add to the list
-                    if (nid > 0 && trainer.OT.Length > 0)
-                        lobbyTrainers.Add((nid, trainer));
-
-                    full = lobbyTrainers.Count == 3;
-                    if (full || DateTime.Now >= endTime)
-                        break;
                 }
+
+                // Log the lobby status after each iteration
+                if (lobbyTrainers.Count == 3)
+                {
+                   // Lobby is currently full.
+                }
+                else if (lobbyTrainers.Count < 3)
+                {
+                  // Lobby is not full, waiting for more players.
+                }
+
+                await Task.Delay(1_000, token).ConfigureAwait(false); // Delay to prevent rapid checks
             }
 
-            await Task.Delay(5_000, token).ConfigureAwait(false);
-
+            // After the waiting loop, proceed based on the lobby status
             if (lobbyTrainers.Count == 0)
             {
+                // Handle the case where the lobby isn't full when the time expires.
                 EmptyRaid++;
                 LostRaid++;
-                Log($"Nobody joined the raid, recovering...");
+                Log($"Not enough players joined the raid, recovering...");
+
                 if (Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.OpenLobby)
                     Log($"Empty Raid Count #{EmptyRaid}");
                 if (Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.SkipRaid)
@@ -1442,12 +1461,15 @@ namespace SysBot.Pokemon.SV.BotRaid
                 return (false, lobbyTrainers);
             }
 
-            RaidCount++; // Increment RaidCount only when a raid is actually starting.
-            Log($"Raid #{RaidCount} is starting!");
+            // If the lobby is full at the end of the waiting period
+            RaidCount++;
             if (EmptyRaid != 0)
                 EmptyRaid = 0;
+            Log($"Time expired. Starting Raid #{RaidCount} with {lobbyTrainers.Count} players.");
             return (true, lobbyTrainers);
         }
+
+
 
         private async Task<bool> IsConnectedToLobby(CancellationToken token)
         {
