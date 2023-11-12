@@ -85,7 +85,7 @@ namespace SysBot.Pokemon.Discord
         [Command("Announce", RunMode = RunMode.Async)]
         [Alias("announce")]
         [Summary("Sends an announcement to all EchoChannels added by the aec command.")]
-        [RequireSudo]
+        [RequireOwner]
         public async Task AnnounceAsync([Remainder] string announcement)
         {
             var unixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -159,13 +159,40 @@ namespace SysBot.Pokemon.Discord
 
         private string GetSelectedThumbnail()
         {
-            // Use the selected thumbnail URL or custom URL if available
-            return Settings.AnnouncementSettings.AnnouncementThumbnailOption switch
+            // Use the custom thumbnail URL if it's not empty; otherwise, use the selected option
+            if (!string.IsNullOrEmpty(Settings.AnnouncementSettings.CustomAnnouncementThumbnailUrl))
             {
-                ThumbnailOption.Custom => Settings.AnnouncementSettings.CustomAnnouncementThumbnailUrl,
-                _ => Settings.AnnouncementSettings.AnnouncementThumbnailOption.ToString().ToLowerInvariant(),
-            };
+                return Settings.AnnouncementSettings.CustomAnnouncementThumbnailUrl;
+            }
+            else
+            {
+                return GetUrlFromThumbnailOption(Settings.AnnouncementSettings.AnnouncementThumbnailOption);
+            }
         }
+
+        private string GetUrlFromThumbnailOption(ThumbnailOption option)
+        {
+            switch (option)
+            {
+                case ThumbnailOption.Gengar:
+                    return "https://genpkm.com/images/gengarmegaphone.png";
+                case ThumbnailOption.Pikachu:
+                    return "https://genpkm.com/images/pikachumegaphone.png";
+                case ThumbnailOption.Umbreon:
+                    return "https://genpkm.com/images/umbreonmegaphone.png";
+                case ThumbnailOption.Sylveon:
+                    return "https://genpkm.com/images/sylveonmegaphone.png";
+                case ThumbnailOption.Charmander:
+                    return "https://genpkm.com/images/charmandermegaphone.png";
+                case ThumbnailOption.Jigglypuff:
+                    return "https://genpkm.com/images/jigglypuffmegaphone.png";
+                case ThumbnailOption.Flareon:
+                    return "https://genpkm.com/images/flareonmegaphone.png";
+                default:
+                    return "https://genpkm.com/images/gengarmegaphone.png";
+            }
+        }
+
 
         [Command("addEmbedChannel")]
         [Alias("aec")]
