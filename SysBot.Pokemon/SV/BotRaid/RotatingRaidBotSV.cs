@@ -1327,24 +1327,45 @@ namespace SysBot.Pokemon.SV.BotRaid
 
         private async Task RollBackTime(CancellationToken token)
         {
-            int holdTimeForRollover = Settings.HoldTimeForRollover;
+            for (int i = 0; i < 2; i++)
+                await Click(B, 0_150, token).ConfigureAwait(false);
 
-            string clickSequence = "B,W150,B,W150,DRIGHT,W150,DRIGHT,W150,DDOWN,W150,DRIGHT,W150,A,W1250,+DDOWN,W2000,-DDOWN,W250,A,W1250,";
+            for (int i = 0; i < 2; i++)
+                await Click(DRIGHT, 0_150, token).ConfigureAwait(false);
+            await Click(DDOWN, 0_150, token).ConfigureAwait(false);
+            await Click(DRIGHT, 0_150, token).ConfigureAwait(false);
+            await Click(A, 1_250, token).ConfigureAwait(false); // Enter settings
+
+            await PressAndHold(DDOWN, 2_000, 0_250, token).ConfigureAwait(false); // Scroll to system settings
+            await Click(A, 1_250, token).ConfigureAwait(false);
 
             if (Settings.UseOvershoot)
             {
-                // Add the sequence for when UseOvershoot is true
-                clickSequence += $"+DDOWN,W{holdTimeForRollover},-DDOWN,W1000,DUP,W500,";
+                await PressAndHold(DDOWN, Settings.HoldTimeForRollover, 1_000, token).ConfigureAwait(false);
+                await Click(DUP, 0_500, token).ConfigureAwait(false);
             }
-            else
+            else if (!Settings.UseOvershoot)
             {
-                // Add the sequence for when UseOvershoot is false (39 DDOWN clicks)
-                clickSequence += string.Join(",", Enumerable.Repeat("DDOWN,W100", 39)) + ",";
+                for (int i = 0; i < 39; i++)
+                    await Click(DDOWN, 0_100, token).ConfigureAwait(false);
             }
 
-            clickSequence += "A,W1250,DDOWN,W150,DDOWN,W150,A,W500,DRIGHT,W200,DRIGHT,W200,DRIGHT,W200,DDOWN,W200,DDOWN,W200,DDOWN,W200,DDOWN,W200,DDOWN,W200,DRIGHT,W200,DRIGHT,W200,DRIGHT,W200,DRIGHT,W200,DRIGHT,W200,DRIGHT,W200,DRIGHT,W200,A,W200,HOME,W1000";
+            await Click(A, 1_250, token).ConfigureAwait(false);
+            for (int i = 0; i < 2; i++)
+                await Click(DDOWN, 0_150, token).ConfigureAwait(false);
+            await Click(A, 0_500, token).ConfigureAwait(false);
 
-            await SendClickSequence(clickSequence, token).ConfigureAwait(false);
+            for (int i = 0; i < 3; i++) // Navigate to the hour setting
+                await Click(DRIGHT, 0_200, token).ConfigureAwait(false);
+
+            for (int i = 0; i < 5; i++) // Roll back the hour by 5
+                await Click(DDOWN, 0_200, token).ConfigureAwait(false);
+
+            for (int i = 0; i < 8; i++) // Mash DRIGHT to confirm
+                await Click(DRIGHT, 0_200, token).ConfigureAwait(false);
+
+            await Click(A, 0_200, token).ConfigureAwait(false); // Confirm date/time change
+            await Click(HOME, 1_000, token).ConfigureAwait(false); // Back to title screen
         }
 
         private async Task<bool> GetLobbyReady(bool recovery, CancellationToken token)
