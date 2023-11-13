@@ -157,7 +157,7 @@ namespace SysBot.Pokemon
             public bool IncludeSeed { get; set; } = true;
 
             [Category(FeatureToggle), Description("When enabled, the embed will countdown the amount of seconds in \"TimeToWait\" until starting the raid.")]
-            public bool IncludeCountdown { get; set; } = false;
+            public bool IncludeCountdown { get; set; } = true;
 
             [Category(Hosting), Description("If true, the bot will show Type Advantages on embeds.")]
             public bool IncludeTypeAdvantage { get; set; } = true;
