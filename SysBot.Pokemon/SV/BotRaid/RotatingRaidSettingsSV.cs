@@ -14,7 +14,7 @@ namespace SysBot.Pokemon
         private const string Hosting = nameof(Hosting);
         private const string Counts = nameof(Counts);
         private const string FeatureToggle = nameof(FeatureToggle);
-        public RotatingRaidPresetFiltersCategory RaidPresetFilters { get; set; } = new RotatingRaidPresetFiltersCategory();
+        public RotatingRaidPresetFiltersCategory EmbedToggles { get; set; } = new RotatingRaidPresetFiltersCategory();
         public enum TeraIconType
         {
             Icon1, // Use special set
@@ -61,9 +61,6 @@ namespace SysBot.Pokemon
 
         [Category(Hosting), Description("Settings related to Events."), Browsable(true)]
         public EventSettingsCategory EventSettings { get; set; } = new();
-
-        [Category(Hosting), Description("RotatingRaid Preset Filters"), DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
-        public RotatingRaidPresetFiltersCategory EmbedToggles { get; set; } = new();
 
         [Category(Hosting), Description("Your Active Raid List lives here.")]
         public List<RotatingRaidParameters> ActiveRaids { get; set; } = new();
@@ -187,16 +184,7 @@ namespace SysBot.Pokemon
         public class RotatingRaidPresetFiltersCategory
         {
             public override string ToString() => "Embed Toggles";
-            /* 
-             [Category(Hosting), Description("If true, the bot will attempt to auto-generate Raid Embeds based on the \"preset.txt\" file.")]
-             public bool UsePresetFile { get; set; } = true;
 
-             [Category(Hosting), Description("If true, the bot will use the first line of preset as title.")]
-             public bool TitleFromPreset { get; set; } = true;
-
-             [Category(Hosting), Description("If true, the bot will overwrite any set Title with the new one.")]
-             public bool ForceTitle { get; set; } = true;
-            */
             [Category(Hosting), Description("Raid embed description.")]
             public string[] RaidEmbedDescription { get; set; } = Array.Empty<string>();
 
@@ -206,11 +194,30 @@ namespace SysBot.Pokemon
             [Category(Hosting), Description("If true, the bot will show Special Rewards on embeds.")]
             public bool IncludeRewards { get; set; } = true;
 
+            [Category(Hosting), Description("Select which rewards to display in the embed.")]
+            public List<string> RewardsToShow { get; set; } = new List<string>
+{
+    "Rare Candy",
+    "Ability Capsule",
+    "Bottle Cap",
+    "Ability Patch",
+    "Exp. Candy L",
+    "Exp. Candy XL",
+    "Sweet Herba Mystica",
+    "Salty Herba Mystica",
+    "Sour Herba Mystica",
+    "Bitter Herba Mystica",
+    "Spicy Herba Mystica",
+    "Pokeball",
+    "Shards"
+};
+
             [Category(Hosting), Description("If true, the bot will show Type Advantages on embeds.")]
             public bool IncludeTypeAdvantage { get; set; } = true;
 
             [Category(Hosting), Description("Delay in milliseconds for capturing a screenshot once in the raid.\n300 Captures Raid Mon.\n1500 Captures Players Only.\n22000 Captures players and Raid Mon.")]
             public ScreenshotTimingOptions ScreenshotTiming { get; set; } = ScreenshotTimingOptions._1500; // default to 1500 ms
+
 
         }
 

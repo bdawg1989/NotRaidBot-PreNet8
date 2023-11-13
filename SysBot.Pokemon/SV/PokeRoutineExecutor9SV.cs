@@ -706,53 +706,98 @@ namespace SysBot.Pokemon
             return (blank, raid.Seed);
         }
 
-        public static string GetSpecialRewards(IReadOnlyList<(int, int, int)> rewards)
-        {
-            string s = string.Empty;
-            int abilitycapsule = 0;
-            int bottlecap = 0;
-            int abilitypatch = 0;
-            int sweetherba = 0;
-            int saltyherba = 0;
-            int sourherba = 0;
-            int bitterherba = 0;
-            int spicyherba = 0;
-            int xl = 0;
-            int l = 0;
-            int rare = 0;
 
-            for (int i = 0; i < rewards.Count; i++)
+        public static string GetSpecialRewards(IReadOnlyList<(int, int, int)> rewards, List<string> rewardsToShow)
+        {
+            // Initialize reward counters
+            int rare = 0, abilitycapsule = 0, bottlecap = 0, abilitypatch = 0, pokeball = 0;
+            int expCandyL = 0, expCandyXL = 0, sweetHerba = 0, saltyHerba = 0, sourHerba = 0, bitterHerba = 0, spicyHerba = 0;
+
+            // Initialize Tera Shard counters
+            Dictionary<int, int> teraShards = new Dictionary<int, int>();
+
+            // Count rewards
+            foreach (var reward in rewards)
             {
-                switch (rewards[i].Item1)
+                switch (reward.Item1)
                 {
                     case 0050: rare++; break;
                     case 0645: abilitycapsule++; break;
                     case 0795: bottlecap++; break;
-                    case 1127: l++; break;
-                    case 1128: xl++; break;
+                    case 1127: expCandyL++; break;
+                    case 1128: expCandyXL++; break;
                     case 1606: abilitypatch++; break;
-                    case 1904: sweetherba++; break;
-                    case 1905: saltyherba++; break;
-                    case 1906: sourherba++; break;
-                    case 1907: bitterherba++; break;
-                    case 1908: spicyherba++; break;
+                    case 1904: sweetHerba++; break;
+                    case 1905: saltyHerba++; break;
+                    case 1906: sourHerba++; break;
+                    case 1907: bitterHerba++; break;
+                    case 1908: spicyHerba++; break;
+                    case 0004: pokeball++; break;
+                    case >= 1862 and <= 1879:
+                        if (teraShards.ContainsKey(reward.Item1))
+                            teraShards[reward.Item1]++;
+                        else
+                            teraShards[reward.Item1] = 1;
+                        break;
                 }
             }
 
-            s += (rare > 0) ? $"Rare Candy x{rare}\n" : "";
-            s += (l > 0) ? $"Exp. Candy L x{l}\n" : "";
-            s += (xl > 0) ? $"Exp. Candy XL x{xl}\n" : "";
-            s += (abilitycapsule > 0) ? $"Ability Capsule x{abilitycapsule}\n" : "";
-            s += (bottlecap > 0) ? $"Bottle Cap x{bottlecap}\n" : "";
-            s += (abilitypatch > 0) ? $"Ability Patch x{abilitypatch}\n" : "";
-            s += (sweetherba > 0) ? $"Sweet Herba Mystica x{sweetherba}\n" : "";
-            s += (saltyherba > 0) ? $"Salty Herba  Mystica x{saltyherba}\n" : "";
-            s += (sourherba > 0) ? $"Sour Herba  Mystica x{sourherba}\n" : "";
-            s += (bitterherba > 0) ? $"Bitter Herba  Mystica x{bitterherba}\n" : "";
-            s += (spicyherba > 0) ? $"Spicy Herba  Mystica x{spicyherba}\n" : "";
+            // Format and filter rewards based on user preferences
+            List<string> rewardStrings = new List<string>();
+            if (rewardsToShow.Contains("Rare Candy") && rare > 0)
+                rewardStrings.Add($"Rare Candy x{rare}");
+            if (rewardsToShow.Contains("Ability Capsule") && abilitycapsule > 0)
+                rewardStrings.Add($"Ability Capsule x{abilitycapsule}");
+            if (rewardsToShow.Contains("Bottle Cap") && bottlecap > 0)
+                rewardStrings.Add($"Bottle Cap x{bottlecap}");
+            if (rewardsToShow.Contains("Ability Patch") && abilitypatch > 0)
+                rewardStrings.Add($"Ability Patch x{abilitypatch}");
+            if (rewardsToShow.Contains("Exp. Candy L") && expCandyL > 0)
+                rewardStrings.Add($"Exp. Candy L x{expCandyL}");
+            if (rewardsToShow.Contains("Exp. Candy XL") && expCandyXL > 0)
+                rewardStrings.Add($"Exp. Candy XL x{expCandyXL}");
+            if (rewardsToShow.Contains("Sweet Herba Mystica") && sweetHerba > 0)
+                rewardStrings.Add($"Sweet Herba Mystica x{sweetHerba}");
+            if (rewardsToShow.Contains("Pokeball") && pokeball > 0)
+                rewardStrings.Add($"Pokeball x{pokeball}");
+            if (rewardsToShow.Contains("Shards"))
+            {
+                foreach (var shard in teraShards)
+                {
+                    string shardTypeName = GetTeraShardTypeName(shard.Key);
+                    rewardStrings.Add($"{shardTypeName} Shard x{shard.Value}");
+                }
+            }
 
-            return s;
+            return string.Join("\n", rewardStrings);
         }
+
+        private static string GetTeraShardTypeName(int shardType)
+        {
+            return shardType switch
+            {
+                1862 => "Normal",
+                1868 => "Fighting",
+                1871 => "Flying",
+                1869 => "Poison",
+                1870 => "Ground",
+                1874 => "Rock",
+                1873 => "Bug",
+                1875 => "Ghost",
+                1878 => "Steel",
+                1863 => "Fire",
+                1864 => "Water",
+                1866 => "Grass",
+                1865 => "Electric",
+                1872 => "Psychic",
+                1867 => "Ice",
+                1876 => "Dragon",
+                1877 => "Dark",
+                1879 => "Fairy",
+                _ => "Unknown", // or handle this case as needed
+            };
+        }
+
 
         public static string[] ProcessRaidPlaceholders(string[] description, PKM pk)
         {

@@ -34,6 +34,7 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             int storyProgressLevel = 6,
             string dlc = "p",
             string? eventType = null)  // New optional parameter for specifying event type
+
         {
             uint seed;
             try
@@ -65,9 +66,10 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
 
             try
             {
+                var rewardsToShow = settings.EmbedToggles.RewardsToShow;
                 var raidDeliveryGroupID = settings.EventSettings.RaidDeliveryGroupID;
                 var isEvent = eventType == "Event";
-                var (_, embed) = RotatingRaidBotSV.RaidInfoCommand(seedValue, (int)crystalType, dlc != "p" ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea, storyProgressLevel, raidDeliveryGroupID, isEvent);
+                var (_, embed) = RotatingRaidBotSV.RaidInfoCommand(seedValue, (int)crystalType, dlc != "p" ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea, storyProgressLevel, raidDeliveryGroupID, rewardsToShow, isEvent);
                 await ReplyAsync(embed: embed);
             }
             catch (Exception ex)
@@ -219,7 +221,8 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             var selectedMap = RotatingRaidBotSV.IsKitakami ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea;
 
             var raidDeliveryGroupID = settings.EventSettings.RaidDeliveryGroupID;
-            var (pk, raidEmbed) = RotatingRaidBotSV.RaidInfoCommand(seed, (int)crystalType, selectedMap, storyProgressLevel, raidDeliveryGroupID);
+            var rewardsToShow = settings.EmbedToggles.RewardsToShow;
+            var (pk, raidEmbed) = RotatingRaidBotSV.RaidInfoCommand(seed, (int)crystalType, selectedMap, storyProgressLevel, raidDeliveryGroupID, rewardsToShow);
             var description = string.Empty;
             var prevpath = "bodyparam.txt";
             var filepath = "RaidFilesSV\\bodyparam.txt";
@@ -324,8 +327,9 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
 
             // Determine the correct map
             var selectedMap = RotatingRaidBotSV.IsKitakami ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea;
+            var rewardsToShow = settings.EmbedToggles.RewardsToShow;
             var raidDeliveryGroupID = settings.EventSettings.RaidDeliveryGroupID;
-            var (pk, raidEmbed) = RotatingRaidBotSV.RaidInfoCommand(seed, (int)crystalType, selectedMap, storyProgressLevel, raidDeliveryGroupID);
+            var (pk, raidEmbed) = RotatingRaidBotSV.RaidInfoCommand(seed, (int)crystalType, selectedMap, storyProgressLevel, raidDeliveryGroupID, rewardsToShow);
             var description = string.Empty;
             var prevpath = "bodyparam.txt";
             var filepath = "RaidFilesSV\\bodyparam.txt";

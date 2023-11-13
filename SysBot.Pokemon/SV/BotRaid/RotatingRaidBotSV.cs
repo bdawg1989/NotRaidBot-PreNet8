@@ -550,7 +550,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
 
             // Use the ScreenshotTiming setting for the delay before taking a screenshot in Raid
-            var screenshotDelay = (int)Settings.RaidPresetFilters.ScreenshotTiming;
+            var screenshotDelay = (int)Settings.EmbedToggles.ScreenshotTiming;
 
             // Use the delay in milliseconds as needed
             await Task.Delay(screenshotDelay, token).ConfigureAwait(false);
@@ -1905,7 +1905,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             if (!disband && !upnext && !raidstart && !Settings.EmbedToggles.IncludeMoves)
             {
                 embed.AddField(" **__Special Rewards__**", string.IsNullOrEmpty($"{RaidEmbedInfo.SpecialRewards}") ? "No Rewards To Display" : $"{RaidEmbedInfo.SpecialRewards}", true);
-
+                RaidEmbedInfo.SpecialRewards = string.Empty;
             }
 
             if (!disband && names is null && !upnext)
@@ -1917,6 +1917,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             if (!disband && !upnext && !raidstart && Settings.EmbedToggles.IncludeMoves)
             {
                 embed.AddField(" **__Special Rewards__**", string.IsNullOrEmpty($"{RaidEmbedInfo.SpecialRewards}") ? "No Rewards To Display" : $"{RaidEmbedInfo.SpecialRewards}", true);
+                RaidEmbedInfo.SpecialRewards = string.Empty;
             }
             // Fetch the type advantage using the static RaidSpeciesTeraType from RaidEmbedInfo
             string typeAdvantage = GetTypeAdvantage(RaidEmbedInfo.RaidSpeciesTeraType);
@@ -2392,7 +2393,8 @@ namespace SysBot.Pokemon.SV.BotRaid
 
                     if (seed == set)
                     {
-                        var res = GetSpecialRewards(container.Rewards[i]);
+                        var res = GetSpecialRewards(container.Rewards[i], Settings.EmbedToggles.RewardsToShow);
+
                         RaidEmbedInfo.SpecialRewards = res;
                         if (string.IsNullOrEmpty(res))
                             res = string.Empty;
@@ -2500,7 +2502,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
         }
 
-        public static (PK9, Embed) RaidInfoCommand(string seedValue, int contentType, TeraRaidMapParent map, int storyProgressLevel, int raidDeliveryGroupID, bool isEvent = false)
+        public static (PK9, Embed) RaidInfoCommand(string seedValue, int contentType, TeraRaidMapParent map, int storyProgressLevel, int raidDeliveryGroupID, List<string> rewardsToShow, bool isEvent = false)
         {
             byte[] enabled = StringToByteArray("00000001");
             byte[] area = StringToByteArray("00000001");
@@ -2561,7 +2563,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 }
             }
             if (!string.IsNullOrEmpty(extraMoves)) movesList += $"**Extra Moves:**\n{extraMoves}";
-            var specialRewards = GetSpecialRewards(reward);
+            var specialRewards = GetSpecialRewards(reward, rewardsToShow);
             var teraTypeLower = strings.Types[teraType].ToLower();
             var teraIconUrl = $"https://genpkm.com/images/teraicons/icon1/{teraTypeLower}.png";
             var disclaimer = $"NotRaidBot {NotRaidBot.Version} by Gengar & Kai\nhttps://notpaldea.net";
