@@ -1954,14 +1954,14 @@ namespace SysBot.Pokemon.SV.BotRaid
         {
             int attemptCount = 0;
             const int maxAttempt = 5;
-            const int waitTime = 31; // time in minutes to wait after max attempts
+            const int waitTime = 10; // time in minutes to wait after max attempts
 
             while (!await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false))
             {
                 if (attemptCount >= maxAttempt)
                 {
                     Log($"Failed to connect after {maxAttempt} attempts, waiting for {waitTime} minutes before retrying...");
-                    await Task.Delay(TimeSpan.FromMinutes(waitTime), token).ConfigureAwait(false); // Wait for 31 minutes before retrying
+                    await Task.Delay(TimeSpan.FromMinutes(waitTime), token).ConfigureAwait(false); // Wait for 10 minutes before retrying
                     await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
                     attemptCount = 0; // Reset attempts after waiting
                 }
