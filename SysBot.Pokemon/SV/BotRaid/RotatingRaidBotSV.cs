@@ -72,14 +72,14 @@ namespace SysBot.Pokemon.SV.BotRaid
         public override async Task MainLoop(CancellationToken token)
         {
 
-            if (Settings.GenerateRaidsFromFile)
+            if (Settings.RaidSettings.GenerateRaidsFromFile)
             {
                 GenerateSeedsFromFile();
                 Log("Done.");
-                Settings.GenerateRaidsFromFile = false;
+                Settings.RaidSettings.GenerateRaidsFromFile = false;
             }
 
-            if (Settings.ConfigureRolloverCorrection)
+            if (Settings.MiscSettings.ConfigureRolloverCorrection)
             {
                 await RolloverCorrectionSV(token).ConfigureAwait(false);
                 return;
@@ -91,7 +91,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 return;
             }
 
-            if (Settings.TimeToWait is < 0 or > 180)
+            if (Settings.RaidSettings.TimeToWait is < 0 or > 180)
             {
                 Log("Time to wait must be between 0 and 180 seconds.");
                 return;
@@ -186,7 +186,7 @@ namespace SysBot.Pokemon.SV.BotRaid
         private void SaveSeeds()
         {
             // Exit the function if saving seeds to file is not enabled
-            if (!Settings.SaveSeedsToFile)
+            if (!Settings.RaidSettings.SaveSeedsToFile)
                 return;
 
             // Filter out raids that don't need to be saved
@@ -478,10 +478,10 @@ namespace SysBot.Pokemon.SV.BotRaid
                 }
                 await CompleteRaid(token).ConfigureAwait(false);
                 raidsHosted++;
-                if (raidsHosted == Settings.TotalRaidsToHost && Settings.TotalRaidsToHost > 0)
+                if (raidsHosted == Settings.RaidSettings.TotalRaidsToHost && Settings.RaidSettings.TotalRaidsToHost > 0)
                     break;
             }
-            if (Settings.TotalRaidsToHost > 0 && raidsHosted != 0)
+            if (Settings.RaidSettings.TotalRaidsToHost > 0 && raidsHosted != 0)
                 Log("Total raids to host has been met.");
         }
 
@@ -894,7 +894,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                     await StartGame(Hub.Config, token).ConfigureAwait(false);
             }
 
-            if (Settings.KeepDaySeed)
+            if (Settings.RaidSettings.KeepDaySeed)
                 await OverrideTodaySeed(token).ConfigureAwait(false);
         }
 
@@ -1116,7 +1116,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 firstRun = false;
             }
 
-            if (Settings.RandomRotation)
+            if (Settings.RaidSettings.RandomRotation)
             {
                 ProcessRandomRotation();
                 return;  // Exit early after processing random rotation
@@ -1339,12 +1339,12 @@ namespace SysBot.Pokemon.SV.BotRaid
             await PressAndHold(DDOWN, 2_000, 0_250, token).ConfigureAwait(false); // Scroll to system settings
             await Click(A, 1_250, token).ConfigureAwait(false);
 
-            if (Settings.UseOvershoot)
+            if (Settings.MiscSettings.UseOvershoot)
             {
-                await PressAndHold(DDOWN, Settings.HoldTimeForRollover, 1_000, token).ConfigureAwait(false);
+                await PressAndHold(DDOWN, Settings.MiscSettings.HoldTimeForRollover, 1_000, token).ConfigureAwait(false);
                 await Click(DUP, 0_500, token).ConfigureAwait(false);
             }
-            else if (!Settings.UseOvershoot)
+            else if (!Settings.MiscSettings.UseOvershoot)
             {
                 for (int i = 0; i < 39; i++)
                     await Click(DDOWN, 0_100, token).ConfigureAwait(false);
@@ -1425,7 +1425,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             await EnqueueEmbed(null, "", false, false, false, false, token).ConfigureAwait(false);
 
             List<(ulong, RaidMyStatus)> lobbyTrainers = new();
-            var wait = TimeSpan.FromSeconds(Settings.TimeToWait);
+            var wait = TimeSpan.FromSeconds(Settings.RaidSettings.TimeToWait);
             var endTime = DateTime.Now + wait;
             bool full = false;
 
@@ -1516,7 +1516,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
         private async Task AdvanceDaySV(CancellationToken token)
         {
-            var scrollroll = Settings.DateTimeFormat switch
+            var scrollroll = Settings.MiscSettings.DateTimeFormat switch
             {
                 DTFormat.DDMMYY => 0,
                 DTFormat.YYMMDD => 2,
@@ -1535,12 +1535,12 @@ namespace SysBot.Pokemon.SV.BotRaid
             await PressAndHold(DDOWN, 2_000, 0_250, token).ConfigureAwait(false); // Scroll to system settings
             await Click(A, 1_250, token).ConfigureAwait(false);
 
-            if (Settings.UseOvershoot)
+            if (Settings.MiscSettings.UseOvershoot)
             {
-                await PressAndHold(DDOWN, Settings.HoldTimeForRollover, 1_000, token).ConfigureAwait(false);
+                await PressAndHold(DDOWN, Settings.MiscSettings.HoldTimeForRollover, 1_000, token).ConfigureAwait(false);
                 await Click(DUP, 0_500, token).ConfigureAwait(false);
             }
-            else if (!Settings.UseOvershoot)
+            else if (!Settings.MiscSettings.UseOvershoot)
             {
                 for (int i = 0; i < 39; i++)
                     await Click(DDOWN, 0_100, token).ConfigureAwait(false);
@@ -1566,7 +1566,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
         private async Task RolloverCorrectionSV(CancellationToken token)
         {
-            var scrollroll = Settings.DateTimeFormat switch
+            var scrollroll = Settings.MiscSettings.DateTimeFormat switch
             {
                 DTFormat.DDMMYY => 0,
                 DTFormat.YYMMDD => 2,
@@ -1585,12 +1585,12 @@ namespace SysBot.Pokemon.SV.BotRaid
             await PressAndHold(DDOWN, 2_000, 0_250, token).ConfigureAwait(false); // Scroll to system settings
             await Click(A, 1_250, token).ConfigureAwait(false);
 
-            if (Settings.UseOvershoot)
+            if (Settings.MiscSettings.UseOvershoot)
             {
-                await PressAndHold(DDOWN, Settings.HoldTimeForRollover, 1_000, token).ConfigureAwait(false);
+                await PressAndHold(DDOWN, Settings.MiscSettings.HoldTimeForRollover, 1_000, token).ConfigureAwait(false);
                 await Click(DUP, 0_500, token).ConfigureAwait(false);
             }
-            else if (!Settings.UseOvershoot)
+            else if (!Settings.MiscSettings.UseOvershoot)
             {
                 for (int i = 0; i < 39; i++)
                     await Click(DDOWN, 0_100, token).ConfigureAwait(false);
@@ -1707,7 +1707,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
             if (Settings.ActiveRaids[RotationCount].AddedByRACommand)
             {
-                await Task.Delay(Settings.RequestEmbedTime * 1000).ConfigureAwait(false);  // Delay for RequestEmbedTime seconds
+                await Task.Delay(Settings.EmbedToggles.RequestEmbedTime * 1000).ConfigureAwait(false);  // Delay for RequestEmbedTime seconds
             }
 
             // Description can only be up to 4096 characters.
@@ -1724,7 +1724,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 }
                 else
                 {
-                    code = $"**{(Settings.ActiveRaids[RotationCount].IsCoded && !Settings.HideRaidCode ? await GetRaidCode(token).ConfigureAwait(false) : Settings.ActiveRaids[RotationCount].IsCoded && Settings.HideRaidCode ? "||Is Hidden!||" : "Free For All")}**";
+                    code = $"**{(Settings.ActiveRaids[RotationCount].IsCoded && !Settings.EmbedToggles.HideRaidCode ? await GetRaidCode(token).ConfigureAwait(false) : Settings.ActiveRaids[RotationCount].IsCoded && Settings.EmbedToggles.HideRaidCode ? "||Is Hidden!||" : "Free For All")}**";
                 }
             }
 
@@ -1735,7 +1735,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 await Task.Delay(5_000, token).ConfigureAwait(false);
 
             byte[]? bytes = Array.Empty<byte>();
-            if (Settings.TakeScreenshot && !upnext)
+            if (Settings.EmbedToggles.TakeScreenshot && !upnext)
                 try
                 {
                     // Assuming this is another place where a network call is made
@@ -1820,14 +1820,14 @@ namespace SysBot.Pokemon.SV.BotRaid
             // Initialize the EmbedBuilder object
             var embed = new EmbedBuilder()
             {
-                Title = disband ? $"**Raid canceled: [{TeraRaidCode}]**" : upnext && Settings.TotalRaidsToHost != 0 ? $"Raid Ended - Preparing Next Raid!" : upnext && Settings.TotalRaidsToHost == 0 ? $"Raid Ended - Preparing Next Raid!" : "",
+                Title = disband ? $"**Raid canceled: [{TeraRaidCode}]**" : upnext && Settings.RaidSettings.TotalRaidsToHost != 0 ? $"Raid Ended - Preparing Next Raid!" : upnext && Settings.RaidSettings.TotalRaidsToHost == 0 ? $"Raid Ended - Preparing Next Raid!" : "",
                 Color = embedColor,
-                Description = disband ? message : upnext ? Settings.TotalRaidsToHost == 0 ? $"# {Settings.ActiveRaids[RotationCount].Title}\n\n{futureTimeMessage}" : $"# {Settings.ActiveRaids[RotationCount].Title}\n\n{futureTimeMessage}" : raidstart ? "" : description,
+                Description = disband ? message : upnext ? Settings.RaidSettings.TotalRaidsToHost == 0 ? $"# {Settings.ActiveRaids[RotationCount].Title}\n\n{futureTimeMessage}" : $"# {Settings.ActiveRaids[RotationCount].Title}\n\n{futureTimeMessage}" : raidstart ? "" : description,
                 ImageUrl = bytes.Length > 0 ? "attachment://zap.jpg" : default,
             };
 
             // Only include footer if not posting 'upnext' embed with the 'Preparing Raid' title
-            if (!(upnext && Settings.TotalRaidsToHost == 0))
+            if (!(upnext && Settings.RaidSettings.TotalRaidsToHost == 0))
             {
                 string programIconUrl = $"https://genpkm.com/images/icon4.png";
                 int raidsInRotationCount = Hub.Config.RotatingRaidSV.ActiveRaids.Count(r => !r.AddedByRACommand);
@@ -1865,11 +1865,11 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             // Prepare the tera icon URL
             string teraType = RaidEmbedInfo.RaidSpeciesTeraType.ToLower();
-            string folderName = Settings.SelectedTeraIconType == TeraIconType.Icon1 ? "icon1" : "icon2"; // Add more conditions for more icon types
+            string folderName = Settings.EmbedToggles.SelectedTeraIconType == TeraIconType.Icon1 ? "icon1" : "icon2"; // Add more conditions for more icon types
             string teraIconUrl = $"https://genpkm.com/images/teraicons/{folderName}/{teraType}.png";
 
             // Only include author (header) if not posting 'upnext' embed with the 'Preparing Raid' title
-            if (!(upnext && Settings.TotalRaidsToHost == 0))
+            if (!(upnext && Settings.RaidSettings.TotalRaidsToHost == 0))
             {
                 // Set the author (header) of the embed with the tera icon
                 embed.WithAuthor(new EmbedAuthorBuilder()
@@ -1887,7 +1887,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 statsField.AppendLine($"**IVs**: {RaidEmbedInfo.RaidSpeciesIVs}");
                 statsField.AppendLine($"**Scale**: {RaidEmbedInfo.ScaleText}({RaidEmbedInfo.ScaleNumber})");
 
-                if (Settings.IncludeSeed)
+                if (Settings.EmbedToggles.IncludeSeed)
                 {
                     statsField.AppendLine($"**Seed**: `{Settings.ActiveRaids[RotationCount].Seed}`");
                 }
@@ -1910,7 +1910,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             if (!disband && names is null && !upnext)
             {
-                embed.AddField(Settings.IncludeCountdown ? $"**__Raid Starting__**:\n**<t:{DateTimeOffset.Now.ToUnixTimeSeconds() + Settings.TimeToWait}:R>**" : $"**Waiting in lobby!**", $"Raid Code: {code}", true);
+                embed.AddField(Settings.EmbedToggles.IncludeCountdown ? $"**__Raid Starting__**:\n**<t:{DateTimeOffset.Now.ToUnixTimeSeconds() + Settings.RaidSettings.TimeToWait}:R>**" : $"**Waiting in lobby!**", $"Raid Code: {code}", true);
                 embed.AddField("\u200b", "\u200b", true);
             }
 
@@ -2028,7 +2028,7 @@ namespace SysBot.Pokemon.SV.BotRaid
         public async Task StartGameRaid(PokeRaidHubConfig config, CancellationToken token)
         {
             // First, check if the time rollback feature is enabled
-            if (Settings.EnableTimeRollBack && DateTime.Now - TimeForRollBackCheck >= TimeSpan.FromHours(5))
+            if (Settings.RaidSettings.EnableTimeRollBack && DateTime.Now - TimeForRollBackCheck >= TimeSpan.FromHours(5))
             {
                 Log("Rolling Time back 5 hours.");
                 // Call the RollBackTime function
@@ -2093,7 +2093,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                     Log($"Game progress level is already {GameProgress}. No update needed.");
                 }
 
-                if (Settings.DisableOverworldSpawns)
+                if (Settings.RaidSettings.DisableOverworldSpawns)
                 {
                     Log("Checking current state of Overworld Spawns.");
                     if (currentSpawnsEnabled.HasValue)

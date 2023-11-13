@@ -272,7 +272,7 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             [Summary("Event (Optional)")] string? eventType = null)  // New argument for specifying an event
         {
             // Check if raid requests are disabled by the host
-            if (Hub.Config.RotatingRaidSV.DisableRequests)
+            if (Hub.Config.RotatingRaidSV.RaidSettings.DisableRequests)
             {
                 await ReplyAsync("Raid Requests are currently disabled by the host.").ConfigureAwait(false);
                 return;
@@ -473,7 +473,7 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             {
                 int raidsBeforeUser;
                 // Handle Random Rotation differently
-                if (Hub.Config.RotatingRaidSV.RandomRotation)
+                if (Hub.Config.RotatingRaidSV.RaidSettings.RandomRotation)
                 {
                     raidsBeforeUser = CalculateEffectiveQueuePosition(userId, currentPosition);
                 }
