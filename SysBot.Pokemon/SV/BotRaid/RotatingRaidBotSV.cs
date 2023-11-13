@@ -1193,70 +1193,11 @@ namespace SysBot.Pokemon.SV.BotRaid
                 }
             }
             Log("Preparing lobby...");
-
             LobbyFiltersCategory settings = new LobbyFiltersCategory();
-            int attempts = 0;  // Counter to track the number of connection attempts.
-            int maxAttempts = 5;  // Maximum allowed connection attempts before considering it a softban.
-
-            while (true)  // Outer loop to repeat the entire process after waiting for 31 minutes
+            // Use ConnectToOnline for handling connection logic
+            if (!await ConnectToOnline(Hub.Config, token))
             {
-                // Initial check for online connection.
-                bool isConnected = await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false);
-                Log($"Initial online status check returned: {isConnected}");
-
-                attempts = 0;  // Reset the attempts counter for a fresh start.
-
-                while (!isConnected && attempts < maxAttempts)
-                {
-                    attempts++;
-                    Log($"Connecting... (Attempt {attempts} of {maxAttempts})");
-
-                    await RecoverToOverworld(token).ConfigureAwait(false);
-                    if (!await ConnectToOnline(Hub.Config, token).ConfigureAwait(false))
-                        return false;
-
-                    await Task.Delay(5000, token).ConfigureAwait(false);  // Wait 5 seconds to check again.
-                    await Click(B, 0_500, token).ConfigureAwait(false);
-                    await Click(B, 0_500, token).ConfigureAwait(false);
-                    await Click(B, 0_500, token).ConfigureAwait(false);
-                    await Click(B, 0_500, token).ConfigureAwait(false);
-
-                    // Check again after attempting to connect.
-                    isConnected = await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false);
-                    Log($"Online status check after connection attempt returned: {isConnected}");
-                }
-
-                // Send an embed message and press 'B' button after the 5th attempt.
-                if (attempts == maxAttempts)
-                {
-                    await Click(B, 0_500, token).ConfigureAwait(false);
-                    await Click(B, 0_500, token).ConfigureAwait(false);
-
-                    // Create and send an embed notifying of technical difficulties.
-                    EmbedBuilder embed = new EmbedBuilder();
-                    embed.Title = "Experiencing Technical Difficulties";
-                    embed.Description = "The bot is experiencing issues connecting online. Please stand by as we try to resolve the issue.";
-                    embed.Color = Color.Red;
-                    embed.ThumbnailUrl = "https://genpkm.com/images/x.png";  // Setting the thumbnail URL directly
-                    EchoUtil.RaidEmbed(null, "", embed);
-                }
-
-
-                // If we've reached the maximum number of attempts, assume a softban scenario.
-                if (attempts >= maxAttempts)
-                {
-                    Log("Reached maximum connection attempts. Assuming softban. Waiting for 31 minutes...");
-                    await Task.Delay(TimeSpan.FromMinutes(31), token).ConfigureAwait(false);  // Using TimeSpan for clarity
-
-                    await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
-                    Log("Game reopening process has been initiated.");
-                }
-
-                // If we've successfully connected, break out of the outer loop.
-                if (isConnected)
-                {
-                    break;
-                }
+                return false; // Handle the case where connection couldn't be established
             }
 
             await Task.Delay(2_500, token).ConfigureAwait(false);
@@ -1960,31 +1901,40 @@ namespace SysBot.Pokemon.SV.BotRaid
             {
                 if (attemptCount >= maxAttempt)
                 {
-                    Log($"Failed to connect after {maxAttempt} attempts, waiting for {waitTime} minutes before retrying...");
-                    await Task.Delay(TimeSpan.FromMinutes(waitTime), token).ConfigureAwait(false); // Wait for 10 minutes before retrying
+                    Log($"Reached maximum connection attempts. Assuming softban. Waiting for {waitTime} minutes...");
+                    // Send an embed message about technical difficulties
+                    EmbedBuilder embed = new EmbedBuilder();
+                    embed.Title = "Experiencing Technical Difficulties";
+                    embed.Description = "The bot is experiencing issues connecting online. Please stand by as we try to resolve the issue.";
+                    embed.Color = Color.Red;
+                    embed.ThumbnailUrl = "https://genpkm.com/images/x.png";
+                    EchoUtil.RaidEmbed(null, "", embed);
+                    // Waiting process
+                    await Task.Delay(TimeSpan.FromMinutes(waitTime), token).ConfigureAwait(false);
                     await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
                     attemptCount = 0; // Reset attempts after waiting
                 }
 
                 attemptCount++;
-                Log($"Attempt to connect: {attemptCount}");
+                Log($"Connecting... (Attempt {attemptCount} of {maxAttempt})");
 
                 await Click(X, 3_000, token).ConfigureAwait(false);
                 await Click(L, 5_000 + config.Timings.ExtraTimeConnectOnline, token).ConfigureAwait(false);
 
-                if (attemptCount < maxAttempt && !await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false))
+                if (attemptCount < maxAttempt)
                 {
-                    Log("Failed to connect, trying again...");
-                    await RecoverToOverworld(token).ConfigureAwait(false);
-                    await Click(X, 3_000, token).ConfigureAwait(false);
-                    await Click(L, 5_000 + config.Timings.ExtraTimeConnectOnline, token).ConfigureAwait(false);
+                    await Task.Delay(5000, token).ConfigureAwait(false); // Wait 5 seconds to check again
+                    await Click(B, 0_500, token).ConfigureAwait(false);
+                    await Click(B, 0_500, token).ConfigureAwait(false);
+                    await Click(B, 0_500, token).ConfigureAwait(false);
+                    await Click(B, 0_500, token).ConfigureAwait(false);
                 }
 
                 // Wait a bit before checking the connection status again
                 await Task.Delay(0_500, token).ConfigureAwait(false);
             }
 
-            // There are several seconds after connection is established before we can dismiss the menu.
+            // Final steps after connection is established
             await Task.Delay(3_000 + config.Timings.ExtraTimeConnectOnline, token).ConfigureAwait(false);
             await Click(A, 1_000, token).ConfigureAwait(false);
             return true;
