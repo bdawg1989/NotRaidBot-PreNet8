@@ -180,8 +180,18 @@ namespace SysBot.Pokemon
     "Bitter Herba Mystica",
     "Spicy Herba Mystica",
     "Pokeball",
-    "Shards"
+    "Shards",
+    "Nugget",
+    "Tiny Mushroom",
+    "Big Mushroom",
+    "Pearl",
+    "Big Pearl",
+    "Stardust",
+    "Star Piece",
+    "Gold Bottle Cap",
+    "PP Up"
 };
+
 
             [Category(Hosting), Description("Amount of time (in seconds) to post a requested raid embed.")]
             public int RequestEmbedTime { get; set; } = 30;

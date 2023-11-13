@@ -712,6 +712,7 @@ namespace SysBot.Pokemon
             // Initialize reward counters
             int rare = 0, abilitycapsule = 0, bottlecap = 0, abilitypatch = 0, pokeball = 0;
             int expCandyL = 0, expCandyXL = 0, sweetHerba = 0, saltyHerba = 0, sourHerba = 0, bitterHerba = 0, spicyHerba = 0;
+            int nugget = 0, tinyMushroom = 0, bigMushroom = 0, pearl = 0, bigPearl = 0, stardust = 0, starPiece = 0, goldBottleCap = 0, ppUp = 0;
 
             // Initialize Tera Shard counters
             Dictionary<int, int> teraShards = new Dictionary<int, int>();
@@ -733,6 +734,15 @@ namespace SysBot.Pokemon
                     case 1907: bitterHerba++; break;
                     case 1908: spicyHerba++; break;
                     case 0004: pokeball++; break;
+                    case 0092: nugget++; break;
+                    case 0086: tinyMushroom++; break;
+                    case 0087: bigMushroom++; break;
+                    case 0088: pearl++; break;
+                    case 0089: bigPearl++; break;
+                    case 0090: stardust++; break;
+                    case 0091: starPiece++; break;
+                    case 0796: goldBottleCap++; break;
+                    case 0051: ppUp++; break;
                     case >= 1862 and <= 1879:
                         if (teraShards.ContainsKey(reward.Item1))
                             teraShards[reward.Item1]++;
@@ -760,6 +770,24 @@ namespace SysBot.Pokemon
                 rewardStrings.Add($"Sweet Herba Mystica x{sweetHerba}");
             if (rewardsToShow.Contains("Pokeball") && pokeball > 0)
                 rewardStrings.Add($"Pokeball x{pokeball}");
+            if (rewardsToShow.Contains("Nugget") && nugget > 0)
+                rewardStrings.Add($"Nugget x{nugget}");
+            if (rewardsToShow.Contains("Tiny Mushroom") && tinyMushroom > 0)
+                rewardStrings.Add($"Tiny Mushroom x{tinyMushroom}");
+            if (rewardsToShow.Contains("Big Mushroom") && bigMushroom > 0)
+                rewardStrings.Add($"Big Mushroom x{bigMushroom}");
+            if (rewardsToShow.Contains("Pearl") && pearl > 0)
+                rewardStrings.Add($"Pearl x{pearl}");
+            if (rewardsToShow.Contains("Big Pearl") && bigPearl > 0)
+                rewardStrings.Add($"Big Pearl x{bigPearl}");
+            if (rewardsToShow.Contains("Stardust") && stardust > 0)
+                rewardStrings.Add($"Stardust x{stardust}");
+            if (rewardsToShow.Contains("Star Piece") && starPiece > 0)
+                rewardStrings.Add($"Star Piece x{starPiece}");
+            if (rewardsToShow.Contains("Gold Bottle Cap") && goldBottleCap > 0)
+                rewardStrings.Add($"Gold Bottle Cap x{goldBottleCap}");
+            if (rewardsToShow.Contains("PP Up") && ppUp > 0)
+                rewardStrings.Add($"PP Up x{ppUp}");
             if (rewardsToShow.Contains("Shards"))
             {
                 foreach (var shard in teraShards)
