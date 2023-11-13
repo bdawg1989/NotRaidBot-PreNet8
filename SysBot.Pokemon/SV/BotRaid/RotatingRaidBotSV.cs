@@ -1911,6 +1911,8 @@ namespace SysBot.Pokemon.SV.BotRaid
                     embed.ThumbnailUrl = "https://genpkm.com/images/x.png";
                     EchoUtil.RaidEmbed(null, "", embed);
                     // Waiting process
+                    await Click(B, 0_500, token).ConfigureAwait(false);
+                    await Click(B, 0_500, token).ConfigureAwait(false);
                     Log($"Waiting for {waitTime} minutes before attempting to reconnect.");
                     await Task.Delay(TimeSpan.FromMinutes(waitTime), token).ConfigureAwait(false);
                     Log("Attempting to reopen the game.");
@@ -1924,26 +1926,27 @@ namespace SysBot.Pokemon.SV.BotRaid
                 await Click(X, 3_000, token).ConfigureAwait(false);
                 await Click(L, 5_000 + config.Timings.ExtraTimeConnectOnline, token).ConfigureAwait(false);
 
-                if (attemptCount < maxAttempt)
-                {
-                    Log($"Connection attempt {attemptCount} failed. Waiting 5 seconds before retrying.");
-                    await Task.Delay(5000, token).ConfigureAwait(false); // Wait 5 seconds to check again
-                    await Click(B, 0_500, token).ConfigureAwait(false); // Log these clicks if necessary
-                }
-
+                // Wait a bit before rechecking the connection status
+                await Task.Delay(5000, token).ConfigureAwait(false); // Wait 5 seconds before rechecking
                 Log("Rechecking the online connection status...");
-                // Wait a bit before checking the connection status again
-                await Task.Delay(0_500, token).ConfigureAwait(false);
+                if (attemptCount < maxAttempt && !await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false))
+                {
+                    Log($"Connection attempt {attemptCount} failed. Waiting before retrying.");
+                    await Click(B, 0_500, token).ConfigureAwait(false);
+                }
             }
 
             Log("Connection established successfully.");
             // Final steps after connection is established
             await Task.Delay(3_000 + config.Timings.ExtraTimeConnectOnline, token).ConfigureAwait(false);
-            await Click(A, 1_000, token).ConfigureAwait(false);
+            await Click(B, 0_500, token).ConfigureAwait(false);
+            await Click(B, 0_500, token).ConfigureAwait(false);
+            await Click(B, 0_500, token).ConfigureAwait(false);
+            await Click(B, 0_500, token).ConfigureAwait(false);
+            await Task.Delay(3_000, token).ConfigureAwait(false);
 
             return true;
         }
-
 
         private async Task<bool> RecoverToOverworld(CancellationToken token)
         {
