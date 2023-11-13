@@ -1962,6 +1962,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 {
                     Log($"Failed to connect after {maxAttempt} attempts, waiting for {waitTime} minutes before retrying...");
                     await Task.Delay(TimeSpan.FromMinutes(waitTime), token).ConfigureAwait(false); // Wait for 31 minutes before retrying
+                    await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
                     attemptCount = 0; // Reset attempts after waiting
                 }
 
