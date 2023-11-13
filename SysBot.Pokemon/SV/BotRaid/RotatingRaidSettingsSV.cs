@@ -63,6 +63,7 @@ namespace SysBot.Pokemon
             get => MiscSettings.ScreenOff;
             set => MiscSettings.ScreenOff = value;
         }
+
         public class RotatingRaidParameters
         {
             public override string ToString() => $"{Title}";
@@ -104,6 +105,7 @@ namespace SysBot.Pokemon
             [Category(Hosting), Description("Set this value to the value of the event den location (Event Index) from Tera Finder.  Make sure you are at this location if you plan to host event raids.  -1 means No Event.")]
             public int RaidDeliveryGroupID { get; set; } = -1;
         }
+
         [Category(Hosting), TypeConverter(typeof(CategoryConverter<RotatingRaidSettingsCategory>))]
         public class RotatingRaidSettingsCategory
         {
@@ -135,10 +137,8 @@ namespace SysBot.Pokemon
 
             [Category(FeatureToggle), Description("When enabled, the bot will roll back the time by 5 hours to keep your day from changing.  Be sure that when you start the bot the Switch Time is past 12:01am and before 7:00pm.")]
             public bool EnableTimeRollBack { get; set; } = true;
-
-
-
         }
+
         [Category(Hosting), TypeConverter(typeof(CategoryConverter<RotatingRaidPresetFiltersCategory>))]
         public class RotatingRaidPresetFiltersCategory
         {
@@ -270,6 +270,7 @@ namespace SysBot.Pokemon
             }
 
         }
+
             public class CategoryConverter<T> : TypeConverter
         {
             public override bool GetPropertiesSupported(ITypeDescriptorContext? context) => true;
