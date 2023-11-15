@@ -1,13 +1,11 @@
 using Discord;
 using Newtonsoft.Json;
 using PKHeX.Core;
-using pkNX.Structures.FlatBuffers.Gen9;
 using RaidCrawler.Core.Structures;
 using SysBot.Base;
 using SysBot.Pokemon.SV.BotRaid.Helpers;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -2215,7 +2213,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
         private async Task ReadRaids(bool init, CancellationToken token)
         {
-            Log("Reading Raids...");
+            Log("Starting raid reads..");
             if (init)
             {
                 if (RaidBlockPointerP == 0)
@@ -2257,16 +2255,26 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             var dataP = Array.Empty<byte>();
             var dataK = Array.Empty<byte>();
-            int firstDeliveryGroupID = -1; // Initialize to -1
+            int delivery;
+            int enc;
 
             if (init || SeedIndexToReplace >= 0 && SeedIndexToReplace <= 69)
             {
                 dataP = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP + RaidBlock.HEADER_SIZE, (int)RaidBlock.SIZE_BASE, token).ConfigureAwait(false);
-                (firstDeliveryGroupID, int enc) = container.ReadAllRaids(dataP, StoryProgress, EventProgress, 0, TeraRaidMapParent.Paldea);
+            }
+            if (init || SeedIndexToReplace >= 70)
+            {
+                dataK = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerK, (int)RaidBlock.SIZE_KITAKAMI, token).ConfigureAwait(false);
+            }
+
+            if (init || SeedIndexToReplace >= 0 && SeedIndexToReplace <= 69)
+            {
+                (delivery, enc, var num4List) = container.ReadAllRaids(dataP, StoryProgress, EventProgress, 0, TeraRaidMapParent.Paldea);
+
 
                 if (enc > 0)
                 {
-                    Log($"Failed to find encounters for {enc} raid(s). Stop the bot, delete any Event raids in ActiveRaids, day roll to refresh map.");
+                    Log($"Failed to find encounters for {enc} raid(s).  Stop the bot, delete any Event raids in ActiveRaids, day roll to refresh map.");
                     await CloseGame(Hub.Config, token).ConfigureAwait(false);
                     await AdvanceDaySV(token).ConfigureAwait(false);
                     await Task.Delay(5_000, token).ConfigureAwait(false);
@@ -2274,12 +2282,18 @@ namespace SysBot.Pokemon.SV.BotRaid
                     await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
                 }
 
+                if (delivery > 0)
+                {
+                    Log($"Invalid delivery group ID for {delivery} raid(s). Group IDs: {string.Join(", ", num4List)}. Try deleting the \"cache\" folder.");
+                }
+
+                // Check the raids to see if any are event raids for Paldea
                 foreach (var raid in container.Raids)
                 {
                     if (raid.IsEvent)
                     {
                         Settings.EventSettings.EventActive = true;
-                        break;
+                        break; // Exit loop if an event raid is found
                     }
                 }
             }
@@ -2293,24 +2307,23 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             if (init || SeedIndexToReplace >= 70 && SeedIndexToReplace <= 94)
             {
-                dataK = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerK, (int)RaidBlock.SIZE_KITAKAMI, token).ConfigureAwait(false);
-                (int delivery, int enc) = container.ReadAllRaids(dataK, StoryProgress, EventProgress, 0, TeraRaidMapParent.Kitakami);
+                (delivery, enc, var num4List) = container.ReadAllRaids(dataK, StoryProgress, EventProgress, 0, TeraRaidMapParent.Kitakami);
 
                 if (enc > 0)
                     Log($"Failed to find encounters for {enc} raid(s).");
 
-                if (delivery > 0 && firstDeliveryGroupID == -1)
+                if (delivery > 0)
                 {
-                    Log($"Invalid delivery group ID for {delivery} raid(s). Try deleting the \"cache\" folder.");
-                    firstDeliveryGroupID = delivery;
+                    Log($"Invalid delivery group ID for {delivery} raid(s). Group IDs: {string.Join(", ", num4List)}. Try deleting the \"cache\" folder.");
                 }
 
+                // Check the raids to see if any are event raids for Kitakami
                 foreach (var raid in container.Raids)
                 {
                     if (raid.IsEvent)
                     {
                         Settings.EventSettings.EventActive = true;
-                        break;
+                        break; // Exit loop if an event raid is found
                     }
                 }
             }
@@ -2318,19 +2331,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             var allRaids = raids.Concat(container.Raids).ToList().AsReadOnly();
             var allEncounters = encounters.Concat(container.Encounters).ToList().AsReadOnly();
             var allRewards = rewards.Concat(container.Rewards).ToList().AsReadOnly();
-            container.SetRaids(allRaids);
-            container.SetEncounters(allEncounters);
-            container.SetRewards(allRewards);
-
-            // Update settings based on EventActive
-            if (Settings.EventSettings.EventActive)
-            {
-                Settings.EventSettings.RaidDeliveryGroupID = firstDeliveryGroupID;
-            }
-            else
-            {
-                Settings.EventSettings.RaidDeliveryGroupID = -1;
-            }
 
             if (init)
             {
