@@ -1,6 +1,7 @@
 using Discord;
 using Newtonsoft.Json;
 using PKHeX.Core;
+using pkNX.Structures.FlatBuffers.Gen9;
 using RaidCrawler.Core.Structures;
 using SysBot.Base;
 using SysBot.Pokemon.SV.BotRaid.Helpers;
@@ -1200,7 +1201,8 @@ namespace SysBot.Pokemon.SV.BotRaid
                 return false; // Handle the case where connection couldn't be established
             }
 
-            await Task.Delay(2_500, token).ConfigureAwait(false);
+            await Task.Delay(0_500, token).ConfigureAwait(false);
+            await Click(B, 0_500, token).ConfigureAwait(false);
             await Click(B, 0_500, token).ConfigureAwait(false);
 
             // Inject PartyPK after we save the game.
@@ -1897,46 +1899,72 @@ namespace SysBot.Pokemon.SV.BotRaid
             const int maxAttempt = 5;
             const int waitTime = 10; // time in minutes to wait after max attempts
 
-            while (!await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false))
+            while (true) // Loop until a successful connection is made or the task is canceled
             {
-                if (attemptCount >= maxAttempt)
+                try
                 {
-                    Log($"Failed to connect after {maxAttempt} attempts. Assuming a softban. Initiating wait for {waitTime} minutes before retrying.");
-                    // Log details about sending an embed message
-                    Log("Sending an embed message to notify about technical difficulties.");
-                    EmbedBuilder embed = new EmbedBuilder();
-                    embed.Title = "Experiencing Technical Difficulties";
-                    embed.Description = "The bot is experiencing issues connecting online. Please stand by as we try to resolve the issue.";
-                    embed.Color = Color.Red;
-                    embed.ThumbnailUrl = "https://genpkm.com/images/x.png";
-                    EchoUtil.RaidEmbed(null, "", embed);
-                    // Waiting process
-                    await Click(B, 0_500, token).ConfigureAwait(false);
-                    await Click(B, 0_500, token).ConfigureAwait(false);
-                    Log($"Waiting for {waitTime} minutes before attempting to reconnect.");
-                    await Task.Delay(TimeSpan.FromMinutes(waitTime), token).ConfigureAwait(false);
-                    Log("Attempting to reopen the game.");
-                    await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
-                    attemptCount = 0; // Reset attempts after waiting
+                    if (await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false))
+                    {
+                        Log("Connection established successfully.");
+                        break; // Exit the loop if connected successfully
+                    }
+
+                    if (attemptCount >= maxAttempt)
+                    {
+                        Log($"Failed to connect after {maxAttempt} attempts. Assuming a softban. Initiating wait for {waitTime} minutes before retrying.");
+                        // Log details about sending an embed message
+                        Log("Sending an embed message to notify about technical difficulties.");
+                        EmbedBuilder embed = new EmbedBuilder
+                        {
+                            Title = "Experiencing Technical Difficulties",
+                            Description = "The bot is experiencing issues connecting online. Please stand by as we try to resolve the issue.",
+                            Color = Color.Red,
+                            ThumbnailUrl = "https://genpkm.com/images/x.png"
+                        };
+                        EchoUtil.RaidEmbed(null, "", embed);
+                        // Waiting process
+                        await Click(B, 0_500, token).ConfigureAwait(false);
+                        await Click(B, 0_500, token).ConfigureAwait(false);
+                        Log($"Waiting for {waitTime} minutes before attempting to reconnect.");
+                        await Task.Delay(TimeSpan.FromMinutes(waitTime), token).ConfigureAwait(false);
+                        Log("Attempting to reopen the game.");
+                        await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
+                        attemptCount = 0; // Reset attempt count
+                    }
+
+                    attemptCount++;
+                    Log($"Attempt {attemptCount} of {maxAttempt}: Trying to connect online...");
+
+                    // Connection attempt logic
+                    await Click(X, 3_000, token).ConfigureAwait(false);
+                    await Click(L, 5_000 + config.Timings.ExtraTimeConnectOnline, token).ConfigureAwait(false);
+
+                    // Wait a bit before rechecking the connection status
+                    await Task.Delay(5000, token).ConfigureAwait(false); // Wait 5 seconds before rechecking
+
+                    if (attemptCount < maxAttempt)
+                    {
+                        Log("Rechecking the online connection status...");
+                        // Wait and recheck logic
+                        await Click(B, 0_500, token).ConfigureAwait(false);
+                    }
                 }
-
-                attemptCount++;
-                Log($"Attempt {attemptCount} of {maxAttempt}: Trying to connect online...");
-
-                await Click(X, 3_000, token).ConfigureAwait(false);
-                await Click(L, 5_000 + config.Timings.ExtraTimeConnectOnline, token).ConfigureAwait(false);
-
-                // Wait a bit before rechecking the connection status
-                await Task.Delay(5000, token).ConfigureAwait(false); // Wait 5 seconds before rechecking
-                Log("Rechecking the online connection status...");
-                if (attemptCount < maxAttempt && !await IsConnectedOnline(ConnectedOffset, token).ConfigureAwait(false))
+                catch (Exception ex)
                 {
-                    Log($"Connection attempt {attemptCount} failed. Waiting before retrying.");
-                    await Click(B, 0_500, token).ConfigureAwait(false);
+                    Log($"Exception occurred during connection attempt: {ex.Message}");
+                    // Handle exceptions, like connectivity issues here
+
+                    if (attemptCount >= maxAttempt)
+                    {
+                        Log($"Failed to connect after {maxAttempt} attempts due to exception. Waiting for {waitTime} minutes before retrying.");
+                        await Task.Delay(TimeSpan.FromMinutes(waitTime), token).ConfigureAwait(false);
+                        Log("Attempting to reopen the game.");
+                        await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
+                        attemptCount = 0;
+                    }
                 }
             }
 
-            Log("Connection established successfully.");
             // Final steps after connection is established
             await Task.Delay(3_000 + config.Timings.ExtraTimeConnectOnline, token).ConfigureAwait(false);
             await Click(B, 0_500, token).ConfigureAwait(false);
@@ -2187,8 +2215,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
         private async Task ReadRaids(bool init, CancellationToken token)
         {
-
-            Log("Starting raid reads..");
+            Log("Reading Raids...");
             if (init)
             {
                 if (RaidBlockPointerP == 0)
@@ -2230,43 +2257,35 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             var dataP = Array.Empty<byte>();
             var dataK = Array.Empty<byte>();
-            int delivery;
-            int enc;
+            int firstDeliveryGroupID = -1; // Initialize to -1
 
             if (init || SeedIndexToReplace >= 0 && SeedIndexToReplace <= 69)
             {
                 dataP = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP + RaidBlock.HEADER_SIZE, (int)RaidBlock.SIZE_BASE, token).ConfigureAwait(false);
-            }
-            if (init || SeedIndexToReplace >= 70)
-            {
-                dataK = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerK, (int)RaidBlock.SIZE_KITAKAMI, token).ConfigureAwait(false);
-            }
-
-            if (init || SeedIndexToReplace >= 0 && SeedIndexToReplace <= 69)
-            {
-                (delivery, enc) = container.ReadAllRaids(dataP, StoryProgress, EventProgress, 0, TeraRaidMapParent.Paldea);
+                (int delivery, int enc) = container.ReadAllRaids(dataP, StoryProgress, EventProgress, 0, TeraRaidMapParent.Paldea);
 
                 if (enc > 0)
                 {
-                    Log($"Failed to find encounters for {enc} raid(s).  Stop the bot, delete any Event raids in ActiveRaids, day roll to refresh map.");
-                    await GoHome(Hub.Config, token).ConfigureAwait(false);
+                    Log($"Failed to find encounters for {enc} raid(s). Stop the bot, delete any Event raids in ActiveRaids, day roll to refresh map.");
+                    await CloseGame(Hub.Config, token).ConfigureAwait(false);
                     await AdvanceDaySV(token).ConfigureAwait(false);
                     await Task.Delay(5_000, token).ConfigureAwait(false);
                     await SaveGame(Hub.Config, token).ConfigureAwait(false);
                     await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
                 }
 
-
                 if (delivery > 0)
+                {
                     Log($"Invalid delivery group ID for {delivery} raid(s). Try deleting the \"cache\" folder.");
+                    firstDeliveryGroupID = delivery;
+                }
 
-                // Check the raids to see if any are event raids for Paldea
                 foreach (var raid in container.Raids)
                 {
                     if (raid.IsEvent)
                     {
                         Settings.EventSettings.EventActive = true;
-                        break; // Exit loop if an event raid is found
+                        break;
                     }
                 }
             }
@@ -2278,23 +2297,26 @@ namespace SysBot.Pokemon.SV.BotRaid
             container.ClearEncounters();
             container.ClearRewards();
 
-            if (init || SeedIndexToReplace >= 70 && SeedIndexToReplace <= 94)
+            if (init || SeedIndexToReplace >= 70)
             {
-                (delivery, enc) = container.ReadAllRaids(dataK, StoryProgress, EventProgress, 0, TeraRaidMapParent.Kitakami);
+                dataK = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerK, (int)RaidBlock.SIZE_KITAKAMI, token).ConfigureAwait(false);
+                (int delivery, int enc) = container.ReadAllRaids(dataK, StoryProgress, EventProgress, 0, TeraRaidMapParent.Kitakami);
 
                 if (enc > 0)
                     Log($"Failed to find encounters for {enc} raid(s).");
 
-                if (delivery > 0)
+                if (delivery > 0 && firstDeliveryGroupID == -1)
+                {
                     Log($"Invalid delivery group ID for {delivery} raid(s). Try deleting the \"cache\" folder.");
+                    firstDeliveryGroupID = delivery;
+                }
 
-                // Check the raids to see if any are event raids for Kitakami
                 foreach (var raid in container.Raids)
                 {
                     if (raid.IsEvent)
                     {
                         Settings.EventSettings.EventActive = true;
-                        break; // Exit loop if an event raid is found
+                        break;
                     }
                 }
             }
@@ -2302,10 +2324,20 @@ namespace SysBot.Pokemon.SV.BotRaid
             var allRaids = raids.Concat(container.Raids).ToList().AsReadOnly();
             var allEncounters = encounters.Concat(container.Encounters).ToList().AsReadOnly();
             var allRewards = rewards.Concat(container.Rewards).ToList().AsReadOnly();
-
             container.SetRaids(allRaids);
             container.SetEncounters(allEncounters);
             container.SetRewards(allRewards);
+
+            // Update settings based on EventActive
+            if (Settings.EventSettings.EventActive)
+            {
+                Settings.EventSettings.RaidDeliveryGroupID = firstDeliveryGroupID;
+            }
+            else
+            {
+                Settings.EventSettings.RaidDeliveryGroupID = -1;
+            }
+
             if (init)
             {
                 for (int rc = 0; rc < Settings.ActiveRaids.Count; rc++)

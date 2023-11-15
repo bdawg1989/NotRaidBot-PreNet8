@@ -1,4 +1,5 @@
 ﻿using PKHeX.Core;
+using RaidCrawler.Core.Structures;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -60,8 +61,6 @@ namespace SysBot.Pokemon.SV.BotRaid
 
     public static class Blocks
     {
-        public static readonly long[] SaveBlockKeyPointer = { 0x4617648, 0xD8, 0x0, 0x0, 0x30, 0x08 };
-
         public static class RaidDataBlocks
         {
             public static readonly DataBlock KUnlockedTeraRaidBattles = new()
@@ -69,7 +68,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 Name = "KUnlockedTeraRaidBattles",
                 Key = 0x27025EBF,
                 Type = SCTypeCode.Bool1,
-                Pointer = SaveBlockKeyPointer,
+                Pointer = PokeDataOffsetsSV.SaveBlockKeyPointer,
                 IsEncrypted = true,
                 Size = 1,
             };
@@ -79,7 +78,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 Name = "KUnlockedRaidDifficulty3",
                 Key = 0xEC95D8EF,
                 Type = SCTypeCode.Bool1,
-                Pointer = SaveBlockKeyPointer,
+                Pointer = PokeDataOffsetsSV.SaveBlockKeyPointer,
                 IsEncrypted = true,
                 Size = 1,
             };
@@ -89,7 +88,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 Name = "KUnlockedRaidDifficulty4",
                 Key = 0xA9428DFE,
                 Type = SCTypeCode.Bool1,
-                Pointer = SaveBlockKeyPointer,
+                Pointer = PokeDataOffsetsSV.SaveBlockKeyPointer,
                 IsEncrypted = true,
                 Size = 1,
             };
@@ -99,7 +98,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 Name = "KUnlockedRaidDifficulty5",
                 Key = 0x9535F471,
                 Type = SCTypeCode.Bool1,
-                Pointer = SaveBlockKeyPointer,
+                Pointer = PokeDataOffsetsSV.SaveBlockKeyPointer,
                 IsEncrypted = true,
                 Size = 1,
             };
@@ -109,7 +108,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 Name = "KUnlockedRaidDifficulty6",
                 Key = 0x6E7F8220,
                 Type = SCTypeCode.Bool1,
-                Pointer = SaveBlockKeyPointer,
+                Pointer = PokeDataOffsetsSV.SaveBlockKeyPointer,
                 IsEncrypted = true,
                 Size = 1,
             };
@@ -119,7 +118,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 Name = "KWildSpawnsEnabled",
                 Key = 0xC812EDC7,
                 Type = SCTypeCode.Bool1,
-                Pointer = SaveBlockKeyPointer,
+                Pointer = PokeDataOffsetsSV.SaveBlockKeyPointer,
                 IsEncrypted = true,
                 Size = 1,
             };
