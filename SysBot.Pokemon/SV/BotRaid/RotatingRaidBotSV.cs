@@ -2262,7 +2262,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             if (init || SeedIndexToReplace >= 0 && SeedIndexToReplace <= 69)
             {
                 dataP = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP + RaidBlock.HEADER_SIZE, (int)RaidBlock.SIZE_BASE, token).ConfigureAwait(false);
-                (int delivery, int enc) = container.ReadAllRaids(dataP, StoryProgress, EventProgress, 0, TeraRaidMapParent.Paldea);
+                (firstDeliveryGroupID, int enc) = container.ReadAllRaids(dataP, StoryProgress, EventProgress, 0, TeraRaidMapParent.Paldea);
 
                 if (enc > 0)
                 {
@@ -2272,12 +2272,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                     await Task.Delay(5_000, token).ConfigureAwait(false);
                     await SaveGame(Hub.Config, token).ConfigureAwait(false);
                     await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
-                }
-
-                if (delivery > 0)
-                {
-                    Log($"Invalid delivery group ID for {delivery} raid(s). Try deleting the \"cache\" folder.");
-                    firstDeliveryGroupID = delivery;
                 }
 
                 foreach (var raid in container.Raids)
@@ -2297,7 +2291,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             container.ClearEncounters();
             container.ClearRewards();
 
-            if (init || SeedIndexToReplace >= 70)
+            if (init || SeedIndexToReplace >= 70 && SeedIndexToReplace <= 94)
             {
                 dataK = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerK, (int)RaidBlock.SIZE_KITAKAMI, token).ConfigureAwait(false);
                 (int delivery, int enc) = container.ReadAllRaids(dataK, StoryProgress, EventProgress, 0, TeraRaidMapParent.Kitakami);
