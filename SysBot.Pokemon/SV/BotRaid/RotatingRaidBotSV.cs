@@ -2287,14 +2287,28 @@ namespace SysBot.Pokemon.SV.BotRaid
                     Log($"Invalid delivery group ID for {delivery} raid(s). Group IDs: {string.Join(", ", num4List)}. Try deleting the \"cache\" folder.");
                 }
 
+                // Initialize a counter to track the index in num4List
+                int raidIndex = 0;
+
                 // Check the raids to see if any are event raids for Paldea
                 foreach (var raid in container.Raids)
                 {
                     if (raid.IsEvent)
                     {
                         Settings.EventSettings.EventActive = true;
+
+                        // Safety check to ensure raidIndex is within the bounds of num4List
+                        if (raidIndex < num4List.Count)
+                        {
+                            // Update the EventSettings.RaidDeliveryGroupID with the corresponding Group ID
+                            Settings.EventSettings.RaidDeliveryGroupID = num4List[raidIndex];
+                            Log($"Updated Event Raid Delivery Group ID to {num4List[raidIndex]}.");
+                        }
+
                         break; // Exit loop if an event raid is found
                     }
+
+                    raidIndex++; // Increment raidIndex to keep it in sync with the raid list
                 }
             }
 
