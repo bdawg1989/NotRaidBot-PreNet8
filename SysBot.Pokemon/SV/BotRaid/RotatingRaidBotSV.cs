@@ -1606,26 +1606,26 @@ namespace SysBot.Pokemon.SV.BotRaid
         }
 
         Dictionary<string, string> TypeAdvantages = new Dictionary<string, string>()
-{
-    { "normal", "Fighting" },
-    { "fire", "Water, Ground, Rock" },
-    { "water", "Electric, Grass" },
-    { "grass", "Flying, Poison, Bug, Fire, Ice" },
-    { "electric", "Ground" },
-    { "ice", "Fighting, Rock, Steel, Fire" },
-    { "fighting", "Flying, Psychic, Fairy" },
-    { "poison", "Ground, Psychic" },
-    { "ground", "Water, Ice, Grass" },
-    { "flying", "Rock, Electric, Ice" },
-    { "psychic", "Bug, Ghost, Dark" },
-    { "bug", "Flying, Rock, Fire" },
-    { "rock", "Fighting, Ground, Steel, Water, Grass" },
-    { "ghost", "Ghost, Dark" },
-    { "dragon", "Ice, Dragon, Fairy" },
-    { "dark", "Fighting, Bug, Fairy" },
-    { "steel", "Fighting, Ground, Fire" },
-    { "fairy", "Poison, Steel" }
-};
+        {
+            { "normal", "Fighting" },
+            { "fire", "Water, Ground, Rock" },
+            { "water", "Electric, Grass" },
+            { "grass", "Flying, Poison, Bug, Fire, Ice" },
+            { "electric", "Ground" },
+            { "ice", "Fighting, Rock, Steel, Fire" },
+            { "fighting", "Flying, Psychic, Fairy" },
+            { "poison", "Ground, Psychic" },
+            { "ground", "Water, Ice, Grass" },
+            { "flying", "Rock, Electric, Ice" },
+            { "psychic", "Bug, Ghost, Dark" },
+            { "bug", "Flying, Rock, Fire" },
+            { "rock", "Fighting, Ground, Steel, Water, Grass" },
+            { "ghost", "Ghost, Dark" },
+            { "dragon", "Ice, Dragon, Fairy" },
+            { "dark", "Fighting, Bug, Fairy" },
+            { "steel", "Fighting, Ground, Fire" },
+            { "fairy", "Poison, Steel" }
+        };
 
         private string GetTypeAdvantage(string teraType)
         {
