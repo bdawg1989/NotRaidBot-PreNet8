@@ -29,6 +29,5 @@ namespace SysBot.Pokemon
         [Category(Integration)]
         [TypeConverter(typeof(ExpandableObjectConverter))]
         public DiscordSettings Discord { get; set; } = new();
-
     }
 }

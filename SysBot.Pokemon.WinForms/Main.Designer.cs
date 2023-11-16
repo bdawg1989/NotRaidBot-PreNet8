@@ -64,10 +64,11 @@ namespace SysBot.Pokemon.WinForms
             TC_Main.Controls.Add(Tab_Logs);
             TC_Main.Dock = DockStyle.Fill;
             TC_Main.Location = new Point(0, 0);
+            TC_Main.Margin = new Padding(6);
             TC_Main.Name = "TC_Main";
-            TC_Main.Padding = new Point(20, 4);
+            TC_Main.Padding = new Point(20, 7);
             TC_Main.SelectedIndex = 0;
-            TC_Main.Size = new Size(1000, 800);
+            TC_Main.Size = new Size(1157, 947);
             TC_Main.TabIndex = 3;
             // 
             // Tab_Bots
@@ -79,9 +80,10 @@ namespace SysBot.Pokemon.WinForms
             Tab_Bots.Controls.Add(CB_Routine);
             Tab_Bots.Controls.Add(NUD_Port);
             Tab_Bots.Controls.Add(B_New);
-            Tab_Bots.Location = new Point(4, 29);
+            Tab_Bots.Location = new Point(4, 52);
+            Tab_Bots.Margin = new Padding(6);
             Tab_Bots.Name = "Tab_Bots";
-            Tab_Bots.Size = new Size(992, 767);
+            Tab_Bots.Size = new Size(1149, 891);
             Tab_Bots.TabIndex = 0;
             Tab_Bots.Text = "Bots";
             // 
@@ -89,9 +91,10 @@ namespace SysBot.Pokemon.WinForms
             // 
             comboBox1.DropDownStyle = ComboBoxStyle.DropDownList;
             comboBox1.FormattingEnabled = true;
-            comboBox1.Location = new Point(487, 6);
+            comboBox1.Location = new Point(904, 13);
+            comboBox1.Margin = new Padding(6);
             comboBox1.Name = "comboBox1";
-            comboBox1.Size = new Size(117, 23);
+            comboBox1.Size = new Size(214, 40);
             comboBox1.TabIndex = 11;
             comboBox1.SelectedIndexChanged += comboBox1_SelectedIndexChanged;
             // 
@@ -100,9 +103,10 @@ namespace SysBot.Pokemon.WinForms
             CB_Protocol.DropDownStyle = ComboBoxStyle.DropDownList;
             CB_Protocol.ForeColor = Color.Red;
             CB_Protocol.FormattingEnabled = true;
-            CB_Protocol.Location = new Point(289, 6);
+            CB_Protocol.Location = new Point(537, 13);
+            CB_Protocol.Margin = new Padding(6);
             CB_Protocol.Name = "CB_Protocol";
-            CB_Protocol.Size = new Size(67, 23);
+            CB_Protocol.Size = new Size(121, 40);
             CB_Protocol.TabIndex = 10;
             CB_Protocol.SelectedIndexChanged += CB_Protocol_SelectedIndexChanged;
             // 
@@ -114,10 +118,10 @@ namespace SysBot.Pokemon.WinForms
             FLP_Bots.BackgroundImageLayout = ImageLayout.Center;
             FLP_Bots.BorderStyle = BorderStyle.Fixed3D;
             FLP_Bots.Font = new Font("Cambria", 12F, FontStyle.Regular, GraphicsUnit.Point);
-            FLP_Bots.Location = new Point(0, 37);
+            FLP_Bots.Location = new Point(0, 79);
             FLP_Bots.Margin = new Padding(0);
             FLP_Bots.Name = "FLP_Bots";
-            FLP_Bots.Size = new Size(991, 729);
+            FLP_Bots.Size = new Size(1137, 785);
             FLP_Bots.TabIndex = 9;
             FLP_Bots.Paint += FLP_Bots_Paint;
             FLP_Bots.Resize += FLP_Bots_Resize;
@@ -125,9 +129,10 @@ namespace SysBot.Pokemon.WinForms
             // TB_IP
             // 
             TB_IP.Font = new Font("Courier New", 12F, FontStyle.Regular, GraphicsUnit.Point);
-            TB_IP.Location = new Point(73, 7);
+            TB_IP.Location = new Point(136, 15);
+            TB_IP.Margin = new Padding(6);
             TB_IP.Name = "TB_IP";
-            TB_IP.Size = new Size(134, 26);
+            TB_IP.Size = new Size(245, 44);
             TB_IP.TabIndex = 8;
             TB_IP.Text = "192.168.0.1";
             // 
@@ -135,18 +140,20 @@ namespace SysBot.Pokemon.WinForms
             // 
             CB_Routine.DropDownStyle = ComboBoxStyle.DropDownList;
             CB_Routine.FormattingEnabled = true;
-            CB_Routine.Location = new Point(364, 6);
+            CB_Routine.Location = new Point(676, 13);
+            CB_Routine.Margin = new Padding(6);
             CB_Routine.Name = "CB_Routine";
-            CB_Routine.Size = new Size(117, 23);
+            CB_Routine.Size = new Size(214, 40);
             CB_Routine.TabIndex = 7;
             // 
             // NUD_Port
             // 
             NUD_Port.Font = new Font("Courier New", 12F, FontStyle.Regular, GraphicsUnit.Point);
-            NUD_Port.Location = new Point(215, 7);
+            NUD_Port.Location = new Point(399, 15);
+            NUD_Port.Margin = new Padding(6);
             NUD_Port.Maximum = new decimal(new int[] { 65535, 0, 0, 0 });
             NUD_Port.Name = "NUD_Port";
-            NUD_Port.Size = new Size(68, 26);
+            NUD_Port.Size = new Size(126, 44);
             NUD_Port.TabIndex = 6;
             NUD_Port.Value = new decimal(new int[] { 6000, 0, 0, 0 });
             // 
@@ -154,9 +161,10 @@ namespace SysBot.Pokemon.WinForms
             // 
             B_New.FlatAppearance.BorderSize = 0;
             B_New.FlatStyle = FlatStyle.Flat;
-            B_New.Location = new Point(3, 7);
+            B_New.Location = new Point(6, 15);
+            B_New.Margin = new Padding(6);
             B_New.Name = "B_New";
-            B_New.Size = new Size(63, 23);
+            B_New.Size = new Size(117, 49);
             B_New.TabIndex = 0;
             B_New.Text = "Add";
             B_New.Click += B_New_Click;
@@ -164,29 +172,32 @@ namespace SysBot.Pokemon.WinForms
             // Tab_Hub
             // 
             Tab_Hub.Controls.Add(PG_Hub);
-            Tab_Hub.Location = new Point(4, 29);
+            Tab_Hub.Location = new Point(4, 52);
+            Tab_Hub.Margin = new Padding(6);
             Tab_Hub.Name = "Tab_Hub";
-            Tab_Hub.Padding = new Padding(3);
-            Tab_Hub.Size = new Size(992, 767);
+            Tab_Hub.Padding = new Padding(6);
+            Tab_Hub.Size = new Size(1149, 891);
             Tab_Hub.TabIndex = 2;
             Tab_Hub.Text = "Hub";
             // 
             // PG_Hub
             // 
             PG_Hub.Dock = DockStyle.Fill;
-            PG_Hub.Location = new Point(3, 3);
+            PG_Hub.Location = new Point(6, 6);
+            PG_Hub.Margin = new Padding(6);
             PG_Hub.Name = "PG_Hub";
             PG_Hub.PropertySort = PropertySort.Categorized;
-            PG_Hub.Size = new Size(986, 761);
+            PG_Hub.Size = new Size(1137, 879);
             PG_Hub.TabIndex = 0;
             PG_Hub.ToolbarVisible = false;
             // 
             // Tab_Logs
             // 
             Tab_Logs.Controls.Add(RTB_Logs);
-            Tab_Logs.Location = new Point(4, 29);
+            Tab_Logs.Location = new Point(4, 52);
+            Tab_Logs.Margin = new Padding(6);
             Tab_Logs.Name = "Tab_Logs";
-            Tab_Logs.Size = new Size(992, 767);
+            Tab_Logs.Size = new Size(1149, 891);
             Tab_Logs.TabIndex = 1;
             Tab_Logs.Text = "Logs";
             // 
@@ -194,9 +205,10 @@ namespace SysBot.Pokemon.WinForms
             // 
             RTB_Logs.Dock = DockStyle.Fill;
             RTB_Logs.Location = new Point(0, 0);
+            RTB_Logs.Margin = new Padding(6);
             RTB_Logs.Name = "RTB_Logs";
             RTB_Logs.ReadOnly = true;
-            RTB_Logs.Size = new Size(992, 767);
+            RTB_Logs.Size = new Size(1149, 891);
             RTB_Logs.TabIndex = 0;
             RTB_Logs.Text = "";
             // 
@@ -205,9 +217,10 @@ namespace SysBot.Pokemon.WinForms
             B_Stop.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             B_Stop.FlatAppearance.BorderSize = 0;
             B_Stop.FlatStyle = FlatStyle.Flat;
-            B_Stop.Location = new Point(900, 0);
+            B_Stop.Location = new Point(971, 0);
+            B_Stop.Margin = new Padding(6);
             B_Stop.Name = "B_Stop";
-            B_Stop.Size = new Size(60, 23);
+            B_Stop.Size = new Size(111, 49);
             B_Stop.TabIndex = 4;
             B_Stop.Text = "Stop All";
             B_Stop.Click += B_Stop_Click;
@@ -217,22 +230,24 @@ namespace SysBot.Pokemon.WinForms
             B_Start.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             B_Start.FlatAppearance.BorderSize = 0;
             B_Start.FlatStyle = FlatStyle.Flat;
-            B_Start.Location = new Point(815, 0);
+            B_Start.Location = new Point(814, 0);
+            B_Start.Margin = new Padding(6);
             B_Start.Name = "B_Start";
-            B_Start.Size = new Size(60, 23);
+            B_Start.Size = new Size(111, 49);
             B_Start.TabIndex = 3;
             B_Start.Text = "Start All";
             B_Start.Click += B_Start_Click;
             // 
             // Main
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleDimensions = new SizeF(13F, 32F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 500);
+            ClientSize = new Size(1157, 947);
             Controls.Add(B_Stop);
             Controls.Add(B_Start);
             Controls.Add(TC_Main);
             Icon = Resources.icon;
+            Margin = new Padding(6);
             MaximizeBox = false;
             Name = "Main";
             StartPosition = FormStartPosition.CenterScreen;

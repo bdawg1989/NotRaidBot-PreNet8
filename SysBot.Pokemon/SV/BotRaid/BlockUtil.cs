@@ -1,5 +1,4 @@
 ﻿using PKHeX.Core;
-using RaidCrawler.Core.Structures;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +9,6 @@ namespace SysBot.Pokemon.SV.BotRaid
 {
     public static class BlockUtil
     {
-
         public static SCBlock CreateDummyBlock(uint key, SCTypeCode dummy)
         {
             var block = (SCBlock)FormatterServices.GetUninitializedObject(typeof(SCBlock));

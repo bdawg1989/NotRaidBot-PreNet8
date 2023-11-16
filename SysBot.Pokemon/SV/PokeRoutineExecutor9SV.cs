@@ -167,7 +167,7 @@ namespace SysBot.Pokemon
             Log("Restarting the game!");
 
             // Switch Logo and game load screen
-            await Task.Delay(15_000 + timing.RestartGameSettings.ExtraTimeLoadGame, token).ConfigureAwait(false); 
+            await Task.Delay(15_000 + timing.RestartGameSettings.ExtraTimeLoadGame, token).ConfigureAwait(false);
 
             for (int i = 0; i < 8; i++)
                 await Click(A, 1_000, token).ConfigureAwait(false);
@@ -693,7 +693,6 @@ namespace SysBot.Pokemon
             container.DeliveryRaidLotteryRewards = FlatbufferDumper.DumpLotteryRewards(delivery_lottery_rewards);
         }
 
-
         public static (PK9, uint) IsSeedReturned(ITeraRaid enc, Raid raid)
         {
             var param = enc.GetParam();
@@ -706,7 +705,6 @@ namespace SysBot.Pokemon
 
             return (blank, raid.Seed);
         }
-
 
         public static string GetSpecialRewards(IReadOnlyList<(int, int, int)> rewards, List<string> rewardsToShow)
         {
@@ -771,24 +769,24 @@ namespace SysBot.Pokemon
                 rewardStrings.Add($"Sweet Herba Mystica x{sweetHerba}");
             if (rewardsToShow.Contains("Pokeball") && pokeball > 0)
                 rewardStrings.Add($"Pokeball x{pokeball}");
-                if (rewardsToShow.Contains("Nugget") && nugget > 0)
-        rewardStrings.Add($"Nugget x{nugget}");
-    if (rewardsToShow.Contains("Tiny Mushroom") && tinyMushroom > 0)
-        rewardStrings.Add($"Tiny Mushroom x{tinyMushroom}");
-    if (rewardsToShow.Contains("Big Mushroom") && bigMushroom > 0)
-        rewardStrings.Add($"Big Mushroom x{bigMushroom}");
-    if (rewardsToShow.Contains("Pearl") && pearl > 0)
-        rewardStrings.Add($"Pearl x{pearl}");
-    if (rewardsToShow.Contains("Big Pearl") && bigPearl > 0)
-        rewardStrings.Add($"Big Pearl x{bigPearl}");
-    if (rewardsToShow.Contains("Stardust") && stardust > 0)
-        rewardStrings.Add($"Stardust x{stardust}");
-    if (rewardsToShow.Contains("Star Piece") && starPiece > 0)
-        rewardStrings.Add($"Star Piece x{starPiece}");
-    if (rewardsToShow.Contains("Gold Bottle Cap") && goldBottleCap > 0)
-        rewardStrings.Add($"Gold Bottle Cap x{goldBottleCap}");
-    if (rewardsToShow.Contains("PP Up") && ppUp > 0)
-        rewardStrings.Add($"PP Up x{ppUp}");
+            if (rewardsToShow.Contains("Nugget") && nugget > 0)
+                rewardStrings.Add($"Nugget x{nugget}");
+            if (rewardsToShow.Contains("Tiny Mushroom") && tinyMushroom > 0)
+                rewardStrings.Add($"Tiny Mushroom x{tinyMushroom}");
+            if (rewardsToShow.Contains("Big Mushroom") && bigMushroom > 0)
+                rewardStrings.Add($"Big Mushroom x{bigMushroom}");
+            if (rewardsToShow.Contains("Pearl") && pearl > 0)
+                rewardStrings.Add($"Pearl x{pearl}");
+            if (rewardsToShow.Contains("Big Pearl") && bigPearl > 0)
+                rewardStrings.Add($"Big Pearl x{bigPearl}");
+            if (rewardsToShow.Contains("Stardust") && stardust > 0)
+                rewardStrings.Add($"Stardust x{stardust}");
+            if (rewardsToShow.Contains("Star Piece") && starPiece > 0)
+                rewardStrings.Add($"Star Piece x{starPiece}");
+            if (rewardsToShow.Contains("Gold Bottle Cap") && goldBottleCap > 0)
+                rewardStrings.Add($"Gold Bottle Cap x{goldBottleCap}");
+            if (rewardsToShow.Contains("PP Up") && ppUp > 0)
+                rewardStrings.Add($"PP Up x{ppUp}");
             if (rewardsToShow.Contains("Shards"))
             {
                 foreach (var shard in teraShards)
@@ -826,7 +824,6 @@ namespace SysBot.Pokemon
                 _ => "Unknown", // or handle this case as needed
             };
         }
-
 
         public static string[] ProcessRaidPlaceholders(string[] description, PKM pk)
         {

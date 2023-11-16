@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 
-
 namespace SysBot.Pokemon
 {
     public class RotatingRaidSettingsSV : IBotStateSettings
@@ -14,29 +13,6 @@ namespace SysBot.Pokemon
         private const string Hosting = nameof(Hosting);
         private const string Counts = nameof(Counts);
         private const string FeatureToggle = nameof(FeatureToggle);
-        public enum TeraIconType
-        {
-            Icon1, // Use special set
-            Icon2 // Use boring set
-        }
-        // Action1 dropdown enum
-        public enum Action1Type
-        {
-            GoAllOut,
-            HangTough,
-            HealUp,
-            Move1,
-            Move2,
-            Move3,
-            Move4
-        }
-        public enum ScreenshotTimingOptions
-        {
-            [Description("1500 milliseconds")]
-            _1500 = 1500, // Team SS
-            [Description("22000 milliseconds")]
-            _22000 = 22000 // Everything SS
-        }
 
         public override string ToString() => "RotatingRaidSV Settings";
 
@@ -192,7 +168,6 @@ namespace SysBot.Pokemon
     "PP Up"
 };
 
-
             [Category(Hosting), Description("Amount of time (in seconds) to post a requested raid embed.")]
             public int RequestEmbedTime { get; set; } = 30;
 
@@ -204,7 +179,6 @@ namespace SysBot.Pokemon
 
             [Category(FeatureToggle), Description("When enabled, the bot will hide the raid code from the Discord embed.")]
             public bool HideRaidCode { get; set; } = false;
-
         }
 
         [Category(Hosting), TypeConverter(typeof(CategoryConverter<LobbyFiltersCategory>))]
@@ -278,10 +252,9 @@ namespace SysBot.Pokemon
                 if (CompletedRaids != 0)
                     yield return $"Started Raids: {CompletedRaids}";
             }
-
         }
 
-            public class CategoryConverter<T> : TypeConverter
+        public class CategoryConverter<T> : TypeConverter
         {
             public override bool GetPropertiesSupported(ITypeDescriptorContext? context) => true;
 

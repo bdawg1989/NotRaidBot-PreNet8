@@ -611,8 +611,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             await FinalizeRaidCompletion(trainers, ready, token);
         }
 
-
-
         private async Task<bool> CheckIfConnectedToLobbyAndLog(CancellationToken token)
         {
             if (await IsConnectedToLobby(token).ConfigureAwait(false))
@@ -828,7 +826,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
         private async Task<bool> HandleEndOfRaidActions(CancellationToken token)
         {
-            LobbyFiltersCategory settings = new LobbyFiltersCategory(); 
+            LobbyFiltersCategory settings = new LobbyFiltersCategory();
 
             Log("Raid lobby disbanded!");
             await Task.Delay(1_500 + settings.ExtraTimeLobbyDisband, token).ConfigureAwait(false);
@@ -1442,7 +1440,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             return (true, lobbyTrainers);
         }
 
-
         private async Task<bool> IsConnectedToLobby(CancellationToken token)
         {
             var data = await SwitchConnection.ReadBytesMainAsync(Offsets.TeraLobbyIsConnected, 1, token).ConfigureAwait(false);
@@ -2037,7 +2034,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
 
             // Only send extra Presses if we need to
-            if(timing.RestartGameSettings.ProfileSelectSettings.ProfileSelectionRequired)
+            if (timing.RestartGameSettings.ProfileSelectSettings.ProfileSelectionRequired)
             {
                 await Click(A, 1_000, token).ConfigureAwait(false); // Now we are on the Profile Screen
                 await Click(A, 1_000, token).ConfigureAwait(false); // Select the profile
@@ -2046,7 +2043,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             // Digital game copies take longer to load
             if (timing.RestartGameSettings.CheckGameDelay)
             {
-                await Task.Delay(2_000 + timing.RestartGameSettings.ExtraTimeCheckGame, token).ConfigureAwait(false); 
+                await Task.Delay(2_000 + timing.RestartGameSettings.ExtraTimeCheckGame, token).ConfigureAwait(false);
             }
 
             // If they have DLC on the system and can't use it, requires an UP + A to start the game.
@@ -2118,7 +2115,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
                 Log($"Attempting to override seed for {Settings.ActiveRaids[RotationCount].Species}.");
                 await OverrideSeedIndex(SeedIndexToReplace, token).ConfigureAwait(false);
-                Log("Seed override completed.");                
+                Log("Seed override completed.");
             }
 
             for (int i = 0; i < 8; i++)
@@ -2455,61 +2452,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                         RaidEmbedInfo.Moves = string.Concat(moves.Where(z => z != 0).Select(z => $"{strings.Move[z]}\n")).TrimEnd(Environment.NewLine.ToCharArray());
                         RaidEmbedInfo.ScaleText = $"{PokeSizeDetailedUtil.GetSizeRating(pk.Scale)}";
                         RaidEmbedInfo.ScaleNumber = pk.Scale;
-                        /*if (Settings.PresetFilters.UsePresetFile)
-                        {
-                            string tera = $"{(MoveType)container.Raids[i].TeraType}";
-                            if (!string.IsNullOrEmpty(Settings.ActiveRaids[a].Title) && !Settings.PresetFilters.ForceTitle)
-                                ModDescription[0] = Settings.ActiveRaids[a].Title;
-
-                            if (Settings.ActiveRaids[a].Description.Length > 0 && !Settings.PresetFilters.ForceDescription)
-                            {
-                                string[] presetOverwrite = new string[Settings.ActiveRaids[a].Description.Length + 1];
-                                presetOverwrite[0] = ModDescription[0];
-                                for (int l = 0; l < Settings.ActiveRaids[a].Description.Length; l++)
-                                    presetOverwrite[l + 1] = Settings.ActiveRaids[a].Description[l];
-
-                                ModDescription = presetOverwrite;
-                            }
-
-                            var raidDescription = ProcessRaidPlaceholders(ModDescription, pk);
-
-                            for (int j = 0; j < raidDescription.Length; j++)
-                            {
-                                raidDescription[j] = raidDescription[j]
-                                .Replace("{tera}", tera)
-                                .Replace("{difficulty}", $"{stars}")
-                                .Replace("{stars}", starcount)
-                                .Trim();
-                                raidDescription[j] = Regex.Replace(raidDescription[j], @"\s+", " ");
-                            }
-
-                            if (Settings.PresetFilters.IncludeMoves)
-                                raidDescription = raidDescription.Concat(new string[] { Environment.NewLine, movestr, extramoves }).ToArray();
-
-                            if (Settings.PresetFilters.IncludeRewards)
-                                raidDescription = raidDescription.Concat(new string[] { res.Replace("\n", Environment.NewLine) }).ToArray();
-
-                            if (Settings.PresetFilters.TitleFromPreset)
-                            {
-                                if (string.IsNullOrEmpty(Settings.ActiveRaids[a].Title) || Settings.PresetFilters.ForceTitle)
-                                    Settings.ActiveRaids[a].Title = raidDescription[0];
-
-                                if (Settings.ActiveRaids[a].Description == null || Settings.ActiveRaids[a].Description.Length == 0 || Settings.ActiveRaids[a].Description.All(string.IsNullOrEmpty) || Settings.PresetFilters.ForceDescription)
-                                    Settings.ActiveRaids[a].Description = raidDescription.Skip(1).ToArray();
-                            }
-                            else if (!Settings.PresetFilters.TitleFromPreset)
-                            {
-                                if (Settings.ActiveRaids[a].Description == null || Settings.ActiveRaids[a].Description.Length == 0 || Settings.ActiveRaids[a].Description.All(string.IsNullOrEmpty) || Settings.PresetFilters.ForceDescription)
-                                    Settings.ActiveRaids[a].Description = raidDescription.ToArray();
-                            }
-                        }
-
-                        else if (!Settings.PresetFilters.UsePresetFile)
-                        {
-                            Settings.ActiveRaids[a].Description = new[] { "\n**Raid Info:**", pkinfo, "\n**Moveset:**", movestr, extramoves, BaseDescription, res };
-                            Settings.ActiveRaids[a].Title = $"{(Species)container.Encounters[i].Species} {starcount} - {(MoveType)container.Raids[i].TeraType}";
-                        } */
-
                         Settings.ActiveRaids[a].IsSet = false; // we don't use zyro's preset.txt file, ew.
                         done = true;
                     }

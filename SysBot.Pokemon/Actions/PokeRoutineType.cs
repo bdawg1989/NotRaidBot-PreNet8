@@ -13,7 +13,6 @@
 
         /// <summary> Performs and rotates group battles as a host. </summary>
         RotatingRaidBot = 2_000,
-
     }
 
     public static class PokeRoutineTypeExtensions
