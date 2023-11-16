@@ -1200,6 +1200,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             await Task.Delay(0_500, token).ConfigureAwait(false);
             await Click(B, 0_500, token).ConfigureAwait(false);
             await Click(B, 0_500, token).ConfigureAwait(false);
+            await Click(B, 0_500, token).ConfigureAwait(false);
 
             // Inject PartyPK after we save the game.
             var len = string.Empty;
