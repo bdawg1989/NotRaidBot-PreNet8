@@ -78,7 +78,7 @@ namespace SysBot.Pokemon
             [Category(Hosting), Description("Set to \"true\" when events are active to properly process level 7 (event) and level 5 (distribution) raids.")]
             public bool EventActive { get; set; } = false;
 
-            [Category(Hosting), Description("Set this value to the value of the event den location (Event Index) from Tera Finder.  Make sure you are at this location if you plan to host event raids.  -1 means No Event.")]
+            [Category(Hosting), Description("Event Group ID.  -1 means No Event.")]
             public int RaidDeliveryGroupID { get; set; } = -1;
         }
 
