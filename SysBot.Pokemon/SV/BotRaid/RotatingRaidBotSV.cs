@@ -2357,9 +2357,10 @@ namespace SysBot.Pokemon.SV.BotRaid
             var allRaids = raids.Concat(container.Raids).ToList().AsReadOnly();
             var allEncounters = encounters.Concat(container.Encounters).ToList().AsReadOnly();
             var allRewards = rewards.Concat(container.Rewards).ToList().AsReadOnly();
-            container.ClearRaids();
-            container.ClearEncounters();
-            container.ClearRewards();
+
+            container.SetRaids(allRaids);
+            container.SetEncounters(allEncounters);
+            container.SetRewards(allRewards);
             if (init)
             {
                 for (int rc = 0; rc < Settings.ActiveRaids.Count; rc++)
