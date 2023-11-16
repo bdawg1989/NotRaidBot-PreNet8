@@ -2321,15 +2321,18 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             if (init || SeedIndexToReplace >= 70 && SeedIndexToReplace <= 94)
             {
-                (delivery, enc, var num4List) = container.ReadAllRaids(dataK, StoryProgress, EventProgress, 0, TeraRaidMapParent.Kitakami);
+                (delivery, enc, var num4ListKitakami) = container.ReadAllRaids(dataK, StoryProgress, EventProgress, 0, TeraRaidMapParent.Kitakami);
 
                 if (enc > 0)
                     Log($"Failed to find encounters for {enc} raid(s).");
 
                 if (delivery > 0)
                 {
-                    Log($"Invalid delivery group ID for {delivery} raid(s). Group IDs: {string.Join(", ", num4List)}. Try deleting the \"cache\" folder.");
+                    Log($"Invalid delivery group ID for {delivery} raid(s). Group IDs: {string.Join(", ", num4ListKitakami)}. Try deleting the \"cache\" folder.");
                 }
+
+                // Initialize a counter for Kitakami raids
+                int raidIndexKitakami = 0;
 
                 // Check the raids to see if any are event raids for Kitakami
                 foreach (var raid in container.Raids)
@@ -2337,8 +2340,19 @@ namespace SysBot.Pokemon.SV.BotRaid
                     if (raid.IsEvent)
                     {
                         Settings.EventSettings.EventActive = true;
+
+                        // Safety check for Kitakami raids
+                        if (raidIndexKitakami < num4ListKitakami.Count)
+                        {
+                            // Update the EventSettings.RaidDeliveryGroupID for Kitakami event raids
+                            Settings.EventSettings.RaidDeliveryGroupID = num4ListKitakami[raidIndexKitakami];
+                            Log($"Updated Kitakami Event Raid Delivery Group ID to {num4ListKitakami[raidIndexKitakami]}.");
+                        }
+
                         break; // Exit loop if an event raid is found
                     }
+
+                    raidIndexKitakami++;
                 }
             }
 

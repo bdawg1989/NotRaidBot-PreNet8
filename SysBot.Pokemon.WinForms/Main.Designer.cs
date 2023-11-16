@@ -228,7 +228,7 @@ namespace SysBot.Pokemon.WinForms
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1000, 800);
+            ClientSize = new Size(800, 500);
             Controls.Add(B_Stop);
             Controls.Add(B_Start);
             Controls.Add(TC_Main);
