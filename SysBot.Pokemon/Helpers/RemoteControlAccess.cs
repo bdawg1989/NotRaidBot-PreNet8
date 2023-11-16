@@ -11,7 +11,6 @@ namespace SysBot.Pokemon
         public ulong ID { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Comment { get; set; } = string.Empty;
-
         public override string ToString() => $"{Name} = {ID} // {Comment}";
     }
 
@@ -43,6 +42,7 @@ namespace SysBot.Pokemon
         public bool Contains(string name) => List.Any(z => z.Name == name);
 
         public int RemoveAll(Predicate<RemoteControlAccess> item) => List.RemoveAll(item);
+
         public void Clear() => List.Clear();
 
         /// <summary>

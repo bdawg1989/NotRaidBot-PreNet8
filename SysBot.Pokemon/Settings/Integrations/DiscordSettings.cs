@@ -5,38 +5,12 @@ namespace SysBot.Pokemon
 {
     public class DiscordSettings
     {
-        public enum EmbedColorOption
-        {
-            Blue,
-            Green,
-            Red,
-            Gold,
-            Purple,
-            Teal,
-            Orange,
-            Magenta,
-            LightGrey,
-            DarkGrey
-        }
-        public enum ThumbnailOption
-        {
-            Gengar,
-            Pikachu,
-            Umbreon,
-            Sylveon,
-            Charmander,
-            Jigglypuff,
-            Flareon,
-            Custom
-        }
-
         private const string Startup = nameof(Startup);
         private const string Operation = nameof(Operation);
         private const string Channels = nameof(Channels);
         private const string Roles = nameof(Roles);
         private const string Users = nameof(Users);
         public override string ToString() => "Discord Integration Settings";
-
 
         // Startup
 
