@@ -2313,7 +2313,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                     // Set DeliveryGroupID back to -1 and EventActive to False
                     Settings.EventSettings.RaidDeliveryGroupID = -1;
                     Settings.EventSettings.EventActive = false;
-                    Log("No event raids found.");
                 }
             }
 
@@ -2365,7 +2364,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                     // Set DeliveryGroupID back to -1 and EventActive to False
                     Settings.EventSettings.RaidDeliveryGroupID = -1;
                     Settings.EventSettings.EventActive = false;
-                    Log("No event raids found.");
                 }
             }
 
