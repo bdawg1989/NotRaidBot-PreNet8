@@ -510,7 +510,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 if (seed == 0)
                 {
                     SeedIndexToReplace = i;
-                    Log($"Index located at {i}");
+                    Log($"Raid Den Located at 00{i + 1}");
                     return;
                 }
             }
@@ -522,7 +522,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 if (seed == 0)
                 {
                     SeedIndexToReplace = i;
-                    Log($"Index located at {i}");
+                    Log($"Raid Den Located at 00{i + 1}");
                     IsKitakami = true;
                     return;
                 }
@@ -1172,7 +1172,6 @@ namespace SysBot.Pokemon.SV.BotRaid
 
         private async Task<bool> PrepareForRaid(CancellationToken token)
         {
-
             if (Settings.ActiveRaids[RotationCount].AddedByRACommand)
             {
                 var user = Settings.ActiveRaids[RotationCount].User;
@@ -1184,17 +1183,16 @@ namespace SysBot.Pokemon.SV.BotRaid
                     }
                     catch (Discord.Net.HttpException ex)
                     {
-                        // Handle exception (e.g., log the error or send a message to a logging channel)
                         Log($"Failed to send DM to {user.Username}. They might have DMs turned off. Exception: {ex.Message}");
                     }
                 }
             }
             Log("Preparing lobby...");
             LobbyFiltersCategory settings = new LobbyFiltersCategory();
-            // Use ConnectToOnline for handling connection logic
+
             if (!await ConnectToOnline(Hub.Config, token))
             {
-                return false; // Handle the case where connection couldn't be established
+                return false;
             }
 
             await Task.Delay(0_500, token).ConfigureAwait(false);
@@ -1202,33 +1200,40 @@ namespace SysBot.Pokemon.SV.BotRaid
             await Click(B, 0_500, token).ConfigureAwait(false);
             await Click(B, 0_500, token).ConfigureAwait(false);
 
-            // Inject PartyPK after we save the game.
-            var len = string.Empty;
-            foreach (var l in Settings.ActiveRaids[RotationCount].PartyPK)
-                len += l;
-            if (len.Length > 1 && EmptyRaid == 0)
+            // Check if firstRun is false before injecting PartyPK
+            if (!firstRun)
             {
-                Log("Preparing PartyPK. Sit tight.");
-                await Task.Delay(2_500 + settings.ExtraTimeLobbyDisband, token).ConfigureAwait(false);
-                await SetCurrentBox(0, token).ConfigureAwait(false);
-                var res = string.Join("\n", Settings.ActiveRaids[RotationCount].PartyPK);
-                if (res.Length > 4096)
-                    res = res[..4096];
-                await InjectPartyPk(res, token).ConfigureAwait(false);
+                var len = string.Empty;
+                foreach (var l in Settings.ActiveRaids[RotationCount].PartyPK)
+                    len += l;
+                if (len.Length > 1 && EmptyRaid == 0)
+                {
+                    Log("Preparing PartyPK. Sit tight.");
+                    await Task.Delay(2_500 + settings.ExtraTimeLobbyDisband, token).ConfigureAwait(false);
+                    await SetCurrentBox(0, token).ConfigureAwait(false);
+                    var res = string.Join("\n", Settings.ActiveRaids[RotationCount].PartyPK);
+                    if (res.Length > 4096)
+                        res = res[..4096];
+                    await InjectPartyPk(res, token).ConfigureAwait(false);
 
-                await Click(X, 2_000, token).ConfigureAwait(false);
-                await Click(DRIGHT, 0_500, token).ConfigureAwait(false);
-                await SetStick(SwitchStick.LEFT, 0, -32000, 1_000, token).ConfigureAwait(false);
-                await SetStick(SwitchStick.LEFT, 0, 0, 0, token).ConfigureAwait(false);
-                for (int i = 0; i < 2; i++)
-                    await Click(DDOWN, 0_500, token).ConfigureAwait(false);
-                await Click(A, 3_500, token).ConfigureAwait(false);
-                await Click(Y, 0_500, token).ConfigureAwait(false);
-                await Click(DLEFT, 0_800, token).ConfigureAwait(false);
-                await Click(Y, 0_500, token).ConfigureAwait(false);
-                for (int i = 0; i < 2; i++)
-                    await Click(B, 1_500, token).ConfigureAwait(false);
-                Log("PartyPK switch successful.");
+                    await Click(X, 2_000, token).ConfigureAwait(false);
+                    await Click(DRIGHT, 0_500, token).ConfigureAwait(false);
+                    await SetStick(SwitchStick.LEFT, 0, -32000, 1_000, token).ConfigureAwait(false);
+                    await SetStick(SwitchStick.LEFT, 0, 0, 0, token).ConfigureAwait(false);
+                    for (int i = 0; i < 2; i++)
+                        await Click(DDOWN, 0_500, token).ConfigureAwait(false);
+                    await Click(A, 3_500, token).ConfigureAwait(false);
+                    await Click(Y, 0_500, token).ConfigureAwait(false);
+                    await Click(DLEFT, 0_800, token).ConfigureAwait(false);
+                    await Click(Y, 0_500, token).ConfigureAwait(false);
+                    for (int i = 0; i < 2; i++)
+                        await Click(B, 1_500, token).ConfigureAwait(false);
+                    Log("PartyPK switch successful.");
+                }
+            }
+            else
+            {
+                Log("First run detected, skipping PartyPK injection.");
             }
 
             for (int i = 0; i < 4; i++)
@@ -1236,22 +1241,19 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             await Task.Delay(1_500, token).ConfigureAwait(false);
 
-            // If not in the overworld, we've been attacked so quit earlier.
             if (!await IsOnOverworld(OverworldOffset, token).ConfigureAwait(false))
                 return false;
 
             await Click(A, 3_000, token).ConfigureAwait(false);
             await Click(A, 3_000, token).ConfigureAwait(false);
 
-
-            if (firstRun) // If it's the first run
+            if (firstRun)
             {
                 Log("First Run detected. Opening Lobby up to all to start raid rotation.");
                 await Click(DDOWN, 1_000, token).ConfigureAwait(false);
             }
-            else if (!Settings.ActiveRaids[RotationCount].IsCoded || Settings.ActiveRaids[RotationCount].IsCoded && EmptyRaid == Settings.LobbyOptions.EmptyRaidLimit && Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.OpenLobby)
+            else if (!Settings.ActiveRaids[RotationCount].IsCoded || (Settings.ActiveRaids[RotationCount].IsCoded && EmptyRaid == Settings.LobbyOptions.EmptyRaidLimit && Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.OpenLobby))
             {
-                // If not the first run, then apply the Settings logic
                 if (Settings.ActiveRaids[RotationCount].IsCoded && EmptyRaid == Settings.LobbyOptions.EmptyRaidLimit && Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.OpenLobby)
                     Log($"We had {Settings.LobbyOptions.EmptyRaidLimit} empty raids.. Opening this raid to all!");
                 await Click(DDOWN, 1_000, token).ConfigureAwait(false);
@@ -2386,7 +2388,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                         {
                             SeedIndexToReplace = i;
                             RotationCount = rc;
-                            Log($"Den ID: {SeedIndexToReplace} stored.");
+                            Log($"Raid Den Located at 00{i + 1}");
                             Log($"Rotation Count set to {RotationCount}");
                             return;
                         }
@@ -2427,7 +2429,13 @@ namespace SysBot.Pokemon.SV.BotRaid
                             res = string.Empty;
                         else
                             res = "**Special Rewards:**\n" + res;
-                        Log($"Seed {seed:X8} found for {(Species)container.Encounters[i].Species}");
+                        // Retrieve the area and den information
+                        var raid = container.Raids[i];
+                        var areaText = $"{Areas.GetArea((int)(raid.Area - 1), raid.MapParent)} - Den {raid.Den}";
+
+                        // Log the area and den information
+                        Log($"Seed {seed:X8} found for {(Species)container.Encounters[i].Species} in {areaText}");
+
                         Settings.ActiveRaids[a].Seed = $"{seed:X8}";
                         var stars = container.Raids[i].IsEvent ? container.Encounters[i].Stars : container.Raids[i].GetStarCount(container.Raids[i].Difficulty, StoryProgress, container.Raids[i].IsBlack);
                         string starcount = string.Empty;
@@ -2447,6 +2455,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                         Settings.ActiveRaids[a].SpeciesForm = container.Encounters[i].Form;
                         var pkinfo = RaidExtensions<PK9>.GetRaidPrintName(pk);
                         var strings = GameInfo.GetStrings(1);
+
                         var moves = new ushort[4] { container.Encounters[i].Move1, container.Encounters[i].Move2, container.Encounters[i].Move3, container.Encounters[i].Move4 };
                         var movestr = string.Concat(moves.Where(z => z != 0).Select(z => $"{strings.Move[z]}ㅤ{Environment.NewLine}")).TrimEnd(Environment.NewLine.ToCharArray());
                         var extramoves = string.Empty;
