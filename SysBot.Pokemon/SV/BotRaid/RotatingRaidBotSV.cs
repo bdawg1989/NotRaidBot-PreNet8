@@ -2287,12 +2287,13 @@ namespace SysBot.Pokemon.SV.BotRaid
 
                 // Initialize a counter to track the index in num4List
                 int raidIndex = 0;
-
+                bool eventRaidFoundP = false;
                 // Check the raids to see if any are event raids for Paldea
                 foreach (var raid in container.Raids)
                 {
                     if (raid.IsEvent)
                     {
+                        eventRaidFoundP = true;
                         Settings.EventSettings.EventActive = true;
 
                         // Safety check to ensure raidIndex is within the bounds of num4List
@@ -2300,13 +2301,19 @@ namespace SysBot.Pokemon.SV.BotRaid
                         {
                             // Update the EventSettings.RaidDeliveryGroupID with the corresponding Group ID
                             Settings.EventSettings.RaidDeliveryGroupID = num4List[raidIndex];
-                            Log($"Updated Event Raid Delivery Group ID to {num4List[raidIndex]}.");
+                            Log($"Event Found! Updating Delivery Group ID to {num4List[raidIndex]}.");
                         }
 
                         break; // Exit loop if an event raid is found
                     }
-
                     raidIndex++; // Increment raidIndex to keep it in sync with the raid list
+                }
+                if (!eventRaidFoundP)
+                {
+                    // Set DeliveryGroupID back to -1 and EventActive to False
+                    Settings.EventSettings.RaidDeliveryGroupID = -1;
+                    Settings.EventSettings.EventActive = false;
+                    Log("No event raids found.");
                 }
             }
 
@@ -2331,12 +2338,13 @@ namespace SysBot.Pokemon.SV.BotRaid
 
                 // Initialize a counter for Kitakami raids
                 int raidIndexKitakami = 0;
-
+                bool eventRaidFoundK = false;
                 // Check the raids to see if any are event raids for Kitakami
                 foreach (var raid in container.Raids)
                 {
                     if (raid.IsEvent)
                     {
+                        eventRaidFoundK = true;
                         Settings.EventSettings.EventActive = true;
 
                         // Safety check for Kitakami raids
@@ -2344,13 +2352,20 @@ namespace SysBot.Pokemon.SV.BotRaid
                         {
                             // Update the EventSettings.RaidDeliveryGroupID for Kitakami event raids
                             Settings.EventSettings.RaidDeliveryGroupID = num4ListKitakami[raidIndexKitakami];
-                            Log($"Updated Kitakami Event Raid Delivery Group ID to {num4ListKitakami[raidIndexKitakami]}.");
+                            Log($"Event Found! Updating Delivery Group ID to {num4ListKitakami[raidIndexKitakami]}.");
                         }
 
                         break; // Exit loop if an event raid is found
                     }
 
                     raidIndexKitakami++;
+                }
+                if (!eventRaidFoundK)
+                {
+                    // Set DeliveryGroupID back to -1 and EventActive to False
+                    Settings.EventSettings.RaidDeliveryGroupID = -1;
+                    Settings.EventSettings.EventActive = false;
+                    Log("No event raids found.");
                 }
             }
 
