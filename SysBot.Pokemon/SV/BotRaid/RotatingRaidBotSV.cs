@@ -1267,6 +1267,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             return true;
         }
 
+
         private async Task RollBackTime(CancellationToken token)
         {
             for (int i = 0; i < 2; i++)
@@ -2290,6 +2291,8 @@ namespace SysBot.Pokemon.SV.BotRaid
                 // Initialize a counter to track the index in num4List
                 int raidIndex = 0;
                 bool eventRaidFoundP = false;
+                int eventRaidPAreaId = -1;
+                int eventRaidPDenId = -1;
                 // Check the raids to see if any are event raids for Paldea
                 foreach (var raid in container.Raids)
                 {
@@ -2297,13 +2300,19 @@ namespace SysBot.Pokemon.SV.BotRaid
                     {
                         eventRaidFoundP = true;
                         Settings.EventSettings.EventActive = true;
+                        // Extract and log the Area ID and Den ID of the Event Raid
+                        eventRaidPAreaId = (int)raid.Area;
+                        eventRaidPDenId = (int)raid.Den;
+                        var areaText = $"{Areas.GetArea((int)(raid.Area - 1), raid.MapParent)} - Den {raid.Den}";
+
+                        Log($"Event Raid found! Located in {areaText}");
 
                         // Safety check to ensure raidIndex is within the bounds of num4List
                         if (raidIndex < num4List.Count)
                         {
                             // Update the EventSettings.RaidDeliveryGroupID with the corresponding Group ID
                             Settings.EventSettings.RaidDeliveryGroupID = num4List[raidIndex];
-                            Log($"Event Found! Updating Delivery Group ID to {num4List[raidIndex]}.");
+                            Log($"Updating Delivery Group ID to {num4List[raidIndex]}.");
                         }
 
                         break; // Exit loop if an event raid is found
@@ -2376,6 +2385,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             container.SetRaids(allRaids);
             container.SetEncounters(allEncounters);
             container.SetRewards(allRewards);
+
             if (init)
             {
                 for (int rc = 0; rc < Settings.ActiveRaids.Count; rc++)
@@ -2435,7 +2445,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
                         // Log the area and den information
                         Log($"Seed {seed:X8} found for {(Species)container.Encounters[i].Species} in {areaText}");
-
+                        firstRun = false;
                         Settings.ActiveRaids[a].Seed = $"{seed:X8}";
                         var stars = container.Raids[i].IsEvent ? container.Encounters[i].Stars : container.Raids[i].GetStarCount(container.Raids[i].Difficulty, StoryProgress, container.Raids[i].IsBlack);
                         string starcount = string.Empty;
