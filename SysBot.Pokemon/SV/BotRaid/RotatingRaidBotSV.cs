@@ -5,6 +5,7 @@ using RaidCrawler.Core.Structures;
 using SysBot.Base;
 using SysBot.Pokemon.SV.BotRaid.Helpers;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -67,6 +68,10 @@ namespace SysBot.Pokemon.SV.BotRaid
         private static int attemptCount = 0;
         public static bool IsKitakami = false;
         private DateTime TimeForRollBackCheck = DateTime.Now;
+        private uint currRaidAreaID;
+        private uint currRaidDenID;
+        private uint zeroIndexRaidAreaID;
+        private uint zeroIndexRaidDenID;
 
         public override async Task MainLoop(CancellationToken token)
         {
@@ -511,6 +516,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 {
                     SeedIndexToReplace = i;
                     Log($"Raid Den Located at 00{i + 1}");
+                    await LogCurrentRaidDetails(SeedIndexToReplace, token);
                     return;
                 }
             }
@@ -1016,19 +1022,57 @@ namespace SysBot.Pokemon.SV.BotRaid
             // Existing logic for overriding the seed...
             List<long> ptr = DeterminePointer(index); // Assuming DeterminePointer is a method that returns the correct pointer
 
+            // Check CrystalType for area and den ID override
+            var crystalType = Settings.ActiveRaids[RotationCount].CrystalType;
             var seed = uint.Parse(Settings.ActiveRaids[RotationCount].Seed, NumberStyles.AllowHexSpecifier);
-            byte[] inj = BitConverter.GetBytes(seed);
-            var currseed = await SwitchConnection.PointerPeek(4, ptr, token).ConfigureAwait(false);
-            Log($"Replacing {BitConverter.ToString(currseed)} with {BitConverter.ToString(inj)}.");
-            await SwitchConnection.PointerPoke(inj, ptr, token).ConfigureAwait(false);
+            if (crystalType == TeraCrystalType.Might)
+            {
+                Log($"CrystalType is Might, proceeding with updating Area ID and Den ID for raid at index {index}.");
+                await SwapRaidLocationsAsync(index, seed, token).ConfigureAwait(false);
+            }
+            else
+            {
+                byte[] inj = BitConverter.GetBytes(seed);
+                var currseed = await SwitchConnection.PointerPeek(4, ptr, token).ConfigureAwait(false);
+                Log($"Replacing {BitConverter.ToString(currseed)} with {BitConverter.ToString(inj)}.");
+                await SwitchConnection.PointerPoke(inj, ptr, token).ConfigureAwait(false);
 
-            var ptr2 = ptr;
-            ptr2[3] += 0x08;
-            var crystal = BitConverter.GetBytes((int)Settings.ActiveRaids[RotationCount].CrystalType);
-            var currcrystal = await SwitchConnection.PointerPeek(1, ptr2, token).ConfigureAwait(false);
-            if (currcrystal != crystal)
-                await SwitchConnection.PointerPoke(crystal, ptr2, token).ConfigureAwait(false);
+                var ptr2 = ptr;
+                ptr2[3] += 0x08;
+                var crystal = BitConverter.GetBytes((int)Settings.ActiveRaids[RotationCount].CrystalType);
+                var currcrystal = await SwitchConnection.PointerPeek(1, ptr2, token).ConfigureAwait(false);
+                if (currcrystal != crystal)
+                    await SwitchConnection.PointerPoke(crystal, ptr2, token).ConfigureAwait(false);
+            }
         }
+
+        private async Task SwapRaidLocationsAsync(int currentRaidIndex, uint seed, CancellationToken token)
+        {
+            Log($"Starting SwapRaidLocationsAsync for raid index: {currentRaidIndex}");
+
+            // Log the global variables directly without reassigning them
+            Log($"Global Variables - Current Raid Area ID: {currRaidAreaID}, Den ID: {currRaidDenID}");
+            Log($"Global Variables - Raid 001 Area ID: {zeroIndexRaidAreaID}, Den ID: {zeroIndexRaidDenID}");
+
+            // Override the data using the global variables
+            var data = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP + RaidBlock.HEADER_SIZE, (int)(RaidBlock.SIZE_BASE - RaidBlock.HEADER_SIZE), token);
+            var dataMemory = new Memory<byte>(data);
+
+            BinaryPrimitives.WriteUInt32LittleEndian(dataMemory[16..].Span, seed); // new seed
+            BinaryPrimitives.WriteUInt32LittleEndian(dataMemory[..].Span, zeroIndexRaidAreaID != 0 ? 1U : 0U); 
+            BinaryPrimitives.WriteUInt32LittleEndian(dataMemory[12..].Span, zeroIndexRaidDenID); // use zeroIndexRaidDenID
+            BinaryPrimitives.WriteUInt32LittleEndian(dataMemory[4..].Span, zeroIndexRaidAreaID); // use zeroIndexRaidAreaID
+
+            var updatedData = dataMemory.ToArray();
+
+            Log($"Updated: Raid 001 now has Area ID: {zeroIndexRaidAreaID}, Den ID: {zeroIndexRaidDenID}");
+
+            // Write the updated data back
+            await SwitchConnection.WriteBytesAbsoluteAsync(updatedData, RaidBlockPointerP + RaidBlock.HEADER_SIZE, token).ConfigureAwait(false);
+
+            Log("Completed SwapRaidLocationsAsync.");
+        }
+
 
         private List<long> DeterminePointer(int index)
         {
@@ -1204,9 +1248,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             await Task.Delay(0_500, token).ConfigureAwait(false);
             await Click(HOME, 0_500, token).ConfigureAwait(false);
             await Click(HOME, 0_500, token).ConfigureAwait(false);
-            await Click(B, 0_500, token).ConfigureAwait(false);
-            await Click(B, 0_500, token).ConfigureAwait(false);
-            await Click(B, 0_500, token).ConfigureAwait(false);
             // Check if firstRun is false before injecting PartyPK
             if (!firstRun)
             {
@@ -2219,6 +2260,39 @@ namespace SysBot.Pokemon.SV.BotRaid
             return _ = $"https://raw.githubusercontent.com/zyro670/PokeTextures/main/Placeholder_Sprites/scaled_up_sprites/Shiny/AlternateArt/" + $"{pkm.Species}{pkmform}" + ".png";
         }
 
+        private async Task LogCurrentRaidDetails(int raidIndex, CancellationToken token)
+        {
+            // Check if the current raid or Raid 001 details have already been set (non-zero)
+            if ((currRaidAreaID != 0 && currRaidDenID != 0) && (zeroIndexRaidAreaID != 0 && zeroIndexRaidDenID != 0))
+                return;
+
+            var data = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP + RaidBlock.HEADER_SIZE, (int)(RaidBlock.SIZE_BASE - RaidBlock.HEADER_SIZE), token);
+
+            // Fetch and log details for the current raid
+            if (currRaidAreaID == 0 || currRaidDenID == 0)
+            {
+                var currentRaid = new Raid(data.Skip(raidIndex * Raid.SIZE).Take(Raid.SIZE).ToArray(), TeraRaidMapParent.Paldea);
+                var currentRaidDetail = new TeraRaidDetail(currentRaid.GetData());
+
+                currRaidAreaID = currentRaidDetail.AreaID;
+                currRaidDenID = currentRaidDetail.SpawnPointID;
+
+                Log($"Raid index: {raidIndex}, Area ID: {currRaidAreaID}, Den ID: {currRaidDenID}");
+            }
+
+            // Fetch and log details for Raid 001
+            if (zeroIndexRaidAreaID == 0 || zeroIndexRaidDenID == 0)
+            {
+                var raid001 = new Raid(data.Take(Raid.SIZE).ToArray(), TeraRaidMapParent.Paldea);
+                var raid001Detail = new TeraRaidDetail(raid001.GetData());
+
+                zeroIndexRaidAreaID = raid001Detail.AreaID;
+                zeroIndexRaidDenID = raid001Detail.SpawnPointID;
+
+                Log($"Raid 001 - Area ID: {zeroIndexRaidAreaID}, Den ID: {zeroIndexRaidDenID}");
+            }
+        }
+
         private async Task ReadRaids(bool init, CancellationToken token)
         {
             Log("Starting raid reads..");
@@ -2407,11 +2481,13 @@ namespace SysBot.Pokemon.SV.BotRaid
                             RotationCount = rc;
                             Log($"Raid Den Located at 00{i + 1}");
                             Log($"Rotation Count set to {RotationCount}");
+                            await LogCurrentRaidDetails(SeedIndexToReplace, token);
                             return;
                         }
                     }
                 }
             }
+
             bool done = false;
             for (int i = 0; i < container.Raids.Count; i++)
             {
