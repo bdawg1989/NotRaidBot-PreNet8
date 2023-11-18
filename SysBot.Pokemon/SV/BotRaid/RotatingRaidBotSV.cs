@@ -1012,21 +1012,9 @@ namespace SysBot.Pokemon.SV.BotRaid
         {
             if (index == -1)
                 return;
-            List<long> ptr;
-            if (index < 69)
-            {
-                ptr = new(Offsets.RaidBlockPointerP)
-                {
-                    [3] = 0x40 + (index + 1) * 0x20
-                };
-            }
-            else
-            {
-                ptr = new(Offsets.RaidBlockPointerK)
-                {
-                    [3] = 0xCE8 + (index - 69) * 0x20
-                };
-            }
+
+            // Existing logic for overriding the seed...
+            List<long> ptr = DeterminePointer(index); // Assuming DeterminePointer is a method that returns the correct pointer
 
             var seed = uint.Parse(Settings.ActiveRaids[RotationCount].Seed, NumberStyles.AllowHexSpecifier);
             byte[] inj = BitConverter.GetBytes(seed);
@@ -1040,6 +1028,24 @@ namespace SysBot.Pokemon.SV.BotRaid
             var currcrystal = await SwitchConnection.PointerPeek(1, ptr2, token).ConfigureAwait(false);
             if (currcrystal != crystal)
                 await SwitchConnection.PointerPoke(crystal, ptr2, token).ConfigureAwait(false);
+        }
+
+        private List<long> DeterminePointer(int index)
+        {
+            if (index < 69)
+            {
+                return new(Offsets.RaidBlockPointerP)
+                {
+                    [3] = 0x40 + (index + 1) * 0x20
+                };
+            }
+            else
+            {
+                return new(Offsets.RaidBlockPointerK)
+                {
+                    [3] = 0xCE8 + (index - 69) * 0x20
+                };
+            }
         }
 
         private async Task<bool> DenStatus(int index, CancellationToken token)
@@ -1196,10 +1202,11 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
 
             await Task.Delay(0_500, token).ConfigureAwait(false);
+            await Click(HOME, 0_500, token).ConfigureAwait(false);
+            await Click(HOME, 0_500, token).ConfigureAwait(false);
             await Click(B, 0_500, token).ConfigureAwait(false);
             await Click(B, 0_500, token).ConfigureAwait(false);
             await Click(B, 0_500, token).ConfigureAwait(false);
-
             // Check if firstRun is false before injecting PartyPK
             if (!firstRun)
             {
@@ -2445,7 +2452,6 @@ namespace SysBot.Pokemon.SV.BotRaid
 
                         // Log the area and den information
                         Log($"Seed {seed:X8} found for {(Species)container.Encounters[i].Species} in {areaText}");
-                        firstRun = false;
                         Settings.ActiveRaids[a].Seed = $"{seed:X8}";
                         var stars = container.Raids[i].IsEvent ? container.Encounters[i].Stars : container.Raids[i].GetStarCount(container.Raids[i].Difficulty, StoryProgress, container.Raids[i].IsBlack);
                         string starcount = string.Empty;
