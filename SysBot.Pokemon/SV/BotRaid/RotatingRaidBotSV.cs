@@ -2541,12 +2541,6 @@ namespace SysBot.Pokemon.SV.BotRaid
 
                     raidIndexKitakami++;
                 }
-                if (!eventRaidFoundK)
-                {
-                    // Set DeliveryGroupID back to -1 and EventActive to False
-                    Settings.EventSettings.RaidDeliveryGroupID = -1;
-                    Settings.EventSettings.EventActive = false;
-                }
             }
 
             var allRaids = raids.Concat(container.Raids).ToList().AsReadOnly();
