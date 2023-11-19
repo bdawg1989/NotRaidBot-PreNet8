@@ -513,7 +513,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 if (seed == 0)
                 {
                     SeedIndexToReplace = i;
-                    Log($"Raid Den Located at 00{i + 1}");
+                    Log($"Raid Den Located at {i + 1:00}");
                     return;
                 }
             }
@@ -525,7 +525,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 if (seed == 0)
                 {
                     SeedIndexToReplace = i;
-                    Log($"Raid Den Located at 00{i + 1}");
+                    Log($"Raid Den Located at {i + 1:00}");
                     IsKitakami = true;
                     return;
                 }
@@ -2563,7 +2563,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                         {
                             SeedIndexToReplace = i;
                             RotationCount = rc;
-                            Log($"Raid Den Located at 00{i + 1}");
+                            Log($"Raid Den Located at {i + 1:00}");
                             Log($"Rotation Count set to {RotationCount}");
                             return;
                         }

@@ -3,7 +3,6 @@ using Discord.Commands;
 using PKHeX.Core;
 using SysBot.Base;
 using SysBot.Pokemon.Discord.Helpers;
-using SysBot.Pokemon.SV.BotRaid;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -215,11 +214,11 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             }
 
             // Determine the correct map
-            var selectedMap = RotatingRaidBotSV.IsKitakami ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea;
+            var selectedMap = IsKitakami ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea;
 
             var raidDeliveryGroupID = settings.EventSettings.RaidDeliveryGroupID;
             var rewardsToShow = settings.EmbedToggles.RewardsToShow;
-            var (pk, raidEmbed) = RotatingRaidBotSV.RaidInfoCommand(seed, (int)crystalType, selectedMap, storyProgressLevel, raidDeliveryGroupID, rewardsToShow);
+            var (pk, raidEmbed) = RaidInfoCommand(seed, (int)crystalType, selectedMap, storyProgressLevel, raidDeliveryGroupID, rewardsToShow);
             var description = string.Empty;
             var prevpath = "bodyparam.txt";
             var filepath = "RaidFilesSV\\bodyparam.txt";
@@ -323,10 +322,10 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             }
 
             // Determine the correct map
-            var selectedMap = RotatingRaidBotSV.IsKitakami ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea;
+            var selectedMap = IsKitakami ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea;
             var rewardsToShow = settings.EmbedToggles.RewardsToShow;
             var raidDeliveryGroupID = settings.EventSettings.RaidDeliveryGroupID;
-            var (pk, raidEmbed) = RotatingRaidBotSV.RaidInfoCommand(seed, (int)crystalType, selectedMap, storyProgressLevel, raidDeliveryGroupID, rewardsToShow);
+            var (pk, raidEmbed) = RaidInfoCommand(seed, (int)crystalType, selectedMap, storyProgressLevel, raidDeliveryGroupID, rewardsToShow);
             var description = string.Empty;
             var prevpath = "bodyparam.txt";
             var filepath = "RaidFilesSV\\bodyparam.txt";
@@ -365,7 +364,7 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             };
 
             // Determine the correct position to insert the new raid after the current rotation
-            int insertPosition = RotatingRaidBotSV.RotationCount + 1;
+            int insertPosition = RotationCount + 1;
             while (insertPosition < Hub.Config.RotatingRaidSV.ActiveRaids.Count && Hub.Config.RotatingRaidSV.ActiveRaids[insertPosition].AddedByRACommand)
             {
                 insertPosition++;
@@ -453,7 +452,7 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
         public async Task CheckQueueStatus()
         {
             var userId = Context.User.Id;
-            int currentPosition = RotatingRaidBotSV.RotationCount;
+            int currentPosition = RotationCount;
 
             // Find the index of the user's request in the queue
             var userRequestIndex = Hub.Config.RotatingRaidSV.ActiveRaids.FindIndex(r => r.RequestedByUserID == userId);
