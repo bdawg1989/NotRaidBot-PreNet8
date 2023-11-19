@@ -68,10 +68,6 @@ namespace SysBot.Pokemon.SV.BotRaid
         private static int attemptCount = 0;
         public static bool IsKitakami = false;
         private DateTime TimeForRollBackCheck = DateTime.Now;
-        private uint currRaidAreaID;
-        private uint currRaidDenID;
-        private uint zeroIndexRaidAreaID;
-        private uint zeroIndexRaidDenID;
 
         public override async Task MainLoop(CancellationToken token)
         {
@@ -516,7 +512,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                 {
                     SeedIndexToReplace = i;
                     Log($"Raid Den Located at 00{i + 1}");
-                    await LogCurrentRaidDetails(SeedIndexToReplace, token);
                     return;
                 }
             }
@@ -1019,60 +1014,140 @@ namespace SysBot.Pokemon.SV.BotRaid
             if (index == -1)
                 return;
 
-            // Existing logic for overriding the seed...
-            List<long> ptr = DeterminePointer(index); // Assuming DeterminePointer is a method that returns the correct pointer
+            List<long> ptr = DeterminePointer(index); // Using DeterminePointer
 
-            // Check CrystalType for area and den ID override
             var crystalType = Settings.ActiveRaids[RotationCount].CrystalType;
             var seed = uint.Parse(Settings.ActiveRaids[RotationCount].Seed, NumberStyles.AllowHexSpecifier);
+
             if (crystalType == TeraCrystalType.Might)
             {
                 Log($"CrystalType is Might, proceeding with updating Area ID and Den ID for raid at index {index}.");
-                await SwapRaidLocationsAsync(index, seed, token).ConfigureAwait(false);
+
+                // Overriding the seed
+                byte[] seedBytes = BitConverter.GetBytes(seed);
+                await SwitchConnection.PointerPoke(seedBytes, ptr, token).ConfigureAwait(false);
+
+                // Overriding the crystal type
+                var crystalPtr = new List<long>(ptr);
+                crystalPtr[3] += 0x08; // Adjusting the pointer for the crystal type
+                byte[] crystalBytes = BitConverter.GetBytes((int)crystalType);
+                await SwitchConnection.PointerPoke(crystalBytes, crystalPtr, token).ConfigureAwait(false);
+
+                await SwapRaidLocationsAsync(index, token).ConfigureAwait(false);
             }
             else
             {
+                // Overriding the seed
                 byte[] inj = BitConverter.GetBytes(seed);
                 var currseed = await SwitchConnection.PointerPeek(4, ptr, token).ConfigureAwait(false);
                 Log($"Replacing {BitConverter.ToString(currseed)} with {BitConverter.ToString(inj)}.");
                 await SwitchConnection.PointerPoke(inj, ptr, token).ConfigureAwait(false);
 
-                var ptr2 = ptr;
+                // Overriding the crystal type
+                var ptr2 = new List<long>(ptr);
                 ptr2[3] += 0x08;
-                var crystal = BitConverter.GetBytes((int)Settings.ActiveRaids[RotationCount].CrystalType);
+                var crystal = BitConverter.GetBytes((int)crystalType);
                 var currcrystal = await SwitchConnection.PointerPeek(1, ptr2, token).ConfigureAwait(false);
                 if (currcrystal != crystal)
                     await SwitchConnection.PointerPoke(crystal, ptr2, token).ConfigureAwait(false);
             }
         }
 
-        private async Task SwapRaidLocationsAsync(int currentRaidIndex, uint seed, CancellationToken token)
+        private async Task SwapRaidLocationsAsync(int currentRaidIndex, CancellationToken token)
         {
             Log($"Starting SwapRaidLocationsAsync for raid index: {currentRaidIndex}");
 
-            // Log the global variables directly without reassigning them
-            Log($"Global Variables - Current Raid Area ID: {currRaidAreaID}, Den ID: {currRaidDenID}");
-            Log($"Global Variables - Raid 001 Area ID: {zeroIndexRaidAreaID}, Den ID: {zeroIndexRaidDenID}");
+            // Get the pointers for the current raid index and raid index 0
+            List<long> currentPointer = CalculateDirectPointer(currentRaidIndex);
+            List<long> zeroPointer = CalculateDirectPointer(0);
 
-            // Override the data using the global variables
-            var data = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP + RaidBlock.HEADER_SIZE, (int)(RaidBlock.SIZE_BASE - RaidBlock.HEADER_SIZE), token);
-            var dataMemory = new Memory<byte>(data);
+            int areaIdOffset = 20; // Corrected Area ID offset
+            int denIdOffset = 25; // Corrected Den ID offset
 
-            BinaryPrimitives.WriteUInt32LittleEndian(dataMemory[16..].Span, seed); // new seed
-            BinaryPrimitives.WriteUInt32LittleEndian(dataMemory[..].Span, zeroIndexRaidAreaID != 0 ? 1U : 0U); 
-            BinaryPrimitives.WriteUInt32LittleEndian(dataMemory[12..].Span, zeroIndexRaidDenID); // use zeroIndexRaidDenID
-            BinaryPrimitives.WriteUInt32LittleEndian(dataMemory[4..].Span, zeroIndexRaidAreaID); // use zeroIndexRaidAreaID
+            // Read values from current index
+            uint currentAreaId = await ReadValue("Area ID", 4, AdjustPointer(currentPointer, areaIdOffset), token);
+            uint currentDenId = await ReadValue("Den ID", 4, AdjustPointer(currentPointer, denIdOffset), token);
 
-            var updatedData = dataMemory.ToArray();
+            // Read values from index 0
+            uint zeroAreaId = await ReadValue("Area ID", 4, AdjustPointer(zeroPointer, areaIdOffset), token);
+            uint zeroDenId = await ReadValue("Den ID", 4, AdjustPointer(zeroPointer, denIdOffset), token);
 
-            Log($"Updated: Raid 001 now has Area ID: {zeroIndexRaidAreaID}, Den ID: {zeroIndexRaidDenID}");
+            // Swap Area ID
+            await LogAndUpdateValue("Area ID", zeroAreaId, 4, AdjustPointer(currentPointer, areaIdOffset), token);
+            await LogAndUpdateValue("Area ID", currentAreaId, 4, AdjustPointer(zeroPointer, areaIdOffset), token);
 
-            // Write the updated data back
-            await SwitchConnection.WriteBytesAbsoluteAsync(updatedData, RaidBlockPointerP + RaidBlock.HEADER_SIZE, token).ConfigureAwait(false);
+            // Swap Den ID
+            await LogAndUpdateValue("Den ID", zeroDenId, 4, AdjustPointer(currentPointer, denIdOffset), token);
+            await LogAndUpdateValue("Den ID", currentDenId, 4, AdjustPointer(zeroPointer, denIdOffset), token);
 
             Log("Completed SwapRaidLocationsAsync.");
         }
 
+        // You need to add a method to read values
+        private async Task<uint> ReadValue(string fieldName, int size, List<long> pointer, CancellationToken token)
+        {
+            byte[] valueBytes = await SwitchConnection.PointerPeek(size, pointer, token).ConfigureAwait(false);
+          //  Log($"{fieldName} - Read Value: {BitConverter.ToString(valueBytes)}");
+
+            // Determine the byte order based on the field name
+            bool isBigEndian = fieldName.Equals("Den ID");
+
+            if (isBigEndian)
+            {
+                // If the value is in big-endian format, reverse the byte array
+                Array.Reverse(valueBytes);
+            }
+
+            // Convert the byte array to uint (now in little-endian format)
+            return BitConverter.ToUInt32(valueBytes, 0);
+        }
+
+        private async Task LogAndUpdateValue(string fieldName, uint value, int size, List<long> pointer, CancellationToken token)
+        {
+            byte[] currentValue = await SwitchConnection.PointerPeek(size, pointer, token).ConfigureAwait(false);
+           // Log($"{fieldName} - Current Value: {BitConverter.ToString(currentValue)}");
+
+            // Determine the byte order based on the field name
+            bool isBigEndian = fieldName.Equals("Den ID");
+
+            // Create a new byte array for the new value
+            byte[] newValue = new byte[4]; // Assuming uint is 4 bytes
+            if (isBigEndian)
+            {
+                newValue[0] = (byte)(value >> 24); // Most significant byte
+                newValue[1] = (byte)(value >> 16);
+                newValue[2] = (byte)(value >> 8);
+                newValue[3] = (byte)(value);       // Least significant byte
+            }
+            else
+            {
+                newValue[0] = (byte)(value);       // Least significant byte
+                newValue[1] = (byte)(value >> 8);
+                newValue[2] = (byte)(value >> 16);
+                newValue[3] = (byte)(value >> 24); // Most significant byte
+            }
+
+            await SwitchConnection.PointerPoke(newValue, pointer, token).ConfigureAwait(false);
+
+            byte[] updatedValue = await SwitchConnection.PointerPeek(size, pointer, token).ConfigureAwait(false);
+          //  Log($"{fieldName} - Updated Value: {BitConverter.ToString(updatedValue)}");
+        }
+
+
+        private List<long> AdjustPointer(List<long> basePointer, int offset)
+        {
+            var adjustedPointer = new List<long>(basePointer);
+            adjustedPointer[3] += offset; // Adjusting the offset at the 4th index
+            return adjustedPointer;
+        }
+        private List<long> CalculateDirectPointer(int index)
+        {
+            // This function now directly calculates the pointer without adding 1 to the index
+            return new(Offsets.RaidBlockPointerP)
+            {
+                [3] = 0x40 + index * 0x20
+            };
+        }
 
         private List<long> DeterminePointer(int index)
         {
@@ -2260,39 +2335,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             return _ = $"https://raw.githubusercontent.com/zyro670/PokeTextures/main/Placeholder_Sprites/scaled_up_sprites/Shiny/AlternateArt/" + $"{pkm.Species}{pkmform}" + ".png";
         }
 
-        private async Task LogCurrentRaidDetails(int raidIndex, CancellationToken token)
-        {
-            // Check if the current raid or Raid 001 details have already been set (non-zero)
-            if ((currRaidAreaID != 0 && currRaidDenID != 0) && (zeroIndexRaidAreaID != 0 && zeroIndexRaidDenID != 0))
-                return;
-
-            var data = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP + RaidBlock.HEADER_SIZE, (int)(RaidBlock.SIZE_BASE - RaidBlock.HEADER_SIZE), token);
-
-            // Fetch and log details for the current raid
-            if (currRaidAreaID == 0 || currRaidDenID == 0)
-            {
-                var currentRaid = new Raid(data.Skip(raidIndex * Raid.SIZE).Take(Raid.SIZE).ToArray(), TeraRaidMapParent.Paldea);
-                var currentRaidDetail = new TeraRaidDetail(currentRaid.GetData());
-
-                currRaidAreaID = currentRaidDetail.AreaID;
-                currRaidDenID = currentRaidDetail.SpawnPointID;
-
-                Log($"Raid index: {raidIndex}, Area ID: {currRaidAreaID}, Den ID: {currRaidDenID}");
-            }
-
-            // Fetch and log details for Raid 001
-            if (zeroIndexRaidAreaID == 0 || zeroIndexRaidDenID == 0)
-            {
-                var raid001 = new Raid(data.Take(Raid.SIZE).ToArray(), TeraRaidMapParent.Paldea);
-                var raid001Detail = new TeraRaidDetail(raid001.GetData());
-
-                zeroIndexRaidAreaID = raid001Detail.AreaID;
-                zeroIndexRaidDenID = raid001Detail.SpawnPointID;
-
-                Log($"Raid 001 - Area ID: {zeroIndexRaidAreaID}, Den ID: {zeroIndexRaidDenID}");
-            }
-        }
-
         private async Task ReadRaids(bool init, CancellationToken token)
         {
             Log("Starting raid reads..");
@@ -2481,7 +2523,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                             RotationCount = rc;
                             Log($"Raid Den Located at 00{i + 1}");
                             Log($"Rotation Count set to {RotationCount}");
-                            await LogCurrentRaidDetails(SeedIndexToReplace, token);
                             return;
                         }
                     }
