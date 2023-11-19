@@ -1071,6 +1071,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                     await SwitchConnection.PointerPoke(crystal, ptr2, token).ConfigureAwait(false);
             }
         }
+
         private async Task SyncSeedToIndexZero(int index, CancellationToken token)
         {
             if (index == -1)
@@ -1176,13 +1177,13 @@ namespace SysBot.Pokemon.SV.BotRaid
           //  Log($"{fieldName} - Updated Value: {BitConverter.ToString(updatedValue)}");
         }
 
-
         private List<long> AdjustPointer(List<long> basePointer, int offset)
         {
             var adjustedPointer = new List<long>(basePointer);
             adjustedPointer[3] += offset; // Adjusting the offset at the 4th index
             return adjustedPointer;
         }
+
         private List<long> CalculateDirectPointer(int index)
         {
             return new(Offsets.RaidBlockPointerP)
@@ -1208,6 +1209,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 };
             }
         }
+
         string ReverseHexString(string hexString)
         {
             char[] charArray = hexString.ToCharArray();
@@ -1437,7 +1439,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             await Click(A, 8_000, token).ConfigureAwait(false);
             return true;
         }
-
 
         private async Task RollBackTime(CancellationToken token)
         {
