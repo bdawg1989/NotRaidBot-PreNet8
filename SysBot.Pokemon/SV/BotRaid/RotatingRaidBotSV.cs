@@ -864,7 +864,7 @@ namespace SysBot.Pokemon.SV.BotRaid
         private async Task FinalizeRaidCompletion(List<(ulong, RaidMyStatus)> trainers, bool ready, CancellationToken token)
         {
             Log("Returning to overworld...");
-
+            await Task.Delay(3_500, token).ConfigureAwait(false);
             while (!await IsOnOverworld(OverworldOffset, token).ConfigureAwait(false))
                 await Click(A, 1_000, token).ConfigureAwait(false);
 
@@ -1086,6 +1086,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             // Swap Den ID
             await LogAndUpdateValue("Den ID", zeroDenId, 4, AdjustPointer(currentPointer, denIdOffset), token);
             await LogAndUpdateValue("Den ID", currentDenId, 4, AdjustPointer(zeroPointer, denIdOffset), token);
+
             hasSwapped = true;
             Log("Completed Swapping Raid Locations.");
         }
