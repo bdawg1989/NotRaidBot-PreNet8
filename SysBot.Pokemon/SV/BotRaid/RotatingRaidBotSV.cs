@@ -2467,6 +2467,12 @@ namespace SysBot.Pokemon.SV.BotRaid
                 // Check the raids to see if any are event raids for Paldea
                 foreach (var raid in container.Raids)
                 {
+                    if (!eventRaidFoundP)
+                    {
+                        // Set DeliveryGroupID back to -1 and EventActive to False
+                        Settings.EventSettings.RaidDeliveryGroupID = -1;
+                        Settings.EventSettings.EventActive = false;
+                    }
                     if (raid.IsEvent)
                     {
                         eventRaidFoundP = true;
@@ -2489,12 +2495,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                         break; // Exit loop if an event raid is found
                     }
                     raidIndex++; // Increment raidIndex to keep it in sync with the raid list
-                }
-                if (!eventRaidFoundP)
-                {
-                    // Set DeliveryGroupID back to -1 and EventActive to False
-                    Settings.EventSettings.RaidDeliveryGroupID = -1;
-                    Settings.EventSettings.EventActive = false;
                 }
             }
 
