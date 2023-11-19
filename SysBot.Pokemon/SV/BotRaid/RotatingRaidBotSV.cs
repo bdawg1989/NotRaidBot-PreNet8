@@ -384,6 +384,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                                 LobbyError = 0;
                                 denFound = true;
                                 firstRun = true;
+                                hasSwapped = false;
                                 await Task.Delay(5_000, token).ConfigureAwait(false);
                                 await Click(B, 1_000, token).ConfigureAwait(false);
                                 await Task.Delay(3_000, token).ConfigureAwait(false);
@@ -1022,7 +1023,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             if (crystalType == TeraCrystalType.Might)
             {
-                Log($"CrystalType is Might, proceeding with updating Area ID and Den ID for raid at index {index}.");
+              //  Log($"CrystalType is Might, proceeding with updating Area ID and Den ID for raid at index {index}.");
 
                 // Overriding the seed
                 byte[] seedBytes = BitConverter.GetBytes(seed);
@@ -1033,15 +1034,32 @@ namespace SysBot.Pokemon.SV.BotRaid
                 crystalPtr[3] += 0x08; // Adjusting the pointer for the crystal type
                 byte[] crystalBytes = BitConverter.GetBytes((int)crystalType);
                 await SwitchConnection.PointerPoke(crystalBytes, crystalPtr, token).ConfigureAwait(false);
-
+                await Task.Delay(1_500, token).ConfigureAwait(false);
                 await SwapRaidLocationsAsync(index, token).ConfigureAwait(false);
+                await Task.Delay(1_500, token).ConfigureAwait(false);
+                await SyncSeedToIndexZero(index, token).ConfigureAwait(false);
             }
             else
             {
+                // Check if crystal type is Black or Base and if swapping has already been done
+                if ((crystalType == TeraCrystalType.Black || crystalType == TeraCrystalType.Base) && hasSwapped)
+                {
+                    //  Log($"CrystalType is {crystalType}, proceeding with re-swapping Area ID and Den ID.");
+                    await SwapRaidLocationsAsync(index, token).ConfigureAwait(false);
+                    await Task.Delay(1_500, token).ConfigureAwait(false);
+                    hasSwapped = false;
+                }
                 // Overriding the seed
                 byte[] inj = BitConverter.GetBytes(seed);
                 var currseed = await SwitchConnection.PointerPeek(4, ptr, token).ConfigureAwait(false);
-                Log($"Replacing {BitConverter.ToString(currseed)} with {BitConverter.ToString(inj)}.");
+                // Convert byte arrays to hexadecimal strings
+                string currSeedHex = BitConverter.ToString(currseed).Replace("-", "");
+                string newSeedHex = BitConverter.ToString(inj).Replace("-", "");
+
+                // Reverse the order of characters to display in the conventional format
+                currSeedHex = ReverseHexString(currSeedHex);
+                newSeedHex = ReverseHexString(newSeedHex);
+                Log($"Replacing {currSeedHex} with {newSeedHex}.");
                 await SwitchConnection.PointerPoke(inj, ptr, token).ConfigureAwait(false);
 
                 // Overriding the crystal type
@@ -1053,17 +1071,35 @@ namespace SysBot.Pokemon.SV.BotRaid
                     await SwitchConnection.PointerPoke(crystal, ptr2, token).ConfigureAwait(false);
             }
         }
+        private async Task SyncSeedToIndexZero(int index, CancellationToken token)
+        {
+            if (index == -1)
+                return;
+
+            // Determine pointers for the specified index and index 0
+            List<long> ptrAtIndex = DeterminePointer(index); // Pointer for the current index
+            List<long> ptrAtZero = DeterminePointer(0); // Pointer for index 0
+
+            // Read the seed from the specified index
+            var seedBytesAtIndex = await SwitchConnection.PointerPeek(4, ptrAtIndex, token).ConfigureAwait(false);
+            uint seedAtIndex = BitConverter.ToUInt32(seedBytesAtIndex, 0); // Assuming little endian
+          //  Log($"Seed at index {index}: {seedAtIndex}");
+
+            // Write the seed to index 0
+            byte[] seedBytesToWrite = BitConverter.GetBytes(seedAtIndex);
+            await SwitchConnection.PointerPoke(seedBytesToWrite, ptrAtZero, token).ConfigureAwait(false);
+          //  Log($"Synced seed from index {index} to index 0");
+        }
 
         private async Task SwapRaidLocationsAsync(int currentRaidIndex, CancellationToken token)
         {
             // Check if the swap has already been done
             if (hasSwapped)
             {
-                Log("Swapping Raid Locations already completed.");
+             //   Log("Swapping Raid Locations already completed.");
                 return;
             }
-            Log($"Starting Swapping Raid Locations for raid index: {currentRaidIndex}");
-
+            //   Log($"Starting Swapping Raid Locations for raid index: {currentRaidIndex}");
             // Get the pointers for the current raid index and raid index 0
             List<long> currentPointer = CalculateDirectPointer(currentRaidIndex);
             List<long> zeroPointer = CalculateDirectPointer(0);
@@ -1088,7 +1124,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             await LogAndUpdateValue("Den ID", currentDenId, 4, AdjustPointer(zeroPointer, denIdOffset), token);
 
             hasSwapped = true;
-            Log("Completed Swapping Raid Locations.");
+          //  Log("Completed Swapping Raid Locations.");
         }
 
         private async Task<uint> ReadValue(string fieldName, int size, List<long> pointer, CancellationToken token)
@@ -1171,6 +1207,12 @@ namespace SysBot.Pokemon.SV.BotRaid
                     [3] = 0xCE8 + (index - 69) * 0x20
                 };
             }
+        }
+        string ReverseHexString(string hexString)
+        {
+            char[] charArray = hexString.ToCharArray();
+            Array.Reverse(charArray);
+            return new string(charArray);
         }
 
         private async Task<bool> DenStatus(int index, CancellationToken token)
