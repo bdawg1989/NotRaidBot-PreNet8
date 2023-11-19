@@ -1059,10 +1059,10 @@ namespace SysBot.Pokemon.SV.BotRaid
             // Check if the swap has already been done
             if (hasSwapped)
             {
-                Log("Swap already completed. Exiting method.");
+                Log("Swapping Raid Locations already completed.");
                 return;
             }
-            Log($"Starting SwapRaidLocationsAsync for raid index: {currentRaidIndex}");
+            Log($"Starting Swapping Raid Locations for raid index: {currentRaidIndex}");
 
             // Get the pointers for the current raid index and raid index 0
             List<long> currentPointer = CalculateDirectPointer(currentRaidIndex);
@@ -1087,7 +1087,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             await LogAndUpdateValue("Den ID", zeroDenId, 4, AdjustPointer(currentPointer, denIdOffset), token);
             await LogAndUpdateValue("Den ID", currentDenId, 4, AdjustPointer(zeroPointer, denIdOffset), token);
             hasSwapped = true;
-            Log("Completed SwapRaidLocationsAsync.");
+            Log("Completed Swapping Raid Locations.");
         }
 
         private async Task<uint> ReadValue(string fieldName, int size, List<long> pointer, CancellationToken token)
