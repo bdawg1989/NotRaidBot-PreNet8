@@ -1038,6 +1038,8 @@ namespace SysBot.Pokemon.SV.BotRaid
                 await SwapRaidLocationsAsync(index, token).ConfigureAwait(false);
                 await Task.Delay(1_500, token).ConfigureAwait(false);
                 await SyncSeedToIndexZero(index, token).ConfigureAwait(false);
+                await Task.Delay(1_500, token).ConfigureAwait(false);
+                await SetRaidZeroCrystalToBase(token).ConfigureAwait(false);
             }
             else
             {
@@ -1046,6 +1048,8 @@ namespace SysBot.Pokemon.SV.BotRaid
                 {
                     //  Log($"CrystalType is {crystalType}, proceeding with re-swapping Area ID and Den ID.");
                     await SwapRaidLocationsAsync(index, token).ConfigureAwait(false);
+                    await Task.Delay(1_500, token).ConfigureAwait(false);
+                    await SetRaidZeroCrystalToMight(token).ConfigureAwait(false);
                     await Task.Delay(1_500, token).ConfigureAwait(false);
                     hasSwapped = false;
                 }
@@ -1125,6 +1129,58 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             hasSwapped = true;
           //  Log("Completed Swapping Raid Locations.");
+        }
+        private async Task SetRaidZeroCrystalToBase(CancellationToken token)
+        {
+            // Define the index for Raid 001
+            const int index = 0;
+
+            // Determine the pointer for index 0
+            List<long> ptr = DeterminePointer(index);
+
+            // Adjust the pointer for the crystal type
+            var crystalPtr = new List<long>(ptr);
+            crystalPtr[3] += 0x08; // Adjusting the pointer for the crystal type
+
+            // Get the current crystal value to check if it needs changing
+            var currentCrystal = await SwitchConnection.PointerPeek(1, crystalPtr, token).ConfigureAwait(false);
+
+            // Set the crystal type to Base if it's not already Base
+            if (currentCrystal[0] != (byte)TeraCrystalType.Base)
+            {
+                byte[] crystalBytes = BitConverter.GetBytes((int)TeraCrystalType.Base);
+                await SwitchConnection.PointerPoke(crystalBytes, crystalPtr, token).ConfigureAwait(false);
+            }
+            else
+            {
+               // Log($"Crystal Type for Raid at index {index} is already Base.");
+            }
+        }
+        private async Task SetRaidZeroCrystalToMight(CancellationToken token)
+        {
+            // Define the index for Raid 001
+            const int index = 0;
+
+            // Determine the pointer for index 0
+            List<long> ptr = DeterminePointer(index);
+
+            // Adjust the pointer for the crystal type
+            var crystalPtr = new List<long>(ptr);
+            crystalPtr[3] += 0x08; // Adjusting the pointer for the crystal type
+
+            // Get the current crystal value to check if it needs changing
+            var currentCrystal = await SwitchConnection.PointerPeek(1, crystalPtr, token).ConfigureAwait(false);
+
+            // Set the crystal type to Base if it's not already Base
+            if (currentCrystal[0] != (byte)TeraCrystalType.Might)
+            {
+                byte[] crystalBytes = BitConverter.GetBytes((int)TeraCrystalType.Might);
+                await SwitchConnection.PointerPoke(crystalBytes, crystalPtr, token).ConfigureAwait(false);
+            }
+            else
+            {
+             //   Log($"Crystal Type for Raid at index {index} is already Base.");
+            }
         }
 
         private async Task<uint> ReadValue(string fieldName, int size, List<long> pointer, CancellationToken token)
