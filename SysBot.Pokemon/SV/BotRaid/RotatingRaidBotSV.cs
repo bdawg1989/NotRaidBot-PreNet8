@@ -2501,7 +2501,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             container.ClearEncounters();
             container.ClearRewards();
 
-            if (init || SeedIndexToReplace >= 70 && SeedIndexToReplace <= 94)
+            if (init || (SeedIndexToReplace >= 70 && SeedIndexToReplace <= 94))
             {
                 (delivery, enc, var num4ListKitakami) = container.ReadAllRaids(dataK, StoryProgress, EventProgress, 0, TeraRaidMapParent.Kitakami);
 
@@ -2509,34 +2509,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                     Log($"Failed to find encounters for {enc} raid(s).");
 
                 if (delivery > 0)
-                {
-                    Log($"Invalid delivery group ID for {delivery} raid(s). Group IDs: {string.Join(", ", num4ListKitakami)}. Try deleting the \"cache\" folder.");
-                }
-
-                // Initialize a counter for Kitakami raids
-                int raidIndexKitakami = 0;
-                bool eventRaidFoundK = false;
-                // Check the raids to see if any are event raids for Kitakami
-                foreach (var raid in container.Raids)
-                {
-                    if (raid.IsEvent)
-                    {
-                        eventRaidFoundK = true;
-                        Settings.EventSettings.EventActive = true;
-
-                        // Safety check for Kitakami raids
-                        if (raidIndexKitakami < num4ListKitakami.Count)
-                        {
-                            // Update the EventSettings.RaidDeliveryGroupID for Kitakami event raids
-                            Settings.EventSettings.RaidDeliveryGroupID = num4ListKitakami[raidIndexKitakami];
-                            Log($"Event Found! Updating Delivery Group ID to {num4ListKitakami[raidIndexKitakami]}.");
-                        }
-
-                        break; // Exit loop if an event raid is found
-                    }
-
-                    raidIndexKitakami++;
-                }
+                    Log($"Invalid delivery group ID for {delivery} raid(s). Try deleting the \"cache\" folder.");
             }
 
             var allRaids = raids.Concat(container.Raids).ToList().AsReadOnly();
