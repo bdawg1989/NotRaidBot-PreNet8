@@ -775,9 +775,9 @@ namespace SysBot.Pokemon.SV.BotRaid
                 TimeSpan timeInBattle = DateTime.Now - battleStartTime;
 
                 // Check for battle timeout
-                if (timeInBattle.TotalMinutes >= 10)
+                if (timeInBattle.TotalMinutes >= 15)
                 {
-                    Log("Battle timed out after 10 minutes. Even Netflix asked if I was still watching...");
+                    Log("Battle timed out after 15 minutes. Even Netflix asked if I was still watching...");
                     timedOut = true;
                     break;
                 }
