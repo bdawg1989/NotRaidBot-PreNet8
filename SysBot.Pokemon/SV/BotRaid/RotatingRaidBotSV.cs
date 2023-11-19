@@ -2446,12 +2446,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
                 if (enc > 0)
                 {
-                    Log($"Failed to find encounters for {enc} raid(s).  Stop the bot, delete any Event raids in ActiveRaids, day roll to refresh map.");
-                    await CloseGame(Hub.Config, token).ConfigureAwait(false);
-                    await AdvanceDaySV(token).ConfigureAwait(false);
-                    await Task.Delay(5_000, token).ConfigureAwait(false);
-                    await SaveGame(Hub.Config, token).ConfigureAwait(false);
-                    await ReOpenGame(Hub.Config, token).ConfigureAwait(false);
+                    Log($"Failed to find encounters for {enc} Event raid.");
                 }
 
                 if (delivery > 0)
