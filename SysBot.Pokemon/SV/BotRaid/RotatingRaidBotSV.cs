@@ -68,6 +68,7 @@ namespace SysBot.Pokemon.SV.BotRaid
         private static int attemptCount = 0;
         public static bool IsKitakami = false;
         private DateTime TimeForRollBackCheck = DateTime.Now;
+        private static bool hasSwapped = false;
 
         public override async Task MainLoop(CancellationToken token)
         {
@@ -1055,6 +1056,12 @@ namespace SysBot.Pokemon.SV.BotRaid
 
         private async Task SwapRaidLocationsAsync(int currentRaidIndex, CancellationToken token)
         {
+            // Check if the swap has already been done
+            if (hasSwapped)
+            {
+                Log("Swap already completed. Exiting method.");
+                return;
+            }
             Log($"Starting SwapRaidLocationsAsync for raid index: {currentRaidIndex}");
 
             // Get the pointers for the current raid index and raid index 0
@@ -1079,11 +1086,10 @@ namespace SysBot.Pokemon.SV.BotRaid
             // Swap Den ID
             await LogAndUpdateValue("Den ID", zeroDenId, 4, AdjustPointer(currentPointer, denIdOffset), token);
             await LogAndUpdateValue("Den ID", currentDenId, 4, AdjustPointer(zeroPointer, denIdOffset), token);
-
+            hasSwapped = true;
             Log("Completed SwapRaidLocationsAsync.");
         }
 
-        // You need to add a method to read values
         private async Task<uint> ReadValue(string fieldName, int size, List<long> pointer, CancellationToken token)
         {
             byte[] valueBytes = await SwitchConnection.PointerPeek(size, pointer, token).ConfigureAwait(false);
@@ -1142,7 +1148,6 @@ namespace SysBot.Pokemon.SV.BotRaid
         }
         private List<long> CalculateDirectPointer(int index)
         {
-            // This function now directly calculates the pointer without adding 1 to the index
             return new(Offsets.RaidBlockPointerP)
             {
                 [3] = 0x40 + index * 0x20
