@@ -1029,62 +1029,61 @@ namespace SysBot.Pokemon.SV.BotRaid
             if (index == -1)
                 return;
 
-            List<long> ptr = DeterminePointer(index);
+            List<long> ptr = DeterminePointer(index); // Using DeterminePointer
 
-                var crystalType = Settings.ActiveRaids[RotationCount].CrystalType;
-                var seed = uint.Parse(Settings.ActiveRaids[RotationCount].Seed, NumberStyles.AllowHexSpecifier);
+            var crystalType = Settings.ActiveRaids[RotationCount].CrystalType;
+            var seed = uint.Parse(Settings.ActiveRaids[RotationCount].Seed, NumberStyles.AllowHexSpecifier);
 
-                if (crystalType == TeraCrystalType.Might)
+            if (crystalType == TeraCrystalType.Might)
+            {
+                Log($"Preparing Event Raid...");
+
+                // Overriding the seed
+                byte[] seedBytes = BitConverter.GetBytes(seed);
+                await SwitchConnection.PointerPoke(seedBytes, ptr, token).ConfigureAwait(false);
+
+                // Overriding the crystal type
+                var crystalPtr = new List<long>(ptr);
+                crystalPtr[3] += 0x08; // Adjusting the pointer for the crystal type
+                byte[] crystalBytes = BitConverter.GetBytes((int)crystalType);
+                await SwitchConnection.PointerPoke(crystalBytes, crystalPtr, token).ConfigureAwait(false);
+                await Task.Delay(1_500, token).ConfigureAwait(false);
+                await SwapRaidLocationsAsync(index, token).ConfigureAwait(false);
+                await Task.Delay(1_500, token).ConfigureAwait(false);
+                await SyncSeedToIndexZero(index, token).ConfigureAwait(false);
+            }
+            else
+            {
+                // Check if crystal type is Black or Base and if swapping has already been done
+                if ((crystalType == TeraCrystalType.Black || crystalType == TeraCrystalType.Base) && hasSwapped)
                 {
-                    Log($"Preparing Event Raid...");
-
-                    // Overriding the seed
-                    byte[] seedBytes = BitConverter.GetBytes(seed);
-                    await SwitchConnection.PointerPoke(seedBytes, ptr, token).ConfigureAwait(false);
-
-                    // Overriding the crystal type
-                    var crystalPtr = new List<long>(ptr);
-                    crystalPtr[3] += 0x08; // Adjusting the pointer for the crystal type
-                    byte[] crystalBytes = BitConverter.GetBytes((int)crystalType);
-                    await SwitchConnection.PointerPoke(crystalBytes, crystalPtr, token).ConfigureAwait(false);
-                    await Task.Delay(1_500, token).ConfigureAwait(false);
+                    //  Log($"CrystalType is {crystalType}, proceeding with re-swapping Area ID and Den ID.");
                     await SwapRaidLocationsAsync(index, token).ConfigureAwait(false);
                     await Task.Delay(1_500, token).ConfigureAwait(false);
-                    await SyncSeedToIndexZero(index, token).ConfigureAwait(false);
+                    hasSwapped = false;
                 }
-                else
-                {
-                    // Check if crystal type is Black or Base and if swapping has already been done
-                    if ((crystalType == TeraCrystalType.Black || crystalType == TeraCrystalType.Base) && hasSwapped)
-                    {
-                        //  Log($"CrystalType is {crystalType}, proceeding with re-swapping Area ID and Den ID.");
-                        await SwapRaidLocationsAsync(index, token).ConfigureAwait(false);
-                        await Task.Delay(1_500, token).ConfigureAwait(false);
-                        hasSwapped = false;
-                    }
-                    // Overriding the seed
-                    byte[] inj = BitConverter.GetBytes(seed);
-                    var currseed = await SwitchConnection.PointerPeek(4, ptr, token).ConfigureAwait(false);
-                    // Convert byte arrays to hexadecimal strings
-                    string currSeedHex = BitConverter.ToString(currseed).Replace("-", "");
-                    string newSeedHex = BitConverter.ToString(inj).Replace("-", "");
+                // Overriding the seed
+                byte[] inj = BitConverter.GetBytes(seed);
+                var currseed = await SwitchConnection.PointerPeek(4, ptr, token).ConfigureAwait(false);
+                // Convert byte arrays to hexadecimal strings
+                string currSeedHex = BitConverter.ToString(currseed).Replace("-", "");
+                string newSeedHex = BitConverter.ToString(inj).Replace("-", "");
 
-                    // Reverse the order of characters to display in the conventional format
-                    currSeedHex = ReverseHexString(currSeedHex);
-                    newSeedHex = ReverseHexString(newSeedHex);
-                    Log($"Replacing {currSeedHex} with {newSeedHex}.");
-                    await SwitchConnection.PointerPoke(inj, ptr, token).ConfigureAwait(false);
+                // Reverse the order of characters to display in the conventional format
+                currSeedHex = ReverseHexString(currSeedHex);
+                newSeedHex = ReverseHexString(newSeedHex);
+                Log($"Replacing {currSeedHex} with {newSeedHex}.");
+                await SwitchConnection.PointerPoke(inj, ptr, token).ConfigureAwait(false);
 
-                    // Overriding the crystal type
-                    var ptr2 = new List<long>(ptr);
-                    ptr2[3] += 0x08;
-                    var crystal = BitConverter.GetBytes((int)crystalType);
-                    var currcrystal = await SwitchConnection.PointerPeek(1, ptr2, token).ConfigureAwait(false);
-                    if (currcrystal != crystal)
-                        await SwitchConnection.PointerPoke(crystal, ptr2, token).ConfigureAwait(false);
-                }
+                // Overriding the crystal type
+                var ptr2 = new List<long>(ptr);
+                ptr2[3] += 0x08;
+                var crystal = BitConverter.GetBytes((int)crystalType);
+                var currcrystal = await SwitchConnection.PointerPeek(1, ptr2, token).ConfigureAwait(false);
+                if (currcrystal != crystal)
+                    await SwitchConnection.PointerPoke(crystal, ptr2, token).ConfigureAwait(false);
             }
-        
+        }
         private void CreateAndAddRandomShinyRaid()
         {
             // Generate a random shiny seed
