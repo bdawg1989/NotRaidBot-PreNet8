@@ -721,32 +721,32 @@ namespace SysBot.Pokemon
             {
                 switch (reward.Item1)
                 {
-                    case 0050: rare++; break;
-                    case 0645: abilitycapsule++; break;
-                    case 0795: bottlecap++; break;
-                    case 1127: expCandyL++; break;
-                    case 1128: expCandyXL++; break;
-                    case 1606: abilitypatch++; break;
-                    case 1904: sweetHerba++; break;
-                    case 1905: saltyHerba++; break;
-                    case 1906: sourHerba++; break;
-                    case 1907: bitterHerba++; break;
-                    case 1908: spicyHerba++; break;
-                    case 0004: pokeball++; break;
-                    case 0092: nugget++; break;
-                    case 0086: tinyMushroom++; break;
-                    case 0087: bigMushroom++; break;
-                    case 0088: pearl++; break;
-                    case 0089: bigPearl++; break;
-                    case 0090: stardust++; break;
-                    case 0091: starPiece++; break;
-                    case 0796: goldBottleCap++; break;
-                    case 0051: ppUp++; break;
+                    case 0050: rare += reward.Item2; break;
+                    case 0645: abilitycapsule += reward.Item2; break;
+                    case 0795: bottlecap += reward.Item2; break;
+                    case 1127: expCandyL += reward.Item2; break;
+                    case 1128: expCandyXL += reward.Item2; break;
+                    case 1606: abilitypatch += reward.Item2; break;
+                    case 1904: sweetHerba += reward.Item2; break;
+                    case 1905: saltyHerba += reward.Item2; break;
+                    case 1906: sourHerba += reward.Item2; break;
+                    case 1907: bitterHerba += reward.Item2; break;
+                    case 1908: spicyHerba += reward.Item2; break;
+                    case 0004: pokeball += reward.Item2; break;
+                    case 0092: nugget += reward.Item2; break;
+                    case 0086: tinyMushroom += reward.Item2; break;
+                    case 0087: bigMushroom += reward.Item2; break;
+                    case 0088: pearl += reward.Item2; break;
+                    case 0089: bigPearl += reward.Item2; break;
+                    case 0090: stardust += reward.Item2; break;
+                    case 0091: starPiece += reward.Item2; break;
+                    case 0796: goldBottleCap += reward.Item2; break;
+                    case 0051: ppUp += reward.Item2; break;
                     case >= 1862 and <= 1879:
                         if (teraShards.ContainsKey(reward.Item1))
-                            teraShards[reward.Item1]++;
+                            teraShards[reward.Item1] += reward.Item2;
                         else
-                            teraShards[reward.Item1] = 1;
+                            teraShards[reward.Item1] = reward.Item2;
                         break;
                 }
             }

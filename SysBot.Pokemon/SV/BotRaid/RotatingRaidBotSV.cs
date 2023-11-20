@@ -2466,7 +2466,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                     if (raid.IsEvent)
                     {
                         eventRaidFoundP = true;
-                        Settings.EventSettings.EventActive = true;
                         // Extract and log the Area ID and Den ID of the Event Raid
                         eventRaidPAreaId = (int)raid.Area;
                         eventRaidPDenId = (int)raid.Den;
@@ -2490,7 +2489,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                 {
                     // Set DeliveryGroupID back to -1 and EventActive to False
                     Settings.EventSettings.RaidDeliveryGroupID = -1;
-                    Settings.EventSettings.EventActive = false;
                 }
             }
 
@@ -2626,6 +2624,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 }
             }
         }
+
 
         public static (PK9, Embed) RaidInfoCommand(string seedValue, int contentType, TeraRaidMapParent map, int storyProgressLevel, int raidDeliveryGroupID, List<string> rewardsToShow, bool isEvent = false)
         {
