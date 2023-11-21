@@ -1023,9 +1023,9 @@ namespace SysBot.Pokemon.SV.BotRaid
             var crystalType = Settings.ActiveRaids[RotationCount].CrystalType;
             var seed = uint.Parse(Settings.ActiveRaids[RotationCount].Seed, NumberStyles.AllowHexSpecifier);
 
-            if (crystalType == TeraCrystalType.Might)
+            if (crystalType == TeraCrystalType.Might || crystalType == TeraCrystalType.Distribution)
             {
-                Log($"Preparing Event Raid...");
+                Log(crystalType == TeraCrystalType.Might ? "Preparing 7 Star Event Raid..." : "Preparing Distribution Raid...");
 
                 // Overriding the seed
                 byte[] seedBytes = BitConverter.GetBytes(seed);
@@ -1037,9 +1037,12 @@ namespace SysBot.Pokemon.SV.BotRaid
                 byte[] crystalBytes = BitConverter.GetBytes((int)crystalType);
                 await SwitchConnection.PointerPoke(crystalBytes, crystalPtr, token).ConfigureAwait(false);
                 await Task.Delay(1_500, token).ConfigureAwait(false);
-                await SwapRaidLocationsAsync(index, token).ConfigureAwait(false);
+                // Determine raid type as a string
+                string raidType = crystalType == TeraCrystalType.Might ? "Might" : "Distribution";
+                // Call SwapRaidLocationsAsync with the raid type
+                await SwapRaidLocationsAsync(index, raidType, token).ConfigureAwait(false);
                 await Task.Delay(1_500, token).ConfigureAwait(false);
-                await SyncSeedToIndexZero(index, token).ConfigureAwait(false);
+                await SyncSeedToIndexZero(index, raidType, token).ConfigureAwait(false);
             }
             else
             {
@@ -1047,7 +1050,8 @@ namespace SysBot.Pokemon.SV.BotRaid
                 if ((crystalType == TeraCrystalType.Black || crystalType == TeraCrystalType.Base) && hasSwapped)
                 {
                     //  Log($"CrystalType is {crystalType}, proceeding with re-swapping Area ID and Den ID.");
-                    await SwapRaidLocationsAsync(index, token).ConfigureAwait(false);
+                    string raidType = crystalType == TeraCrystalType.Black ? "Black" : "Base";
+                    await SwapRaidLocationsAsync(index, raidType, token).ConfigureAwait(false);
                     await Task.Delay(1_500, token).ConfigureAwait(false);
                     hasSwapped = false;
                 }
@@ -1193,38 +1197,40 @@ namespace SysBot.Pokemon.SV.BotRaid
             return (((num3 >> 16) ^ (num3 & 0xFFFF)) >> 4 == ((num2 >> 16) ^ (num2 & 0xFFFF)) >> 4) ? 1 : 0;
         }
 
-        private async Task SyncSeedToIndexZero(int index, CancellationToken token)
+        private async Task SyncSeedToIndexZero(int index, string raidType, CancellationToken token)
         {
             if (index == -1)
                 return;
 
-            // Determine pointers for the specified index and index 0
+            // Determine pointers for the specified index and the target index
             List<long> ptrAtIndex = DeterminePointer(index); // Pointer for the current index
-            List<long> ptrAtZero = DeterminePointer(0); // Pointer for index 0
+            int targetIndex = raidType == "Might" ? 0 : 1; // Sync to index 0 for Might and index 1 for Distribution
+            List<long> ptrAtTarget = DeterminePointer(targetIndex); // Pointer for the target index
 
             // Read the seed from the specified index
             var seedBytesAtIndex = await SwitchConnection.PointerPeek(4, ptrAtIndex, token).ConfigureAwait(false);
-            uint seedAtIndex = BitConverter.ToUInt32(seedBytesAtIndex, 0); // Assuming little endian
-                                                                           //  Log($"Seed at index {index}: {seedAtIndex}");
+            uint seedAtIndex = BitConverter.ToUInt32(seedBytesAtIndex, 0);
 
-            // Write the seed to index 0
+            // Write the seed to the target index
             byte[] seedBytesToWrite = BitConverter.GetBytes(seedAtIndex);
-            await SwitchConnection.PointerPoke(seedBytesToWrite, ptrAtZero, token).ConfigureAwait(false);
-            //  Log($"Synced seed from index {index} to index 0");
+            await SwitchConnection.PointerPoke(seedBytesToWrite, ptrAtTarget, token).ConfigureAwait(false);
+            // Log($"Synced seed from index {index} to index {targetIndex}");
         }
 
-        private async Task SwapRaidLocationsAsync(int currentRaidIndex, CancellationToken token)
+        private async Task SwapRaidLocationsAsync(int currentRaidIndex, string raidType, CancellationToken token)
         {
             // Check if the swap has already been done
             if (hasSwapped)
             {
-                //   Log("Swapping Raid Locations already completed.");
                 return;
             }
-            //   Log($"Starting Swapping Raid Locations for raid index: {currentRaidIndex}");
-            // Get the pointers for the current raid index and raid index 0
+
+            // Determine the index to swap with based on raid type
+            int swapWithIndex = raidType == "Might" ? 0 : 1; // Assuming index 0 for Might and index 1 for Distribution
+
+            // Get the pointers for the current raid index and the determined index
             List<long> currentPointer = CalculateDirectPointer(currentRaidIndex);
-            List<long> zeroPointer = CalculateDirectPointer(0);
+            List<long> swapPointer = CalculateDirectPointer(swapWithIndex);
 
             int areaIdOffset = 20; // Corrected Area ID offset
             int denIdOffset = 25; // Corrected Den ID offset
@@ -1233,20 +1239,19 @@ namespace SysBot.Pokemon.SV.BotRaid
             uint currentAreaId = await ReadValue("Area ID", 4, AdjustPointer(currentPointer, areaIdOffset), token);
             uint currentDenId = await ReadValue("Den ID", 4, AdjustPointer(currentPointer, denIdOffset), token);
 
-            // Read values from index 0
-            uint zeroAreaId = await ReadValue("Area ID", 4, AdjustPointer(zeroPointer, areaIdOffset), token);
-            uint zeroDenId = await ReadValue("Den ID", 4, AdjustPointer(zeroPointer, denIdOffset), token);
+            // Read values from the determined index
+            uint swapAreaId = await ReadValue("Area ID", 4, AdjustPointer(swapPointer, areaIdOffset), token);
+            uint swapDenId = await ReadValue("Den ID", 4, AdjustPointer(swapPointer, denIdOffset), token);
 
             // Swap Area ID
-            await LogAndUpdateValue("Area ID", zeroAreaId, 4, AdjustPointer(currentPointer, areaIdOffset), token);
-            await LogAndUpdateValue("Area ID", currentAreaId, 4, AdjustPointer(zeroPointer, areaIdOffset), token);
+            await LogAndUpdateValue("Area ID", swapAreaId, 4, AdjustPointer(currentPointer, areaIdOffset), token);
+            await LogAndUpdateValue("Area ID", currentAreaId, 4, AdjustPointer(swapPointer, areaIdOffset), token);
 
             // Swap Den ID
-            await LogAndUpdateValue("Den ID", zeroDenId, 4, AdjustPointer(currentPointer, denIdOffset), token);
-            await LogAndUpdateValue("Den ID", currentDenId, 4, AdjustPointer(zeroPointer, denIdOffset), token);
+            await LogAndUpdateValue("Den ID", swapDenId, 4, AdjustPointer(currentPointer, denIdOffset), token);
+            await LogAndUpdateValue("Den ID", currentDenId, 4, AdjustPointer(swapPointer, denIdOffset), token);
 
             hasSwapped = true;
-            //  Log("Completed Swapping Raid Locations.");
         }
 
         private async Task<uint> ReadValue(string fieldName, int size, List<long> pointer, CancellationToken token)
