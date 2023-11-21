@@ -753,45 +753,45 @@ namespace SysBot.Pokemon
             // Format and filter rewards based on user preferences
             List<string> rewardStrings = new List<string>();
             if (rewardsToShow.Contains("Rare Candy") && rare > 0)
-                rewardStrings.Add($"Rare Candy x{rare}");
+                rewardStrings.Add($"**Rare Candy** x{rare}");
             if (rewardsToShow.Contains("Ability Capsule") && abilitycapsule > 0)
-                rewardStrings.Add($"Ability Capsule x{abilitycapsule}");
+                rewardStrings.Add($"**Ability Capsule** x{abilitycapsule}");
             if (rewardsToShow.Contains("Bottle Cap") && bottlecap > 0)
-                rewardStrings.Add($"Bottle Cap x{bottlecap}");
+                rewardStrings.Add($"**Bottle Cap** x{bottlecap}");
             if (rewardsToShow.Contains("Ability Patch") && abilitypatch > 0)
-                rewardStrings.Add($"Ability Patch x{abilitypatch}");
+                rewardStrings.Add($"**Ability Patch** x{abilitypatch}");
             if (rewardsToShow.Contains("Exp. Candy L") && expCandyL > 0)
-                rewardStrings.Add($"Exp. Candy L x{expCandyL}");
+                rewardStrings.Add($"**Exp. Candy L** x{expCandyL}");
             if (rewardsToShow.Contains("Exp. Candy XL") && expCandyXL > 0)
-                rewardStrings.Add($"Exp. Candy XL x{expCandyXL}");
+                rewardStrings.Add($"**Exp. Candy XL** x{expCandyXL}");
             if (rewardsToShow.Contains("Sweet Herba Mystica") && sweetHerba > 0)
-                rewardStrings.Add($"Sweet Herba Mystica x{sweetHerba}");
+                rewardStrings.Add($"**Sweet Herba Mystica** x{sweetHerba}");
             if (rewardsToShow.Contains("Pokeball") && pokeball > 0)
-                rewardStrings.Add($"Pokeball x{pokeball}");
+                rewardStrings.Add($"**Pokeball** x{pokeball}");
             if (rewardsToShow.Contains("Nugget") && nugget > 0)
-                rewardStrings.Add($"Nugget x{nugget}");
+                rewardStrings.Add($"**Nugget** x{nugget}");
             if (rewardsToShow.Contains("Tiny Mushroom") && tinyMushroom > 0)
-                rewardStrings.Add($"Tiny Mushroom x{tinyMushroom}");
+                rewardStrings.Add($"**Tiny Mushroom** x{tinyMushroom}");
             if (rewardsToShow.Contains("Big Mushroom") && bigMushroom > 0)
-                rewardStrings.Add($"Big Mushroom x{bigMushroom}");
+                rewardStrings.Add($"**Big Mushroom** x{bigMushroom}");
             if (rewardsToShow.Contains("Pearl") && pearl > 0)
-                rewardStrings.Add($"Pearl x{pearl}");
+                rewardStrings.Add($"**Pearl** x{pearl}");
             if (rewardsToShow.Contains("Big Pearl") && bigPearl > 0)
-                rewardStrings.Add($"Big Pearl x{bigPearl}");
+                rewardStrings.Add($"**Big Pearl** x{bigPearl}");
             if (rewardsToShow.Contains("Stardust") && stardust > 0)
-                rewardStrings.Add($"Stardust x{stardust}");
+                rewardStrings.Add($"**Stardust** x{stardust}");
             if (rewardsToShow.Contains("Star Piece") && starPiece > 0)
-                rewardStrings.Add($"Star Piece x{starPiece}");
+                rewardStrings.Add($"**Star Piece** x{starPiece}");
             if (rewardsToShow.Contains("Gold Bottle Cap") && goldBottleCap > 0)
-                rewardStrings.Add($"Gold Bottle Cap x{goldBottleCap}");
+                rewardStrings.Add($"**Gold Bottle Cap** x{goldBottleCap}");
             if (rewardsToShow.Contains("PP Up") && ppUp > 0)
-                rewardStrings.Add($"PP Up x{ppUp}");
+                rewardStrings.Add($"**PP Up** x{ppUp}");
             if (rewardsToShow.Contains("Shards"))
             {
                 foreach (var shard in teraShards)
                 {
                     string shardTypeName = GetTeraShardTypeName(shard.Key);
-                    rewardStrings.Add($"{shardTypeName} Shard x{shard.Value}");
+                    rewardStrings.Add($"**{shardTypeName} Tera Shard** x{shard.Value}");
                 }
             }
 

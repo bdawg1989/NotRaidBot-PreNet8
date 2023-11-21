@@ -498,10 +498,11 @@ namespace SysBot.Pokemon.SV.BotRaid
                 //dgaf about cache not existing
             }
 
-            // Remove all entries in ActiveRaids where AddedByRACommand is true
-            Settings.ActiveRaids.RemoveAll(p => p.AddedByRACommand);
+            // Remove all Mystery Shiny Raids and other raids added by RA command
+            Settings.ActiveRaids.RemoveAll(p => p.AddedByRACommand && p.Title == "Mystery Shiny Raid");
 
             await CleanExit(CancellationToken.None).ConfigureAwait(false);
+
         }
 
         private async Task LocateSeedIndex(CancellationToken token)
