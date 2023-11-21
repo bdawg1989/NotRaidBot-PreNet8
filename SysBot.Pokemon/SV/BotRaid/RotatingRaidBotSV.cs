@@ -2585,46 +2585,46 @@ namespace SysBot.Pokemon.SV.BotRaid
                 {
                     Log($"Invalid delivery group ID for {delivery} raid(s). Group IDs: {string.Join(", ", num4List)}. Try deleting the \"cache\" folder.");
                 }
-
-                // Initialize a counter to track the index in num4List
-                int raidIndex = 0;
-                bool eventRaidFoundP = false;
-                int eventRaidPAreaId = -1;
-                int eventRaidPDenId = -1;
-                // Check the raids to see if any are event raids for Paldea
-                foreach (var raid in container.Raids)
+                GameProgress currentProgress = (GameProgress)StoryProgress;
+                if (currentProgress == GameProgress.Unlocked5Stars || currentProgress == GameProgress.Unlocked6Stars)
                 {
-                    if (raid.IsEvent)
+                    bool eventRaidFoundP = false;
+                    int eventRaidPAreaId = -1;
+                    int eventRaidPDenId = -1;
+                    int raidIndex = 0; // Initialize a counter for raid index
+
+                    foreach (var raid in container.Raids)
                     {
-                        eventRaidFoundP = true;
-                        Settings.EventSettings.EventActive = true;
-                        // Extract and log the Area ID and Den ID of the Event Raid
-                        eventRaidPAreaId = (int)raid.Area;
-                        eventRaidPDenId = (int)raid.Den;
-                        var areaText = $"{Areas.GetArea((int)(raid.Area - 1), raid.MapParent)} - Den {raid.Den}";
-
-                        Log($"Event Raid found! Located in {areaText}");
-
-                        // Safety check to ensure raidIndex is within the bounds of num4List
-                        if (raidIndex < num4List.Count)
+                        if (raid.IsEvent)
                         {
-                            // Update the EventSettings.RaidDeliveryGroupID with the corresponding Group ID
-                            Settings.EventSettings.RaidDeliveryGroupID = num4List[raidIndex];
-                            Log($"Updating Delivery Group ID to {num4List[raidIndex]}.");
-                        }
+                            eventRaidFoundP = true;
+                            Settings.EventSettings.EventActive = true;
+                            eventRaidPAreaId = (int)raid.Area;
+                            eventRaidPDenId = (int)raid.Den;
 
-                        break; // Exit loop if an event raid is found
+                            // Log and update settings only if GameProgress is Unlocked5Stars or Unlocked6Stars
+                            var areaText = $"{Areas.GetArea((int)(raid.Area - 1), raid.MapParent)} - Den {raid.Den}";
+                            Log($"Event Raid found! Located in {areaText}");
+
+                            if (raidIndex < num4List.Count)
+                            {
+                                Settings.EventSettings.RaidDeliveryGroupID = num4List[raidIndex];
+                                Log($"Updating Delivery Group ID to {num4List[raidIndex]}.");
+                            }
+
+                            break; // Exit loop if an event raid is found
+                        }
+                        raidIndex++;
                     }
-                    raidIndex++; // Increment raidIndex to keep it in sync with the raid list
-                }
-                if (!eventRaidFoundP)
-                {
-                    // Set DeliveryGroupID back to -1 and EventActive to False
-                    Settings.EventSettings.RaidDeliveryGroupID = -1;
-                    Settings.EventSettings.EventActive = false;
+
+                    if (!eventRaidFoundP)
+                    {
+                        // Set DeliveryGroupID back to -1 and EventActive to False
+                        Settings.EventSettings.RaidDeliveryGroupID = -1;
+                        Settings.EventSettings.EventActive = false;
+                    }
                 }
             }
-
             var raids = container.Raids;
             var encounters = container.Encounters;
             var rewards = container.Rewards;
@@ -2642,31 +2642,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                 if (delivery > 0)
                 {
                     Log($"Invalid delivery group ID for {delivery} raid(s). Group IDs: {string.Join(", ", num4ListKitakami)}. Try deleting the \"cache\" folder.");
-                }
-
-                // Initialize a counter for Kitakami raids
-                int raidIndexKitakami = 0;
-                bool eventRaidFoundK = false;
-                // Check the raids to see if any are event raids for Kitakami
-                foreach (var raid in container.Raids)
-                {
-                    if (raid.IsEvent)
-                    {
-                        eventRaidFoundK = true;
-                        Settings.EventSettings.EventActive = true;
-
-                        // Safety check for Kitakami raids
-                        if (raidIndexKitakami < num4ListKitakami.Count)
-                        {
-                            // Update the EventSettings.RaidDeliveryGroupID for Kitakami event raids
-                            Settings.EventSettings.RaidDeliveryGroupID = num4ListKitakami[raidIndexKitakami];
-                            Log($"Event Found! Updating Delivery Group ID to {num4ListKitakami[raidIndexKitakami]}.");
-                        }
-
-                        break; // Exit loop if an event raid is found
-                    }
-
-                    raidIndexKitakami++;
                 }
             }
 
