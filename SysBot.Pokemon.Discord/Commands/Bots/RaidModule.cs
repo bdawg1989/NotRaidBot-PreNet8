@@ -535,18 +535,30 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             var userId = Context.User.Id;
             var list = Hub.Config.RotatingRaidSV.ActiveRaids;
 
-            var raid = list.FirstOrDefault(r => r.RequestedByUserID == userId && r.AddedByRACommand);
-            if (raid == null)
+            // Find the index of the user's raid
+            int raidIndex = list.FindIndex(r => r.RequestedByUserID == userId && r.AddedByRACommand);
+            if (raidIndex == -1)
             {
                 await ReplyAsync("You don't have a raid added.").ConfigureAwait(false);
                 return;
             }
 
-            list.Remove(raid);
+            // Prevent canceling if the raid is next in line
+            if (raidIndex == RotationCount + 1)
+            {
+                await ReplyAsync("Your raid request is up next and cannot be canceled at this time.").ConfigureAwait(false);
+                return;
+            }
+
+            // Proceed with removal if it's not next in line
+            var raid = list[raidIndex];
+            list.RemoveAt(raidIndex);
             await Context.Message.DeleteAsync().ConfigureAwait(false);
             var msg = $"Cleared your Raid from the queue.";
             await ReplyAsync(msg).ConfigureAwait(false);
         }
+
+
 
         [Command("removeRaidParams")]
         [Alias("rrp")]
