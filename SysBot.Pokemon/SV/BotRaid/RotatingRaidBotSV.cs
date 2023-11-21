@@ -51,7 +51,6 @@ namespace SysBot.Pokemon.SV.BotRaid
         private int EmptyRaid = 0;
         private int LostRaid = 0;
         private bool firstRun = true;
-        bool timedOut = false;
         public static int RotationCount { get; set; }
         private ulong TodaySeed;
         private ulong OverworldOffset;
@@ -65,7 +64,6 @@ namespace SysBot.Pokemon.SV.BotRaid
         private SAV9SV HostSAV = new();
         private DateTime StartTime = DateTime.Now;
         public static RaidContainer? container;
-        private static int attemptCount = 0;
         public static bool IsKitakami = false;
         private DateTime TimeForRollBackCheck = DateTime.Now;
         private static bool hasSwapped = false;
@@ -1067,6 +1065,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                     await SwitchConnection.PointerPoke(crystal, ptr2, token).ConfigureAwait(false);
             }
         }
+
         private void CreateAndAddRandomShinyRaidAsRequested()
         {
             // Generate a random shiny seed
@@ -1132,6 +1131,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             // Log the addition for debugging purposes
             Log($"Added Mystery Shiny Raid with seed: {randomSeed:X} at position {insertPosition}");
         }
+
         public GameProgress ConvertToGameProgress(int storyProgressLevel)
         {
             return storyProgressLevel switch
@@ -1145,6 +1145,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 _ => GameProgress.Unlocked6Stars
             };
         }
+
         private uint GenerateRandomShinySeed()
         {
             Random random = new Random();
@@ -1161,6 +1162,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             return seed;
         }
+
         private static int Raidshiny(uint Seed)
         {
             Xoroshiro128Plus xoroshiro128Plus = new Xoroshiro128Plus(Seed);
@@ -1169,6 +1171,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             uint num3 = (uint)xoroshiro128Plus.NextInt(4294967295uL);
             return (((num3 >> 16) ^ (num3 & 0xFFFF)) >> 4 == ((num2 >> 16) ^ (num2 & 0xFFFF)) >> 4) ? 1 : 0;
         }
+
         private async Task SyncSeedToIndexZero(int index, CancellationToken token)
         {
             if (index == -1)
@@ -1274,13 +1277,13 @@ namespace SysBot.Pokemon.SV.BotRaid
             //  Log($"{fieldName} - Updated Value: {BitConverter.ToString(updatedValue)}");
         }
 
-
         private List<long> AdjustPointer(List<long> basePointer, int offset)
         {
             var adjustedPointer = new List<long>(basePointer);
             adjustedPointer[3] += offset; // Adjusting the offset at the 4th index
             return adjustedPointer;
         }
+
         private List<long> CalculateDirectPointer(int index)
         {
             return new(Offsets.RaidBlockPointerP)
@@ -1306,6 +1309,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 };
             }
         }
+
         string ReverseHexString(string hexString)
         {
             char[] charArray = hexString.ToCharArray();
@@ -1535,7 +1539,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             await Click(A, 8_000, token).ConfigureAwait(false);
             return true;
         }
-
 
         private async Task RollBackTime(CancellationToken token)
         {
