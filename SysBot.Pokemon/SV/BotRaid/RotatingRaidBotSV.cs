@@ -497,8 +497,8 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
 
             // Remove all Mystery Shiny Raids and other raids added by RA command
-            Settings.ActiveRaids.RemoveAll(p => p.AddedByRACommand && p.Title == "Mystery Shiny Raid");
-
+            Settings.ActiveRaids.RemoveAll(p => p.AddedByRACommand);
+            Settings.ActiveRaids.RemoveAll(p => p.Title == "Mystery Shiny Raid");
             await CleanExit(CancellationToken.None).ConfigureAwait(false);
 
         }
@@ -818,7 +818,13 @@ namespace SysBot.Pokemon.SV.BotRaid
                     Log($"{nextUpdateMinute} minutes have passed. We are still in battle...");
                     nextUpdateMinute += 2; // Update the time for the next status update.
                 }
-
+                // Check if the battle has been ongoing for 6 minutes
+                if (timeInBattle.TotalMinutes >= 6)
+                {
+                    // Hit Home button twice in case we are stuck
+                    await Click(HOME, 0_500, token).ConfigureAwait(false);
+                    await Click(HOME, 0_500, token).ConfigureAwait(false);
+                }
                 // Make sure to wait some time before the next iteration to prevent a tight loop
                 await Task.Delay(1000, token); // Wait for a second before checking again
             }
