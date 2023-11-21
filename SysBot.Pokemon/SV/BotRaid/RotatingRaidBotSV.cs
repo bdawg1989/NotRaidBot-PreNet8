@@ -1051,13 +1051,28 @@ namespace SysBot.Pokemon.SV.BotRaid
                     await Task.Delay(1_500, token).ConfigureAwait(false);
                     hasSwapped = false;
                 }
+
                 // Overriding the seed
                 byte[] inj = BitConverter.GetBytes(seed);
                 var currseed = await SwitchConnection.PointerPeek(4, ptr, token).ConfigureAwait(false);
 
-                // Convert byte arrays to hexadecimal strings without reversing
-                string currSeedHex = BitConverter.ToString(currseed).Replace("-", "");
-                string newSeedHex = BitConverter.ToString(inj).Replace("-", "");
+                // Reverse the byte array of the current seed for logging purposes if necessary
+                byte[] currSeedForLogging = (byte[])currseed.Clone();
+                if (BitConverter.IsLittleEndian)
+                {
+                    Array.Reverse(currSeedForLogging);
+                }
+
+                // Reverse the byte array of the new seed for logging purposes if necessary
+                byte[] injForLogging = (byte[])inj.Clone();
+                if (BitConverter.IsLittleEndian)
+                {
+                    Array.Reverse(injForLogging);
+                }
+
+                // Convert byte arrays to hexadecimal strings for logging
+                string currSeedHex = BitConverter.ToString(currSeedForLogging).Replace("-", "");
+                string newSeedHex = BitConverter.ToString(injForLogging).Replace("-", "");
 
                 Log($"Replacing {currSeedHex} with {newSeedHex}.");
                 await SwitchConnection.PointerPoke(inj, ptr, token).ConfigureAwait(false);
