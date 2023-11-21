@@ -5,6 +5,7 @@ using RaidCrawler.Core.Structures;
 using SysBot.Base;
 using SysBot.Pokemon.SV.BotRaid.Helpers;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -68,8 +69,6 @@ namespace SysBot.Pokemon.SV.BotRaid
         public static bool IsKitakami = false;
         private DateTime TimeForRollBackCheck = DateTime.Now;
         private static bool hasSwapped = false;
-        private uint lastRandomShinySeed;
-
 
         public override async Task MainLoop(CancellationToken token)
         {
@@ -820,15 +819,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                     Log($"{nextUpdateMinute} minutes have passed. We are still in battle...");
                     nextUpdateMinute += 2; // Update the time for the next status update.
                 }
-                // Check if the battle has been ongoing for 6 minutes
-                if (timeInBattle.TotalMinutes >= 6)
-                {
-                    // Hit Home button twice to get out of stuck mode if we are indeed stuck.
-                    await Click(HOME, 0_500, token).ConfigureAwait(false);
-                    await Click(HOME, 0_500, token).ConfigureAwait(false);
 
-                    break;
-                }
                 // Make sure to wait some time before the next iteration to prevent a tight loop
                 await Task.Delay(1000, token); // Wait for a second before checking again
             }
@@ -846,11 +837,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             await Click(B, 0_500, token).ConfigureAwait(false);
             await Click(DDOWN, 0_500, token).ConfigureAwait(false);
             await Click(A, 0_500, token).ConfigureAwait(false);
-            if (Settings.RaidSettings.MysteryRaids && !firstRun)
-            {
-                // Create and add a new random shiny raid
-                CreateAndAddRandomShinyRaid();
-            }
+
             if (Settings.ActiveRaids.Count > 1)
             {
                 await SanitizeRotationCount(token).ConfigureAwait(false);
@@ -967,9 +954,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                     Console.WriteLine("Unknown action, what's the move?");
                     throw new InvalidOperationException("Unknown action type!");
             }
-
-            // Check for Action2, if defined.
-            // TODO: Implement Action2 logic here.
         }
 
         private async Task CountRaids(List<(ulong, RaidMyStatus)>? trainers, CancellationToken token)
@@ -1065,13 +1049,11 @@ namespace SysBot.Pokemon.SV.BotRaid
                 // Overriding the seed
                 byte[] inj = BitConverter.GetBytes(seed);
                 var currseed = await SwitchConnection.PointerPeek(4, ptr, token).ConfigureAwait(false);
-                // Convert byte arrays to hexadecimal strings
+
+                // Convert byte arrays to hexadecimal strings without reversing
                 string currSeedHex = BitConverter.ToString(currseed).Replace("-", "");
                 string newSeedHex = BitConverter.ToString(inj).Replace("-", "");
 
-                // Reverse the order of characters to display in the conventional format
-                currSeedHex = ReverseHexString(currSeedHex);
-                newSeedHex = ReverseHexString(newSeedHex);
                 Log($"Replacing {currSeedHex} with {newSeedHex}.");
                 await SwitchConnection.PointerPoke(inj, ptr, token).ConfigureAwait(false);
 
@@ -1084,15 +1066,46 @@ namespace SysBot.Pokemon.SV.BotRaid
                     await SwitchConnection.PointerPoke(crystal, ptr2, token).ConfigureAwait(false);
             }
         }
-        private void CreateAndAddRandomShinyRaid()
+        private void CreateAndAddRandomShinyRaidAsRequested()
         {
             // Generate a random shiny seed
             uint randomSeed = GenerateRandomShinySeed();
 
-            // Generate random values for DifficultyLevel and StoryProgressLevel
             Random random = new Random();
-            int randomDifficultyLevel = random.Next(1, 7); // Difficulty level ranges from 1 to 6
             int randomStoryProgressLevel = random.Next(3, 7); // Story progress level ranges from 3 to 6
+            var gameProgress = ConvertToGameProgress(randomStoryProgressLevel);
+
+            // Determine minimum and maximum difficulty based on StoryProgressLevel
+            int minDifficulty, maxDifficulty;
+            switch (gameProgress)
+            {
+                case GameProgress.Unlocked3Stars:
+                    minDifficulty = 1; maxDifficulty = 3;
+                    break;
+                case GameProgress.Unlocked4Stars:
+                    minDifficulty = 1; maxDifficulty = 4;
+                    break;
+                case GameProgress.Unlocked5Stars:
+                    minDifficulty = 3; maxDifficulty = 5;
+                    break;
+                case GameProgress.Unlocked6Stars:
+                    minDifficulty = 3; maxDifficulty = 6;
+                    break;
+                default:
+                    minDifficulty = 1; maxDifficulty = 6; // Default case, adjust as needed
+                    break;
+            }
+
+            int randomDifficultyLevel = random.Next(minDifficulty, maxDifficulty + 1); // Generate random difficulty within the range
+
+            // Determine the crystal type based on difficulty level
+            var crystalType = randomDifficultyLevel switch
+            {
+                >= 1 and <= 5 => TeraCrystalType.Base,
+                6 => TeraCrystalType.Black,
+                7 => TeraCrystalType.Might,
+                _ => throw new ArgumentException("Invalid difficulty level.")
+            };
 
             // Create a new ActiveRaid entry for the random shiny raid
             RotatingRaidParameters newRandomShinyRaid = new RotatingRaidParameters
@@ -1102,17 +1115,35 @@ namespace SysBot.Pokemon.SV.BotRaid
                 Title = "Mystery Shiny Raid",
                 AddedByRACommand = true,
                 DifficultyLevel = randomDifficultyLevel,
-                StoryProgressLevel = randomStoryProgressLevel,
+                StoryProgressLevel = (int)gameProgress,
+                CrystalType = crystalType,
+                IsShiny = true,
                 // Set other necessary properties, defaults or placeholders as required
             };
 
-            // Add the new raid to the ActiveRaids list
-            Settings.ActiveRaids.Add(newRandomShinyRaid);
+            // Find the last position of a raid added by the RA command
+            int lastRaCommandRaidIndex = Settings.ActiveRaids.FindLastIndex(raid => raid.AddedByRACommand);
+            int insertPosition = lastRaCommandRaidIndex != -1 ? lastRaCommandRaidIndex + 1 : RotationCount + 1;
 
-            // Log the seed for debugging purposes
-            Log($"Added Mystery Shiny Raid with seed: {randomSeed:X}");
+            // Insert the new raid at the determined position
+            Settings.ActiveRaids.Insert(insertPosition, newRandomShinyRaid);
+
+            // Log the addition for debugging purposes
+            Log($"Added Mystery Shiny Raid with seed: {randomSeed:X} at position {insertPosition}");
         }
-
+        public GameProgress ConvertToGameProgress(int storyProgressLevel)
+        {
+            return storyProgressLevel switch
+            {
+                6 => GameProgress.Unlocked6Stars,
+                5 => GameProgress.Unlocked5Stars,
+                4 => GameProgress.Unlocked4Stars,
+                3 => GameProgress.Unlocked3Stars,
+                2 => GameProgress.UnlockedTeraRaids,
+                1 => GameProgress.UnlockedTeraRaids,
+                _ => GameProgress.Unlocked6Stars
+            };
+        }
         private uint GenerateRandomShinySeed()
         {
             Random random = new Random();
@@ -1149,12 +1180,12 @@ namespace SysBot.Pokemon.SV.BotRaid
             // Read the seed from the specified index
             var seedBytesAtIndex = await SwitchConnection.PointerPeek(4, ptrAtIndex, token).ConfigureAwait(false);
             uint seedAtIndex = BitConverter.ToUInt32(seedBytesAtIndex, 0); // Assuming little endian
-          //  Log($"Seed at index {index}: {seedAtIndex}");
+                                                                           //  Log($"Seed at index {index}: {seedAtIndex}");
 
             // Write the seed to index 0
             byte[] seedBytesToWrite = BitConverter.GetBytes(seedAtIndex);
             await SwitchConnection.PointerPoke(seedBytesToWrite, ptrAtZero, token).ConfigureAwait(false);
-          //  Log($"Synced seed from index {index} to index 0");
+            //  Log($"Synced seed from index {index} to index 0");
         }
 
         private async Task SwapRaidLocationsAsync(int currentRaidIndex, CancellationToken token)
@@ -1162,7 +1193,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             // Check if the swap has already been done
             if (hasSwapped)
             {
-             //   Log("Swapping Raid Locations already completed.");
+                //   Log("Swapping Raid Locations already completed.");
                 return;
             }
             //   Log($"Starting Swapping Raid Locations for raid index: {currentRaidIndex}");
@@ -1190,13 +1221,13 @@ namespace SysBot.Pokemon.SV.BotRaid
             await LogAndUpdateValue("Den ID", currentDenId, 4, AdjustPointer(zeroPointer, denIdOffset), token);
 
             hasSwapped = true;
-          //  Log("Completed Swapping Raid Locations.");
+            //  Log("Completed Swapping Raid Locations.");
         }
 
         private async Task<uint> ReadValue(string fieldName, int size, List<long> pointer, CancellationToken token)
         {
             byte[] valueBytes = await SwitchConnection.PointerPeek(size, pointer, token).ConfigureAwait(false);
-          //  Log($"{fieldName} - Read Value: {BitConverter.ToString(valueBytes)}");
+            //  Log($"{fieldName} - Read Value: {BitConverter.ToString(valueBytes)}");
 
             // Determine the byte order based on the field name
             bool isBigEndian = fieldName.Equals("Den ID");
@@ -1214,7 +1245,7 @@ namespace SysBot.Pokemon.SV.BotRaid
         private async Task LogAndUpdateValue(string fieldName, uint value, int size, List<long> pointer, CancellationToken token)
         {
             byte[] currentValue = await SwitchConnection.PointerPeek(size, pointer, token).ConfigureAwait(false);
-           // Log($"{fieldName} - Current Value: {BitConverter.ToString(currentValue)}");
+            // Log($"{fieldName} - Current Value: {BitConverter.ToString(currentValue)}");
 
             // Determine the byte order based on the field name
             bool isBigEndian = fieldName.Equals("Den ID");
@@ -1239,8 +1270,9 @@ namespace SysBot.Pokemon.SV.BotRaid
             await SwitchConnection.PointerPoke(newValue, pointer, token).ConfigureAwait(false);
 
             byte[] updatedValue = await SwitchConnection.PointerPeek(size, pointer, token).ConfigureAwait(false);
-          //  Log($"{fieldName} - Updated Value: {BitConverter.ToString(updatedValue)}");
+            //  Log($"{fieldName} - Updated Value: {BitConverter.ToString(updatedValue)}");
         }
+
 
         private List<long> AdjustPointer(List<long> basePointer, int offset)
         {
@@ -1248,7 +1280,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             adjustedPointer[3] += offset; // Adjusting the offset at the 4th index
             return adjustedPointer;
         }
-
         private List<long> CalculateDirectPointer(int index)
         {
             return new(Offsets.RaidBlockPointerP)
@@ -1274,7 +1305,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                 };
             }
         }
-
         string ReverseHexString(string hexString)
         {
             char[] charArray = hexString.ToCharArray();
@@ -1504,6 +1534,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             await Click(A, 8_000, token).ConfigureAwait(false);
             return true;
         }
+
 
         private async Task RollBackTime(CancellationToken token)
         {
@@ -1886,7 +1917,12 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
             if (Settings.ActiveRaids[RotationCount].AddedByRACommand)
             {
-                await Task.Delay(Settings.EmbedToggles.RequestEmbedTime * 1000).ConfigureAwait(false);  // Delay for RequestEmbedTime seconds
+                // Check if the raid is a Mystery Shiny Raid
+                if (Settings.ActiveRaids[RotationCount].Title != "Mystery Shiny Raid")
+                {
+                    // Apply the delay only if it's not a Mystery Shiny Raid
+                    await Task.Delay(Settings.EmbedToggles.RequestEmbedTime * 1000).ConfigureAwait(false);  // Delay for RequestEmbedTime seconds
+                }
             }
 
             // Description can only be up to 4096 characters.
@@ -2357,6 +2393,11 @@ namespace SysBot.Pokemon.SV.BotRaid
                 Log($"Attempting to override seed for {Settings.ActiveRaids[RotationCount].Species}.");
                 await OverrideSeedIndex(SeedIndexToReplace, token).ConfigureAwait(false);
                 Log("Seed override completed.");
+                if (Settings.RaidSettings.MysteryRaids && !firstRun)
+                {
+                    // Create and add a new random shiny raid
+                    CreateAndAddRandomShinyRaidAsRequested();
+                }
             }
 
             for (int i = 0; i < 8; i++)
@@ -2531,6 +2572,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                     if (raid.IsEvent)
                     {
                         eventRaidFoundP = true;
+                        Settings.EventSettings.EventActive = true;
                         // Extract and log the Area ID and Den ID of the Event Raid
                         eventRaidPAreaId = (int)raid.Area;
                         eventRaidPDenId = (int)raid.Den;
@@ -2554,6 +2596,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 {
                     // Set DeliveryGroupID back to -1 and EventActive to False
                     Settings.EventSettings.RaidDeliveryGroupID = -1;
+                    Settings.EventSettings.EventActive = false;
                 }
             }
 
@@ -2564,7 +2607,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             container.ClearEncounters();
             container.ClearRewards();
 
-            if (init || (SeedIndexToReplace >= 70 && SeedIndexToReplace <= 94))
+            if (init || SeedIndexToReplace >= 70 && SeedIndexToReplace <= 94)
             {
                 (delivery, enc, var num4ListKitakami) = container.ReadAllRaids(dataK, StoryProgress, EventProgress, 0, TeraRaidMapParent.Kitakami);
 
@@ -2572,7 +2615,34 @@ namespace SysBot.Pokemon.SV.BotRaid
                     Log($"Failed to find encounters for {enc} raid(s).");
 
                 if (delivery > 0)
-                    Log($"Invalid delivery group ID for {delivery} raid(s). Try deleting the \"cache\" folder.");
+                {
+                    Log($"Invalid delivery group ID for {delivery} raid(s). Group IDs: {string.Join(", ", num4ListKitakami)}. Try deleting the \"cache\" folder.");
+                }
+
+                // Initialize a counter for Kitakami raids
+                int raidIndexKitakami = 0;
+                bool eventRaidFoundK = false;
+                // Check the raids to see if any are event raids for Kitakami
+                foreach (var raid in container.Raids)
+                {
+                    if (raid.IsEvent)
+                    {
+                        eventRaidFoundK = true;
+                        Settings.EventSettings.EventActive = true;
+
+                        // Safety check for Kitakami raids
+                        if (raidIndexKitakami < num4ListKitakami.Count)
+                        {
+                            // Update the EventSettings.RaidDeliveryGroupID for Kitakami event raids
+                            Settings.EventSettings.RaidDeliveryGroupID = num4ListKitakami[raidIndexKitakami];
+                            Log($"Event Found! Updating Delivery Group ID to {num4ListKitakami[raidIndexKitakami]}.");
+                        }
+
+                        break; // Exit loop if an event raid is found
+                    }
+
+                    raidIndexKitakami++;
+                }
             }
 
             var allRaids = raids.Concat(container.Raids).ToList().AsReadOnly();
@@ -2689,7 +2759,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                 }
             }
         }
-
 
         public static (PK9, Embed) RaidInfoCommand(string seedValue, int contentType, TeraRaidMapParent map, int storyProgressLevel, int raidDeliveryGroupID, List<string> rewardsToShow, bool isEvent = false)
         {

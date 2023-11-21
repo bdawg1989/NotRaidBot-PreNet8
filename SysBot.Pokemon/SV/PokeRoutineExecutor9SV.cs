@@ -750,7 +750,6 @@ namespace SysBot.Pokemon
                         break;
                 }
             }
-
             // Format and filter rewards based on user preferences
             List<string> rewardStrings = new List<string>();
             if (rewardsToShow.Contains("Rare Candy") && rare > 0)
