@@ -1221,14 +1221,8 @@ namespace SysBot.Pokemon.SV.BotRaid
 
         private async Task SwapRaidLocationsAsync(int currentRaidIndex, string raidType, CancellationToken token)
         {
-            // Check if the swap has already been done
-            if (hasSwapped)
-            {
-                return;
-            }
-
             // Determine the index to swap with based on raid type
-            int swapWithIndex = raidType == "Might" ? 0 : 1; // Assuming index 0 for Might and index 1 for Distribution
+            int swapWithIndex = raidType == "Might" ? 0 : (raidType == "Distribution" ? 1 : currentRaidIndex);
 
             // Get the pointers for the current raid index and the determined index
             List<long> currentPointer = CalculateDirectPointer(currentRaidIndex);
@@ -1245,15 +1239,34 @@ namespace SysBot.Pokemon.SV.BotRaid
             uint swapAreaId = await ReadValue("Area ID", 4, AdjustPointer(swapPointer, areaIdOffset), token);
             uint swapDenId = await ReadValue("Den ID", 4, AdjustPointer(swapPointer, denIdOffset), token);
 
-            // Swap Area ID
-            await LogAndUpdateValue("Area ID", swapAreaId, 4, AdjustPointer(currentPointer, areaIdOffset), token);
-            await LogAndUpdateValue("Area ID", currentAreaId, 4, AdjustPointer(swapPointer, areaIdOffset), token);
+            if (hasSwapped && (raidType == "Black" || raidType == "Base"))
+            {
+                // Reversing the swap if it's a Black or Base raid
+                // Swap Area ID
+                await LogAndUpdateValue("Area ID", currentAreaId, 4, AdjustPointer(swapPointer, areaIdOffset), token);
+                await LogAndUpdateValue("Area ID", swapAreaId, 4, AdjustPointer(currentPointer, areaIdOffset), token);
 
-            // Swap Den ID
-            await LogAndUpdateValue("Den ID", swapDenId, 4, AdjustPointer(currentPointer, denIdOffset), token);
-            await LogAndUpdateValue("Den ID", currentDenId, 4, AdjustPointer(swapPointer, denIdOffset), token);
+                // Swap Den ID
+                await LogAndUpdateValue("Den ID", currentDenId, 4, AdjustPointer(swapPointer, denIdOffset), token);
+                await LogAndUpdateValue("Den ID", swapDenId, 4, AdjustPointer(currentPointer, denIdOffset), token);
 
-            hasSwapped = true;
+                // Reset the flag after reversing the swap
+                hasSwapped = false;
+            }
+            else if (!hasSwapped && (raidType == "Might" || raidType == "Distribution"))
+            {
+                // Performing the initial swap for Might or Distribution
+                // Swap Area ID
+                await LogAndUpdateValue("Area ID", swapAreaId, 4, AdjustPointer(currentPointer, areaIdOffset), token);
+                await LogAndUpdateValue("Area ID", currentAreaId, 4, AdjustPointer(swapPointer, areaIdOffset), token);
+
+                // Swap Den ID
+                await LogAndUpdateValue("Den ID", swapDenId, 4, AdjustPointer(currentPointer, denIdOffset), token);
+                await LogAndUpdateValue("Den ID", currentDenId, 4, AdjustPointer(swapPointer, denIdOffset), token);
+
+                // Set the flag after performing the swap
+                hasSwapped = true;
+            }
         }
 
         private async Task<uint> ReadValue(string fieldName, int size, List<long> pointer, CancellationToken token)
