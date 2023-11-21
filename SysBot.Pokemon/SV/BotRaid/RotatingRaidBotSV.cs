@@ -1025,6 +1025,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             if (crystalType == TeraCrystalType.Might || crystalType == TeraCrystalType.Distribution)
             {
+                hasSwapped = false;
                 Log(crystalType == TeraCrystalType.Might ? "Preparing 7 Star Event Raid..." : "Preparing Distribution Raid...");
 
                 // Overriding the seed
@@ -1049,11 +1050,12 @@ namespace SysBot.Pokemon.SV.BotRaid
                 // Check if crystal type is Black or Base and if swapping has already been done
                 if ((crystalType == TeraCrystalType.Black || crystalType == TeraCrystalType.Base) && hasSwapped)
                 {
+                    hasSwapped = false;
                     //  Log($"CrystalType is {crystalType}, proceeding with re-swapping Area ID and Den ID.");
                     string raidType = crystalType == TeraCrystalType.Black ? "Black" : "Base";
                     await SwapRaidLocationsAsync(index, raidType, token).ConfigureAwait(false);
                     await Task.Delay(1_500, token).ConfigureAwait(false);
-                    hasSwapped = false;
+                    hasSwapped = true;
                 }
 
                 // Overriding the seed
