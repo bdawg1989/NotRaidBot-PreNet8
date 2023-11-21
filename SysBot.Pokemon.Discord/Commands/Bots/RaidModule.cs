@@ -558,8 +558,6 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             await ReplyAsync(msg).ConfigureAwait(false);
         }
 
-
-
         [Command("removeRaidParams")]
         [Alias("rrp")]
         [Summary("Removes a raid parameter.")]
