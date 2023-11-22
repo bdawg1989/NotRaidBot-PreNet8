@@ -1095,10 +1095,6 @@ namespace SysBot.Pokemon.SV.BotRaid
 
         private void CreateAndAddRandomShinyRaidAsRequested()
         {
-            if (firstRun)
-            {
-                return;
-            }
             // Generate a random shiny seed
             uint randomSeed = GenerateRandomShinySeed();
 
@@ -2448,8 +2444,14 @@ namespace SysBot.Pokemon.SV.BotRaid
                 Log("Seed override completed.");
                 if (Settings.RaidSettings.MysteryRaids && !firstRun)
                 {
-                    // Create and add a new random shiny raid
-                    CreateAndAddRandomShinyRaidAsRequested();
+                    // Count the number of existing Mystery Shiny Raids
+                    int mysteryRaidCount = Settings.ActiveRaids.Count(raid => raid.Title.Contains("Mystery Shiny Raid"));
+
+                    // Only create and add a new Mystery Shiny Raid if there are two or fewer in the list
+                    if (mysteryRaidCount <= 2)
+                    {
+                        CreateAndAddRandomShinyRaidAsRequested();
+                    }
                 }
             }
 
