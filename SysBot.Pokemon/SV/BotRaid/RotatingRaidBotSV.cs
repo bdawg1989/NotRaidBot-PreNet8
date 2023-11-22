@@ -1095,6 +1095,10 @@ namespace SysBot.Pokemon.SV.BotRaid
 
         private void CreateAndAddRandomShinyRaidAsRequested()
         {
+            if (firstRun)
+            {
+                return;
+            }
             // Generate a random shiny seed
             uint randomSeed = GenerateRandomShinySeed();
 
@@ -1388,77 +1392,80 @@ namespace SysBot.Pokemon.SV.BotRaid
         {
             await Task.Delay(0_050, token).ConfigureAwait(false);
 
-            // First, check if ActiveRaids is empty. If it is, no further processing is needed.
             if (Settings.ActiveRaids.Count == 0)
             {
                 Log("ActiveRaids is empty. Exiting SanitizeRotationCount.");
                 return;
             }
 
-            // Validate that the RotationCount is within the range of ActiveRaids.
-            if (RotationCount >= Settings.ActiveRaids.Count)
-            {
-                RotationCount = 0;
-                Log($"Resetting Rotation Count to {RotationCount}");
-            }
+            // Ensure RotationCount is within range
+            RotationCount %= Settings.ActiveRaids.Count;
 
-            // Check if the current raid was added by the RA command, and remove it.
+            // Check if the current raid was added by the RA command
             if (Settings.ActiveRaids[RotationCount].AddedByRACommand)
             {
-                Log($"Raid for {Settings.ActiveRaids[RotationCount].Species} was added via RA command and will be removed from the rotation list.");
-                Settings.ActiveRaids.RemoveAt(RotationCount);
-                // Do not increment the RotationCount here, since the next raid has now taken the index of the removed raid.
+                bool isMysteryRaid = Settings.ActiveRaids[RotationCount].Title.Contains("Mystery Shiny Raid");
+                bool isUserRequestedRaid = !isMysteryRaid && Settings.ActiveRaids[RotationCount].Title.Contains("'s Requested Raid");
 
-                // Re-check RotationCount after removal to avoid index out-of-range errors
-                if (RotationCount >= Settings.ActiveRaids.Count)
+                if (isUserRequestedRaid || isMysteryRaid)
                 {
-                    RotationCount = 0;
-                    Log($"Resetting Rotation Count to {RotationCount}");
+                    Log($"Raid for {Settings.ActiveRaids[RotationCount].Species} was added via RA command and will be removed from the rotation list.");
+                    Settings.ActiveRaids.RemoveAt(RotationCount);
+                }
+                else if (!firstRun)
+                {
+                    RotationCount++;
                 }
             }
-            else
+            else if (!firstRun)
             {
-                // If the current raid wasn't added by the RA command, move to the next raid.
                 RotationCount++;
             }
 
             if (firstRun)
             {
-                RotationCount = 0; // Start back at 0 on first run.
-                Log($"Resetting Rotation Count to {RotationCount}");
+                RotationCount = 0;
                 firstRun = false;
             }
 
             if (Settings.RaidSettings.RandomRotation)
             {
                 ProcessRandomRotation();
-                return;  // Exit early after processing random rotation
+                return;
             }
 
-            // Check RotationCount again after possibly incrementing it
-            if (RotationCount >= Settings.ActiveRaids.Count)
+            // Adjust RotationCount to point to the next priority raid
+            RotationCount = FindNextPriorityRaidIndex(RotationCount, Settings.ActiveRaids);
+            Log($"Next raid in the list: {Settings.ActiveRaids[RotationCount].Species}.");
+        }
+
+        private int FindNextPriorityRaidIndex(int currentRotationCount, List<RotatingRaidParameters> raids)
+        {
+            int count = raids.Count;
+            for (int i = 0; i < count; i++)
             {
-                RotationCount = 0;
-                Log($"Resetting Rotation Count to {RotationCount}");
-            }
-            else
-            {
-                Log($"Next raid in the list: {Settings.ActiveRaids[RotationCount].Species}.");
-                while (RotationCount < Settings.ActiveRaids.Count && !Settings.ActiveRaids[RotationCount].ActiveInRotation)
+                int index = (currentRotationCount + i) % count;
+                RotatingRaidParameters raid = raids[index];
+
+                // Prioritize user requested raids over Mystery Shiny Raids
+                if (raid.AddedByRACommand && !raid.Title.Contains("Mystery Shiny Raid"))
                 {
-                    Log($"{Settings.ActiveRaids[RotationCount].Species} is disabled. Moving to next active raid in rotation.");
-                    RotationCount++;
-                    if (RotationCount >= Settings.ActiveRaids.Count)
-                    {
-                        RotationCount = 0;
-                        Log($"Resetting Rotation Count to {RotationCount}");
-                    }
+                    return index;
                 }
             }
+            return currentRotationCount; // Continue with the current rotation if no priority raid is found
         }
 
         private void ProcessRandomRotation()
         {
+            // Turn off RandomRotation if both RandomRotation and MysteryRaid are true
+            if (Settings.RaidSettings.RandomRotation && Settings.RaidSettings.MysteryRaids)
+            {
+                Settings.RaidSettings.RandomRotation = false;
+                Log("RandomRotation turned off due to MysteryRaids being active.");
+                return;  // Exit the method as RandomRotation is now turned off
+            }
+
             // Check the remaining raids for any added by the RA command
             for (var i = RotationCount; i < Settings.ActiveRaids.Count; i++)
             {
@@ -1475,6 +1482,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             RotationCount = random.Next(Settings.ActiveRaids.Count);
             Log($"Setting Rotation Count to {RotationCount}");
         }
+
 
         private async Task InjectPartyPk(string battlepk, CancellationToken token)
         {
