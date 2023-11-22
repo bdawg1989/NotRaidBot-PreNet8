@@ -26,17 +26,33 @@ namespace SysBot.Pokemon.Discord
             var lines = string.Join(Environment.NewLine, summaries);
             await ReplyAsync(Format.Code(lines)).ConfigureAwait(false);
         }
+        private string GetRunningBotIP()
+        {
+            var r = SysCord<T>.Runner;
+            var runningBot = r.Bots.Find(x => x.IsRunning);
 
+            // Check if a running bot is found
+            if (runningBot != null)
+            {
+                return runningBot.Bot.Config.Connection.IP;
+            }
+            else
+            {
+                // Default IP address or logic if no running bot is found
+                return "192.168.1.1";
+            }
+        }
         private static string GetDetailedSummary(PokeRoutineExecutorBase z)
         {
             return $"- {z.Connection.Name} | {z.Connection.Label} - {z.Config.CurrentRoutineType} ~ {z.LastTime:hh:mm:ss} | {z.LastLogged}";
         }
 
         [Command("botStart")]
-        [Summary("Starts a bot by IP address/port.")]
+        [Summary("Starts the currently running bot.")]
         [RequireSudo]
-        public async Task StartBotAsync(string ip)
+        public async Task StartBotAsync()
         {
+            string ip = GetRunningBotIP();
             var bot = SysCord<T>.Runner.GetBot(ip);
             if (bot == null)
             {
@@ -45,14 +61,14 @@ namespace SysBot.Pokemon.Discord
             }
 
             bot.Start();
-            // await Context.Channel.EchoAndReply($"The bot at {ip} ({bot.Bot.Connection.Label}) has been commanded to Start.").ConfigureAwait(false);
         }
 
         [Command("botStop")]
-        [Summary("Stops a bot by IP address/port.")]
+        [Summary("Stops the currently running bot.")]
         [RequireSudo]
-        public async Task StopBotAsync(string ip)
+        public async Task StopBotAsync()
         {
+            string ip = GetRunningBotIP();
             var bot = SysCord<T>.Runner.GetBot(ip);
             if (bot == null)
             {
@@ -61,15 +77,15 @@ namespace SysBot.Pokemon.Discord
             }
 
             bot.Stop();
-            // await Context.Channel.EchoAndReply($"The bot at {ip} ({bot.Bot.Connection.Label}) has been commanded to Stop.").ConfigureAwait(false);
         }
 
         [Command("botIdle")]
         [Alias("botPause")]
-        [Summary("Commands a bot to Idle by IP address/port.")]
+        [Summary("Commands the currently running bot to Idle.")]
         [RequireSudo]
-        public async Task IdleBotAsync(string ip)
+        public async Task IdleBotAsync()
         {
+            string ip = GetRunningBotIP();
             var bot = SysCord<T>.Runner.GetBot(ip);
             if (bot == null)
             {
@@ -78,14 +94,14 @@ namespace SysBot.Pokemon.Discord
             }
 
             bot.Pause();
-            await Context.Channel.EchoAndReply($"The bot at {ip} ({bot.Bot.Connection.Label}) has been commanded to Idle.").ConfigureAwait(false);
         }
 
         [Command("botChange")]
-        [Summary("Changes the routine of a bot (trades).")]
+        [Summary("Changes the routine of the currently running bot (trades).")]
         [RequireSudo]
-        public async Task ChangeTaskAsync(string ip, [Summary("Routine enum name")] PokeRoutineType task)
+        public async Task ChangeTaskAsync([Summary("Routine enum name")] PokeRoutineType task)
         {
+            string ip = GetRunningBotIP();
             var bot = SysCord<T>.Runner.GetBot(ip);
             if (bot == null)
             {
@@ -94,29 +110,24 @@ namespace SysBot.Pokemon.Discord
             }
 
             bot.Bot.Config.Initialize(task);
-            await Context.Channel.EchoAndReply($"The bot at {ip} ({bot.Bot.Connection.Label}) has been commanded to do {task} as its next task.").ConfigureAwait(false);
         }
 
         [Command("botRestart")]
-        [Summary("Restarts the bot(s) by IP address(es), separated by commas.")]
+        [Summary("Restarts the currently running bot(s).")]
         [RequireSudo]
-        public async Task RestartBotAsync(string ipAddressesCommaSeparated)
+        public async Task RestartBotAsync()
         {
-            var ips = ipAddressesCommaSeparated.Split(',');
-            foreach (var ip in ips)
+            string ip = GetRunningBotIP();
+            var bot = SysCord<T>.Runner.GetBot(ip);
+            if (bot == null)
             {
-                var bot = SysCord<T>.Runner.GetBot(ip);
-                if (bot == null)
-                {
-                    await ReplyAsync($"No bot has that IP address ({ip}).").ConfigureAwait(false);
-                    return;
-                }
-
-                var c = bot.Bot.Connection;
-                c.Reset();
-                bot.Start();
-                await Context.Channel.EchoAndReply($"The bot at {ip} ({c.Label}) has been commanded to Restart.").ConfigureAwait(false);
+                await ReplyAsync($"No bot has that IP address ({ip}).").ConfigureAwait(false);
+                return;
             }
+
+            var c = bot.Bot.Connection;
+            c.Reset();
+            bot.Start();
         }
     }
 }

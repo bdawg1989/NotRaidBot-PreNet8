@@ -70,26 +70,44 @@ namespace SysBot.Pokemon.Discord
             await SetStickAsyncImpl(s, x, y, ms, bot).ConfigureAwait(false);
         }
 
+        private string GetRunningBotIP()
+        {
+            var r = SysCord<T>.Runner;
+            var runningBot = r.Bots.Find(x => x.IsRunning);
+
+            // Check if a running bot is found
+            if (runningBot != null)
+            {
+                return runningBot.Bot.Config.Connection.IP;
+            }
+            else
+            {
+                // Default IP address or logic if no running bot is found
+                return "192.168.1.1";
+            }
+        }
+
         [Command("setScreenOn")]
         [Alias("screenOn", "scrOn")]
         [Summary("Turns the screen on")]
         [RequireSudo]
-        public async Task SetScreenOnAsync([Remainder] string ip)
+        public async Task SetScreenOnAsync()
         {
-            await SetScreen(true, ip).ConfigureAwait(false);
+            await SetScreen(true).ConfigureAwait(false);
         }
 
         [Command("setScreenOff")]
         [Alias("screenOff", "scrOff")]
         [Summary("Turns the screen off")]
         [RequireSudo]
-        public async Task SetScreenOffAsync([Remainder] string ip)
+        public async Task SetScreenOffAsync()
         {
-            await SetScreen(false, ip).ConfigureAwait(false);
+            await SetScreen(false).ConfigureAwait(false);
         }
 
-        private async Task SetScreen(bool on, string ip)
+        private async Task SetScreen(bool on)
         {
+            string ip = GetRunningBotIP();
             var bot = GetBot(ip);
             if (bot == null)
             {
