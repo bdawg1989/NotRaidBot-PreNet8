@@ -766,6 +766,14 @@ namespace SysBot.Pokemon
                 rewardStrings.Add($"**Exp. Candy XL** x{expCandyXL}");
             if (rewardsToShow.Contains("Sweet Herba Mystica") && sweetHerba > 0)
                 rewardStrings.Add($"**Sweet Herba Mystica** x{sweetHerba}");
+            if (rewardsToShow.Contains("Salty Herba Mystica") && saltyHerba > 0)
+                rewardStrings.Add($"**Salty Herba Mystica** x{saltyHerba}");
+            if (rewardsToShow.Contains("Sour Herba Mystica") && sourHerba > 0)
+                rewardStrings.Add($"**Sour Herba Mystica** x{sourHerba}");
+            if (rewardsToShow.Contains("Bitter Herba Mystica") && bitterHerba > 0)
+                rewardStrings.Add($"**Bitter Herba Mystica** x{bitterHerba}");
+            if (rewardsToShow.Contains("Spicy Herba Mystica") && spicyHerba > 0)
+                rewardStrings.Add($"**Spicy Herba Mystica** x{spicyHerba}");
             if (rewardsToShow.Contains("Pokeball") && pokeball > 0)
                 rewardStrings.Add($"**Pokeball** x{pokeball}");
             if (rewardsToShow.Contains("Nugget") && nugget > 0)
