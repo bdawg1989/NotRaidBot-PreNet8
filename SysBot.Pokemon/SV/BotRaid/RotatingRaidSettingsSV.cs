@@ -102,6 +102,9 @@ namespace SysBot.Pokemon
             [Category(Hosting), Description("When true, bot will add random shiny seeds to queue.  Only User Requests and Mystery Raids will be ran.")]
             public bool MysteryRaids { get; set; } = false;
 
+            [Category("MysteryRaids"), Description("Settings specific to Mystery Raids.")]
+            public MysteryRaidsSettings MysteryRaidsSettings { get; set; } = new MysteryRaidsSettings();
+
             [Category(Hosting), Description("When true, the bot will not allow user requested raids and will inform them that this setting is on.")]
             public bool DisableRequests { get; set; } = false;
 
@@ -182,6 +185,23 @@ namespace SysBot.Pokemon
 
             [Category(FeatureToggle), Description("When enabled, the bot will hide the raid code from the Discord embed.")]
             public bool HideRaidCode { get; set; } = false;
+        }
+        [Category("MysteryRaids"), TypeConverter(typeof(ExpandableObjectConverter))]
+        public class MysteryRaidsSettings
+        {
+            [Description("When true, 3* Raids are unlocked in Mystery Raids.")]
+            public bool Unlocked3Star { get; set; } = true;
+
+            [Description("When true, 4* Raids are unlocked in Mystery Raids.")]
+            public bool Unlocked4Star { get; set; } = true;
+
+            [Description("When true, 5* Raids are unlocked in Mystery Raids.")]
+            public bool Unlocked5Star { get; set; } = true;
+
+            [Description("When true, 6* Raids are unlocked in Mystery Raids.")]
+            public bool Unlocked6Star { get; set; } = true;
+
+            public override string ToString() => "Mystery Raids Settings";
         }
 
         [Category(Hosting), TypeConverter(typeof(CategoryConverter<LobbyFiltersCategory>))]

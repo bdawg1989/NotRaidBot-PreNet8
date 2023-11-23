@@ -5,7 +5,6 @@ using RaidCrawler.Core.Structures;
 using SysBot.Base;
 using SysBot.Pokemon.SV.BotRaid.Helpers;
 using System;
-using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -1099,7 +1098,27 @@ namespace SysBot.Pokemon.SV.BotRaid
             uint randomSeed = GenerateRandomShinySeed();
 
             Random random = new Random();
-            int randomStoryProgressLevel = random.Next(3, 7); // Story progress level ranges from 3 to 6
+
+            // Get the enabled star categories from MysteryRaidsSettings
+            var mysteryRaidsSettings = Settings.RaidSettings.MysteryRaidsSettings;
+
+            // Create a list of enabled StoryProgressLevels
+            var enabledLevels = new List<int>();
+            if (mysteryRaidsSettings.Unlocked3Star) enabledLevels.Add(3);
+            if (mysteryRaidsSettings.Unlocked4Star) enabledLevels.Add(4);
+            if (mysteryRaidsSettings.Unlocked5Star) enabledLevels.Add(5);
+            if (mysteryRaidsSettings.Unlocked6Star) enabledLevels.Add(6);
+
+            // Check if all options are false
+            if (!enabledLevels.Any())
+            {
+                Log("All Mystery Raids options are disabled. Mystery Raids will be turned off.");
+                Settings.RaidSettings.MysteryRaids = false; // Disable Mystery Raids
+                return; // Exit the method
+            }
+
+            // Randomly pick a StoryProgressLevel from the enabled levels
+            int randomStoryProgressLevel = enabledLevels.Any() ? enabledLevels[random.Next(enabledLevels.Count)] : 3; // Default to 3 if none are enabled
             var gameProgress = ConvertToGameProgress(randomStoryProgressLevel);
 
             // Determine minimum and maximum difficulty based on StoryProgressLevel
@@ -1123,7 +1142,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                     break;
             }
 
-            int randomDifficultyLevel = random.Next(minDifficulty, maxDifficulty + 1); // Generate random difficulty within the range
+            int randomDifficultyLevel = random.Next(minDifficulty, maxDifficulty + 1);
 
             // Determine the crystal type based on difficulty level
             var crystalType = randomDifficultyLevel switch
