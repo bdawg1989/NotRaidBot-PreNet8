@@ -2537,10 +2537,9 @@ namespace SysBot.Pokemon.SV.BotRaid
         {
             Log($"We had {Settings.LobbyOptions.SkipRaidLimit} lost/empty raids.. Moving on!");
 
+            await SanitizeRotationCount(token).ConfigureAwait(false);
             // Prepare and send an embed to inform users
             await EnqueueEmbed(null, "", false, false, true, false, token).ConfigureAwait(false);
-
-            await SanitizeRotationCount(token).ConfigureAwait(false);
             await CloseGame(Hub.Config, token).ConfigureAwait(false);
             await StartGameRaid(Hub.Config, token).ConfigureAwait(false);
         }
