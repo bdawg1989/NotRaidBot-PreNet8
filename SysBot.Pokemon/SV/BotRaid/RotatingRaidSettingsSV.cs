@@ -98,9 +98,11 @@ namespace SysBot.Pokemon
 
             [Category(Hosting), Description("When enabled, the bot will randomly pick a Raid to run, while keeping requests prioritized.")]
             public bool RandomRotation { get; set; } = false;
-            [Category(Hosting), Description("When enabled, the bot will randomly pick a Raid to run, while keeping requests prioritized.")]
-            public bool MysteryRaids { get; set; } = false;
+
             [Category(Hosting), Description("When true, bot will add random shiny seeds to queue.")]
+            public bool MysteryRaids { get; set; } = false;
+
+            [Category(Hosting), Description("When true, no one will be able to request raids.")]
             public bool DisableRequests { get; set; } = false;
 
             [Category(FeatureToggle), Description("Prevent attacks.  When true, Overworld Spawns (Pokémon) are disabled on the next seed injection.  When false, Overworld Spawns (Pokémon) are enabled on the next seed injection.")]
