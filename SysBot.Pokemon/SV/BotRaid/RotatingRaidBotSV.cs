@@ -2536,10 +2536,15 @@ namespace SysBot.Pokemon.SV.BotRaid
         private async Task SkipRaidOnLosses(CancellationToken token)
         {
             Log($"We had {Settings.LobbyOptions.SkipRaidLimit} lost/empty raids.. Moving on!");
+
+            // Prepare and send an embed to inform users
+            await EnqueueEmbed(null, "", false, false, true, false, token).ConfigureAwait(false);
+
             await SanitizeRotationCount(token).ConfigureAwait(false);
             await CloseGame(Hub.Config, token).ConfigureAwait(false);
             await StartGameRaid(Hub.Config, token).ConfigureAwait(false);
         }
+
 
         private static string AltPokeImg(PKM pkm)
         {
