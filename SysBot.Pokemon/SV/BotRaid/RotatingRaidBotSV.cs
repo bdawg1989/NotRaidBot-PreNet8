@@ -1426,6 +1426,11 @@ namespace SysBot.Pokemon.SV.BotRaid
                 firstRun = false;
             }
 
+            if (RotationCount >= Settings.ActiveRaids.Count)
+            {
+                RotationCount = 0;
+            }
+
             if (Settings.RaidSettings.RandomRotation)
             {
                 ProcessRandomRotation();
@@ -1483,7 +1488,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             RotationCount = random.Next(Settings.ActiveRaids.Count);
             Log($"Setting Rotation Count to {RotationCount}");
         }
-
 
         private async Task InjectPartyPk(string battlepk, CancellationToken token)
         {
