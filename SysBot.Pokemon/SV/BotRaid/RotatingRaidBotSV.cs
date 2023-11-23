@@ -1391,13 +1391,14 @@ namespace SysBot.Pokemon.SV.BotRaid
             if (Settings.ActiveRaids.Count == 0)
             {
                 Log("ActiveRaids is empty. Exiting SanitizeRotationCount.");
+                RotationCount = 0;
                 return;
             }
 
-            // Ensure RotationCount is within range
-            RotationCount %= Settings.ActiveRaids.Count;
+            // Normalize RotationCount to be within the range of ActiveRaids
+            RotationCount = (RotationCount >= Settings.ActiveRaids.Count) ? 0 : RotationCount;
 
-            // Check if the current raid was added by the RA command
+            // Process RA command raids
             if (Settings.ActiveRaids[RotationCount].AddedByRACommand)
             {
                 bool isMysteryRaid = Settings.ActiveRaids[RotationCount].Title.Contains("Mystery Shiny Raid");
@@ -1407,15 +1408,16 @@ namespace SysBot.Pokemon.SV.BotRaid
                 {
                     Log($"Raid for {Settings.ActiveRaids[RotationCount].Species} was added via RA command and will be removed from the rotation list.");
                     Settings.ActiveRaids.RemoveAt(RotationCount);
+                    RotationCount = (RotationCount >= Settings.ActiveRaids.Count) ? 0 : RotationCount;
                 }
                 else if (!firstRun)
                 {
-                    RotationCount++;
+                    RotationCount = (RotationCount + 1) % Settings.ActiveRaids.Count;
                 }
             }
             else if (!firstRun)
             {
-                RotationCount++;
+                RotationCount = (RotationCount + 1) % Settings.ActiveRaids.Count;
             }
 
             if (firstRun)
@@ -1430,7 +1432,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 return;
             }
 
-            // Adjust RotationCount to point to the next priority raid
+            // Find next priority raid
             RotationCount = FindNextPriorityRaidIndex(RotationCount, Settings.ActiveRaids);
             Log($"Next raid in the list: {Settings.ActiveRaids[RotationCount].Species}.");
         }
@@ -1438,27 +1440,21 @@ namespace SysBot.Pokemon.SV.BotRaid
         private int FindNextPriorityRaidIndex(int currentRotationCount, List<RotatingRaidParameters> raids)
         {
             int count = raids.Count;
-            bool userRequestedRaidExists = raids.Any(raid => raid.AddedByRACommand && !raid.Title.Contains("Mystery Shiny Raid"));
-
             for (int i = 0; i < count; i++)
             {
                 int index = (currentRotationCount + i) % count;
                 RotatingRaidParameters raid = raids[index];
 
-                if (raid.AddedByRACommand)
+                if (raid.AddedByRACommand && !raid.Title.Contains("Mystery Shiny Raid"))
                 {
-                    // Prioritize user-requested raids over Mystery Shiny Raids
-                    if (!raid.Title.Contains("Mystery Shiny Raid"))
-                    {
-                        return index; // User-requested raid
-                    }
-                    else if (!userRequestedRaidExists && Settings.RaidSettings.MysteryRaids)
-                    {
-                        return index; // Mystery Shiny Raid if no user-requested raid exists and MysteryRaids is true
-                    }
+                    return index;
+                }
+                else if (Settings.RaidSettings.MysteryRaids && raid.Title.Contains("Mystery Shiny Raid"))
+                {
+                    return index;
                 }
             }
-            return currentRotationCount; // Continue with the current rotation if no priority raid is found
+            return currentRotationCount;
         }
 
         private void ProcessRandomRotation()
