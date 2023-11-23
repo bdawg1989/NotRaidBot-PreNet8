@@ -1096,30 +1096,29 @@ namespace SysBot.Pokemon.SV.BotRaid
         {
             // Generate a random shiny seed
             uint randomSeed = GenerateRandomShinySeed();
-
             Random random = new Random();
 
             // Get the enabled star categories from MysteryRaidsSettings
             var mysteryRaidsSettings = Settings.RaidSettings.MysteryRaidsSettings;
 
-            // Create a list of enabled StoryProgressLevels
-            var enabledLevels = new List<int>();
-            if (mysteryRaidsSettings.Unlocked3Star) enabledLevels.Add(3);
-            if (mysteryRaidsSettings.Unlocked4Star) enabledLevels.Add(4);
-            if (mysteryRaidsSettings.Unlocked5Star) enabledLevels.Add(5);
-            if (mysteryRaidsSettings.Unlocked6Star) enabledLevels.Add(6);
-
             // Check if all options are false
-            if (!enabledLevels.Any())
+            if (!mysteryRaidsSettings.Unlocked3Star && !mysteryRaidsSettings.Unlocked4Star &&
+                !mysteryRaidsSettings.Unlocked5Star && !mysteryRaidsSettings.Unlocked6Star)
             {
                 Log("All Mystery Raids options are disabled. Mystery Raids will be turned off.");
                 Settings.RaidSettings.MysteryRaids = false; // Disable Mystery Raids
                 return; // Exit the method
             }
 
+            // Create a list of enabled StoryProgressLevels based on the enum values
+            var enabledLevels = new List<GameProgress>();
+            if (mysteryRaidsSettings.Unlocked3Star) enabledLevels.Add(GameProgress.Unlocked3Stars);
+            if (mysteryRaidsSettings.Unlocked4Star) enabledLevels.Add(GameProgress.Unlocked4Stars);
+            if (mysteryRaidsSettings.Unlocked5Star) enabledLevels.Add(GameProgress.Unlocked5Stars);
+            if (mysteryRaidsSettings.Unlocked6Star) enabledLevels.Add(GameProgress.Unlocked6Stars);
+
             // Randomly pick a StoryProgressLevel from the enabled levels
-            int randomStoryProgressLevel = enabledLevels.Any() ? enabledLevels[random.Next(enabledLevels.Count)] : 3; // Default to 3 if none are enabled
-            var gameProgress = ConvertToGameProgress(randomStoryProgressLevel);
+            GameProgress gameProgress = enabledLevels[random.Next(enabledLevels.Count)];
 
             // Determine minimum and maximum difficulty based on StoryProgressLevel
             int minDifficulty, maxDifficulty;
@@ -1138,7 +1137,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                     minDifficulty = 3; maxDifficulty = 6;
                     break;
                 default:
-                    minDifficulty = 1; maxDifficulty = 6; // Default case, adjust as needed
+                    minDifficulty = 1; maxDifficulty = 6; // Default case
                     break;
             }
 
@@ -1149,7 +1148,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             {
                 >= 1 and <= 5 => TeraCrystalType.Base,
                 6 => TeraCrystalType.Black,
-                7 => TeraCrystalType.Might,
                 _ => throw new ArgumentException("Invalid difficulty level.")
             };
 
@@ -1163,8 +1161,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 DifficultyLevel = randomDifficultyLevel,
                 StoryProgressLevel = (int)gameProgress,
                 CrystalType = crystalType,
-                IsShiny = true,
-                // Set other necessary properties, defaults or placeholders as required
+                IsShiny = true
             };
 
             // Find the last position of a raid added by the RA command
@@ -1176,20 +1173,6 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             // Log the addition for debugging purposes
             Log($"Added Mystery Shiny Raid with seed: {randomSeed:X} at position {insertPosition}");
-        }
-
-        public GameProgress ConvertToGameProgress(int storyProgressLevel)
-        {
-            return storyProgressLevel switch
-            {
-                6 => GameProgress.Unlocked6Stars,
-                5 => GameProgress.Unlocked5Stars,
-                4 => GameProgress.Unlocked4Stars,
-                3 => GameProgress.Unlocked3Stars,
-                2 => GameProgress.UnlockedTeraRaids,
-                1 => GameProgress.UnlockedTeraRaids,
-                _ => GameProgress.Unlocked6Stars
-            };
         }
 
         private uint GenerateRandomShinySeed()
