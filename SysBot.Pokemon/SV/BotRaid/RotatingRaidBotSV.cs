@@ -1455,6 +1455,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             return currentRotationCount;
         }
 
+
         private void ProcessRandomRotation()
         {
             // Turn off RandomRotation if both RandomRotation and MysteryRaid are true
@@ -2541,6 +2542,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             await StartGameRaid(Hub.Config, token).ConfigureAwait(false);
         }
 
+
         private static string AltPokeImg(PKM pkm)
         {
             string pkmform = string.Empty;
@@ -2783,7 +2785,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                         RaidEmbedInfo.RaidSpeciesNature = GameInfo.Strings.Natures[pk.Nature];
                         RaidEmbedInfo.RaidSpeciesAbility = $"{(Ability)pk.Ability}";
                         RaidEmbedInfo.RaidSpeciesIVs = $"{pk.IV_HP}/{pk.IV_ATK}/{pk.IV_DEF}/{pk.IV_SPA}/{pk.IV_SPD}/{pk.IV_SPE}";
-                        RaidEmbedInfo.RaidSpeciesTeraType = $"{pk.TeraType}";
+                        RaidEmbedInfo.RaidSpeciesTeraType = $"{(MoveType)container.Raids[i].TeraType}";
                         RaidEmbedInfo.Moves = string.Concat(moves.Where(z => z != 0).Select(z => $"{strings.Move[z]}\n")).TrimEnd(Environment.NewLine.ToCharArray());
                         RaidEmbedInfo.ScaleText = $"{PokeSizeDetailedUtil.GetSizeRating(pk.Scale)}";
                         RaidEmbedInfo.ScaleNumber = pk.Scale;
