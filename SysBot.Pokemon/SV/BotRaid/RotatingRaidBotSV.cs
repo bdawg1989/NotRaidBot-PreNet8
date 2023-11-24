@@ -1,18 +1,17 @@
 using Discord;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using PKHeX.Core;
 using RaidCrawler.Core.Structures;
 using SysBot.Base;
 using SysBot.Pokemon.SV.BotRaid.Helpers;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Mime;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -68,6 +67,9 @@ namespace SysBot.Pokemon.SV.BotRaid
         public static bool IsKitakami = false;
         private DateTime TimeForRollBackCheck = DateTime.Now;
         private static bool hasSwapped = false;
+        private uint originalAreaId;
+        private uint originalDenId;
+        private bool originalIdsSet = false;
 
         public override async Task MainLoop(CancellationToken token)
         {
@@ -384,6 +386,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                                 denFound = true;
                                 firstRun = true;
                                 hasSwapped = false;
+                                originalIdsSet = false;
                                 await Task.Delay(5_000, token).ConfigureAwait(false);
                                 await Click(B, 1_000, token).ConfigureAwait(false);
                                 await Task.Delay(3_000, token).ConfigureAwait(false);
@@ -1026,7 +1029,6 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             if (crystalType == TeraCrystalType.Might || crystalType == TeraCrystalType.Distribution)
             {
-                hasSwapped = false;
                 Log(crystalType == TeraCrystalType.Might ? "Preparing 7 Star Event Raid..." : "Preparing Distribution Raid...");
 
                 // Overriding the seed
@@ -1051,12 +1053,10 @@ namespace SysBot.Pokemon.SV.BotRaid
                 // Check if crystal type is Black or Base and if swapping has already been done
                 if ((crystalType == TeraCrystalType.Black || crystalType == TeraCrystalType.Base) && hasSwapped)
                 {
-                    hasSwapped = false;
                     //  Log($"CrystalType is {crystalType}, proceeding with re-swapping Area ID and Den ID.");
                     string raidType = crystalType == TeraCrystalType.Black ? "Black" : "Base";
                     await SwapRaidLocationsAsync(index, raidType, token).ConfigureAwait(false);
                     await Task.Delay(1_500, token).ConfigureAwait(false);
-                    hasSwapped = true;
                 }
 
                 // Overriding the seed
@@ -1225,8 +1225,18 @@ namespace SysBot.Pokemon.SV.BotRaid
 
         private async Task SwapRaidLocationsAsync(int currentRaidIndex, string raidType, CancellationToken token)
         {
-            // Determine the index to swap with based on raid type
-            int swapWithIndex = raidType == "Might" ? 0 : (raidType == "Distribution" ? 1 : currentRaidIndex);
+            int swapWithIndex;
+            if (raidType == "Might" || raidType == "Distribution")
+            {
+                // For Might or Distribution raids, the swap is with index 0
+                swapWithIndex = 0;
+            }
+            else
+            {
+                // For Base or Black raids, use the original index (0 or 1) that was swapped with
+                swapWithIndex = originalIdsSet ? (raidType == "Base" ? 0 : 1) : currentRaidIndex;
+            }
+            Log($"SwapRaidLocationsAsync: Current Index: {currentRaidIndex}, Swap With Index: {swapWithIndex} (RaidType: {raidType})");
 
             // Get the pointers for the current raid index and the determined index
             List<long> currentPointer = CalculateDirectPointer(currentRaidIndex);
@@ -1239,37 +1249,54 @@ namespace SysBot.Pokemon.SV.BotRaid
             uint currentAreaId = await ReadValue("Area ID", 4, AdjustPointer(currentPointer, areaIdOffset), token);
             uint currentDenId = await ReadValue("Den ID", 4, AdjustPointer(currentPointer, denIdOffset), token);
 
-            // Read values from the determined index
+            // Read values from the determined index (swap index)
             uint swapAreaId = await ReadValue("Area ID", 4, AdjustPointer(swapPointer, areaIdOffset), token);
             uint swapDenId = await ReadValue("Den ID", 4, AdjustPointer(swapPointer, denIdOffset), token);
 
-            if (hasSwapped && (raidType == "Black" || raidType == "Base"))
+            if (!originalIdsSet && (raidType == "Might" || raidType == "Distribution"))
             {
-                // Reversing the swap if it's a Black or Base raid
-                // Swap Area ID
-                await LogAndUpdateValue("Area ID", currentAreaId, 4, AdjustPointer(swapPointer, areaIdOffset), token);
-                await LogAndUpdateValue("Area ID", swapAreaId, 4, AdjustPointer(currentPointer, areaIdOffset), token);
-
-                // Swap Den ID
-                await LogAndUpdateValue("Den ID", currentDenId, 4, AdjustPointer(swapPointer, denIdOffset), token);
-                await LogAndUpdateValue("Den ID", swapDenId, 4, AdjustPointer(currentPointer, denIdOffset), token);
-
-                // Reset the flag after reversing the swap
-                hasSwapped = false;
+                // Set original IDs during the first swap
+                originalAreaId = currentAreaId;
+                originalDenId = currentDenId;
+                originalIdsSet = true;
+                Log($"Set original IDs: Area ID: {originalAreaId}, Den ID: {originalDenId}");
             }
-            else if (!hasSwapped && (raidType == "Might" || raidType == "Distribution"))
-            {
-                // Performing the initial swap for Might or Distribution
-                // Swap Area ID
-                await LogAndUpdateValue("Area ID", swapAreaId, 4, AdjustPointer(currentPointer, areaIdOffset), token);
-                await LogAndUpdateValue("Area ID", currentAreaId, 4, AdjustPointer(swapPointer, areaIdOffset), token);
 
-                // Swap Den ID
+            if (!hasSwapped && (raidType == "Might" || raidType == "Distribution"))
+            {
+                Log("Performing initial swap for Might or Distribution raid.");
+                // Performing the initial swap
+                await LogAndUpdateValue("Area ID", swapAreaId, 4, AdjustPointer(currentPointer, areaIdOffset), token);
                 await LogAndUpdateValue("Den ID", swapDenId, 4, AdjustPointer(currentPointer, denIdOffset), token);
+
+                await LogAndUpdateValue("Area ID", currentAreaId, 4, AdjustPointer(swapPointer, areaIdOffset), token);
                 await LogAndUpdateValue("Den ID", currentDenId, 4, AdjustPointer(swapPointer, denIdOffset), token);
 
-                // Set the flag after performing the swap
-                hasSwapped = true;
+                hasSwapped = true; // Set the flag after swapping
+            }
+            else if (hasSwapped && (raidType != "Might" && raidType != "Distribution"))
+            {
+                Log("Reversing swap for Black or Base raid.");
+
+                // Determine the correct index to swap back with, based on the raid type
+                int reverseSwapIndex = originalIdsSet && raidType != "Might" ? 0 : (raidType == "Distribution" ? 1 : currentRaidIndex);
+
+                Log($"Reversing swap with Index: {reverseSwapIndex}");
+
+                List<long> reverseSwapPointer = CalculateDirectPointer(reverseSwapIndex);
+
+                // Log current and original IDs before reversing swap
+                Log($"Current Index: {currentRaidIndex}, Area ID: {swapAreaId}, Den ID: {swapDenId}");
+                Log($"Original IDs - Area ID: {originalAreaId}, Den ID: {originalDenId}");
+
+                // Reversing the swap
+                await LogAndUpdateValue("Area ID", originalAreaId, 4, AdjustPointer(reverseSwapPointer, areaIdOffset), token);
+                await LogAndUpdateValue("Den ID", originalDenId, 4, AdjustPointer(reverseSwapPointer, denIdOffset), token);
+
+                await LogAndUpdateValue("Area ID", swapAreaId, 4, AdjustPointer(currentPointer, areaIdOffset), token);
+                await LogAndUpdateValue("Den ID", swapDenId, 4, AdjustPointer(currentPointer, denIdOffset), token);
+
+                hasSwapped = false; // Reset the flag after re-swapping
             }
         }
 
@@ -1355,39 +1382,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
         }
 
-        static string ReverseHexString(string hexString)
-        {
-            char[] charArray = hexString.ToCharArray();
-            Array.Reverse(charArray);
-            return new string(charArray);
-        }
-
-        private async Task<bool> DenStatus(int index, CancellationToken token)
-        {
-            if (index == -1)
-                return false;
-            List<long> ptr;
-            if (index < 69)
-            {
-                ptr = new(Offsets.RaidBlockPointerP)
-                {
-                    [3] = 0x40 + (index + 1) * 0x20 - 0x10
-                };
-            }
-            else
-            {
-                ptr = new(Offsets.RaidBlockPointerK)
-                {
-                    [3] = 0xCE8 + (index - 69) * 0x20 - 0x10
-                };
-            }
-            var data = await SwitchConnection.PointerPeek(2, ptr, token).ConfigureAwait(false);
-            var status = BitConverter.ToUInt16(data);
-            var msg = status == 1 ? "active" : "inactive"; // 1 = Den Found
-            Log($"Den is {msg}.");
-            return status == 1;
-        }
-
         private async Task SanitizeRotationCount(CancellationToken token)
         {
             await Task.Delay(0_050, token).ConfigureAwait(false);
@@ -1460,6 +1454,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
             return currentRotationCount;
         }
+
 
         private void ProcessRandomRotation()
         {
@@ -2547,6 +2542,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             await StartGameRaid(Hub.Config, token).ConfigureAwait(false);
         }
 
+
         private static string AltPokeImg(PKM pkm)
         {
             string pkmform = string.Empty;
@@ -2624,7 +2620,6 @@ namespace SysBot.Pokemon.SV.BotRaid
 
                 if (delivery > 0)
                 {
-                    Log($"Invalid delivery group ID for {delivery} raid(s). Group IDs: {string.Join(", ", num4List)}. Try deleting the \"cache\" folder.");
                 }
                 GameProgress currentProgress = (GameProgress)StoryProgress;
                 if (currentProgress == GameProgress.Unlocked5Stars || currentProgress == GameProgress.Unlocked6Stars)
