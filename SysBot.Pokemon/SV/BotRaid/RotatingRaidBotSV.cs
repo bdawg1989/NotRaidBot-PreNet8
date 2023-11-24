@@ -70,6 +70,12 @@ namespace SysBot.Pokemon.SV.BotRaid
         private uint originalAreaId;
         private uint originalDenId;
         private bool originalIdsSet = false;
+        private uint areaIdIndex0;
+        private uint denIdIndex0;
+        private uint areaIdIndex1;
+        private uint denIdIndex1;
+        private bool indicesInitialized = false;
+
 
         public override async Task MainLoop(CancellationToken token)
         {
@@ -387,6 +393,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                                 firstRun = true;
                                 hasSwapped = false;
                                 originalIdsSet = false;
+                                indicesInitialized = false;
                                 await Task.Delay(5_000, token).ConfigureAwait(false);
                                 await Click(B, 1_000, token).ConfigureAwait(false);
                                 await Task.Delay(3_000, token).ConfigureAwait(false);
@@ -1226,17 +1233,19 @@ namespace SysBot.Pokemon.SV.BotRaid
         private async Task SwapRaidLocationsAsync(int currentRaidIndex, string raidType, CancellationToken token)
         {
             int swapWithIndex;
-            if (raidType == "Might" || raidType == "Distribution")
+            if (raidType == "Might")
             {
-                // For Might or Distribution raids, the swap is with index 0
-                swapWithIndex = 0;
+                swapWithIndex = 0; // Swap with index 0 for Might raids
+            }
+            else if (raidType == "Distribution")
+            {
+                swapWithIndex = 1; // Swap with index 1 for Distribution raids
             }
             else
             {
-                // For Base or Black raids, use the original index (0 or 1) that was swapped with
                 swapWithIndex = originalIdsSet ? (raidType == "Base" ? 0 : 1) : currentRaidIndex;
             }
-            Log($"SwapRaidLocationsAsync: Current Index: {currentRaidIndex}, Swap With Index: {swapWithIndex} (RaidType: {raidType})");
+           // Log($"Current Index: {currentRaidIndex}, Swap With Index: {swapWithIndex} (RaidType: {raidType})");
 
             // Get the pointers for the current raid index and the determined index
             List<long> currentPointer = CalculateDirectPointer(currentRaidIndex);
@@ -1245,61 +1254,59 @@ namespace SysBot.Pokemon.SV.BotRaid
             int areaIdOffset = 20; // Corrected Area ID offset
             int denIdOffset = 25; // Corrected Den ID offset
 
+            // Read and store area and den ID values for indices 0 and 1
+            if (!originalIdsSet)
+            {
+                areaIdIndex0 = await ReadValue("Area ID", 4, AdjustPointer(CalculateDirectPointer(0), areaIdOffset), token);
+                denIdIndex0 = await ReadValue("Den ID", 4, AdjustPointer(CalculateDirectPointer(0), denIdOffset), token);
+                areaIdIndex1 = await ReadValue("Area ID", 4, AdjustPointer(CalculateDirectPointer(1), areaIdOffset), token);
+                denIdIndex1 = await ReadValue("Den ID", 4, AdjustPointer(CalculateDirectPointer(1), denIdOffset), token);
+            }
+
             // Read values from current index
             uint currentAreaId = await ReadValue("Area ID", 4, AdjustPointer(currentPointer, areaIdOffset), token);
             uint currentDenId = await ReadValue("Den ID", 4, AdjustPointer(currentPointer, denIdOffset), token);
 
-            // Read values from the determined index (swap index)
-            uint swapAreaId = await ReadValue("Area ID", 4, AdjustPointer(swapPointer, areaIdOffset), token);
-            uint swapDenId = await ReadValue("Den ID", 4, AdjustPointer(swapPointer, denIdOffset), token);
-
-            if (!originalIdsSet && (raidType == "Might" || raidType == "Distribution"))
-            {
-                // Set original IDs during the first swap
-                originalAreaId = currentAreaId;
-                originalDenId = currentDenId;
-                originalIdsSet = true;
-                Log($"Set original IDs: Area ID: {originalAreaId}, Den ID: {originalDenId}");
-            }
-
             if (!hasSwapped && (raidType == "Might" || raidType == "Distribution"))
             {
-                Log("Performing initial swap for Might or Distribution raid.");
-                // Performing the initial swap
+               // Log("Performing initial swap for Might or Distribution raid.");
+
+                // Get the IDs to swap with
+                uint swapAreaId = swapWithIndex == 0 ? areaIdIndex0 : areaIdIndex1;
+                uint swapDenId = swapWithIndex == 0 ? denIdIndex0 : denIdIndex1;
+
+                // Swap IDs between the current index and index 0/1
                 await LogAndUpdateValue("Area ID", swapAreaId, 4, AdjustPointer(currentPointer, areaIdOffset), token);
                 await LogAndUpdateValue("Den ID", swapDenId, 4, AdjustPointer(currentPointer, denIdOffset), token);
 
-                await LogAndUpdateValue("Area ID", currentAreaId, 4, AdjustPointer(swapPointer, areaIdOffset), token);
-                await LogAndUpdateValue("Den ID", currentDenId, 4, AdjustPointer(swapPointer, denIdOffset), token);
+                // Update index 0 or 1 with the original IDs
+                List<long> originalPointer = CalculateDirectPointer(swapWithIndex);
+                await LogAndUpdateValue("Area ID", currentAreaId, 4, AdjustPointer(originalPointer, areaIdOffset), token);
+                await LogAndUpdateValue("Den ID", currentDenId, 4, AdjustPointer(originalPointer, denIdOffset), token);
 
-                hasSwapped = true; // Set the flag after swapping
+                originalAreaId = currentAreaId;
+                originalDenId = currentDenId;
+                originalIdsSet = true;
+                hasSwapped = true;
             }
             else if (hasSwapped && (raidType != "Might" && raidType != "Distribution"))
             {
                 Log("Reversing swap for Black or Base raid.");
 
-                // Determine the correct index to swap back with, based on the raid type
-                int reverseSwapIndex = originalIdsSet && raidType != "Might" ? 0 : (raidType == "Distribution" ? 1 : currentRaidIndex);
+                // Determine the correct index that was originally swapped with
+                int reverseSwapIndex = originalIdsSet && raidType == "Base" ? 0 : 1;
 
-                Log($"Reversing swap with Index: {reverseSwapIndex}");
+                // Swap current index back with original IDs
+                await LogAndUpdateValue("Area ID", originalAreaId, 4, AdjustPointer(currentPointer, areaIdOffset), token);
+                await LogAndUpdateValue("Den ID", originalDenId, 4, AdjustPointer(currentPointer, denIdOffset), token);
 
-                List<long> reverseSwapPointer = CalculateDirectPointer(reverseSwapIndex);
+                // Swap index 0 or 1 back to its original state
+                await LogAndUpdateValue("Area ID", reverseSwapIndex == 0 ? areaIdIndex0 : areaIdIndex1, 4, AdjustPointer(CalculateDirectPointer(reverseSwapIndex), areaIdOffset), token);
+                await LogAndUpdateValue("Den ID", reverseSwapIndex == 0 ? denIdIndex0 : denIdIndex1, 4, AdjustPointer(CalculateDirectPointer(reverseSwapIndex), denIdOffset), token);
 
-                // Log current and original IDs before reversing swap
-                Log($"Current Index: {currentRaidIndex}, Area ID: {swapAreaId}, Den ID: {swapDenId}");
-                Log($"Original IDs - Area ID: {originalAreaId}, Den ID: {originalDenId}");
-
-                // Reversing the swap
-                await LogAndUpdateValue("Area ID", originalAreaId, 4, AdjustPointer(reverseSwapPointer, areaIdOffset), token);
-                await LogAndUpdateValue("Den ID", originalDenId, 4, AdjustPointer(reverseSwapPointer, denIdOffset), token);
-
-                await LogAndUpdateValue("Area ID", swapAreaId, 4, AdjustPointer(currentPointer, areaIdOffset), token);
-                await LogAndUpdateValue("Den ID", swapDenId, 4, AdjustPointer(currentPointer, denIdOffset), token);
-
-                hasSwapped = false; // Reset the flag after re-swapping
+                hasSwapped = false;
             }
         }
-
         private async Task<uint> ReadValue(string fieldName, int size, List<long> pointer, CancellationToken token)
         {
             byte[] valueBytes = await SwitchConnection.PointerPeek(size, pointer, token).ConfigureAwait(false);
