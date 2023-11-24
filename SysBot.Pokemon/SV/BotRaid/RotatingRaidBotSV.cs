@@ -1455,7 +1455,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             return currentRotationCount;
         }
 
-
         private void ProcessRandomRotation()
         {
             // Turn off RandomRotation if both RandomRotation and MysteryRaid are true
@@ -2542,7 +2541,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             await StartGameRaid(Hub.Config, token).ConfigureAwait(false);
         }
 
-
         private static string AltPokeImg(PKM pkm)
         {
             string pkmform = string.Empty;
@@ -2778,7 +2776,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                             extramoves = string.Concat(extraMovesList.Take(extraMovesList.Count()));
                             RaidEmbedInfo.ExtraMoves = extramoves;
                         }
-                        var entity = raid.GetTeraEncounter(container, raid.IsEvent ? 3 : StoryProgress, raid.IsEvent ? 1 : -1);
                         var titlePrefix = container.Raids[i].IsShiny ? "Shiny" : "";
                         RaidEmbedInfo.RaidSpecies = (Species)container.Encounters[i].Species;
                         RaidEmbedInfo.RaidEmbedTitle = $"{starcount} {titlePrefix} {(Species)container.Encounters[i].Species}{pkinfo}";
@@ -2786,7 +2783,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                         RaidEmbedInfo.RaidSpeciesNature = GameInfo.Strings.Natures[pk.Nature];
                         RaidEmbedInfo.RaidSpeciesAbility = $"{(Ability)pk.Ability}";
                         RaidEmbedInfo.RaidSpeciesIVs = $"{pk.IV_HP}/{pk.IV_ATK}/{pk.IV_DEF}/{pk.IV_SPA}/{pk.IV_SPD}/{pk.IV_SPE}";
-                        RaidEmbedInfo.RaidSpeciesTeraType = $"{raid.GetTeraType(entity)}";
+                        RaidEmbedInfo.RaidSpeciesTeraType = $"{pk.TeraType}";
                         RaidEmbedInfo.Moves = string.Concat(moves.Where(z => z != 0).Select(z => $"{strings.Move[z]}\n")).TrimEnd(Environment.NewLine.ToCharArray());
                         RaidEmbedInfo.ScaleText = $"{PokeSizeDetailedUtil.GetSizeRating(pk.Scale)}";
                         RaidEmbedInfo.ScaleNumber = pk.Scale;
