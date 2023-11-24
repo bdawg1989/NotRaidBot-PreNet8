@@ -6,11 +6,13 @@ using SysBot.Base;
 using SysBot.Pokemon.SV.BotRaid.Helpers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Mime;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -1175,7 +1177,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             Log($"Added Mystery Shiny Raid with seed: {randomSeed:X} at position {insertPosition}");
         }
 
-        private uint GenerateRandomShinySeed()
+        private static uint GenerateRandomShinySeed()
         {
             Random random = new Random();
             uint seed;
@@ -1320,7 +1322,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             //  Log($"{fieldName} - Updated Value: {BitConverter.ToString(updatedValue)}");
         }
 
-        private List<long> AdjustPointer(List<long> basePointer, int offset)
+        private static List<long> AdjustPointer(List<long> basePointer, int offset)
         {
             var adjustedPointer = new List<long>(basePointer);
             adjustedPointer[3] += offset; // Adjusting the offset at the 4th index
@@ -1353,7 +1355,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
         }
 
-        string ReverseHexString(string hexString)
+        static string ReverseHexString(string hexString)
         {
             char[] charArray = hexString.ToCharArray();
             Array.Reverse(charArray);
@@ -1458,7 +1460,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
             return currentRotationCount;
         }
-
 
         private void ProcessRandomRotation()
         {
@@ -2546,7 +2547,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             await StartGameRaid(Hub.Config, token).ConfigureAwait(false);
         }
 
-
         private static string AltPokeImg(PKM pkm)
         {
             string pkmform = string.Empty;
@@ -2783,6 +2783,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                             extramoves = string.Concat(extraMovesList.Take(extraMovesList.Count()));
                             RaidEmbedInfo.ExtraMoves = extramoves;
                         }
+                        var entity = raid.GetTeraEncounter(container, raid.IsEvent ? 3 : StoryProgress, raid.IsEvent ? 1 : -1);
                         var titlePrefix = container.Raids[i].IsShiny ? "Shiny" : "";
                         RaidEmbedInfo.RaidSpecies = (Species)container.Encounters[i].Species;
                         RaidEmbedInfo.RaidEmbedTitle = $"{starcount} {titlePrefix} {(Species)container.Encounters[i].Species}{pkinfo}";
@@ -2790,7 +2791,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                         RaidEmbedInfo.RaidSpeciesNature = GameInfo.Strings.Natures[pk.Nature];
                         RaidEmbedInfo.RaidSpeciesAbility = $"{(Ability)pk.Ability}";
                         RaidEmbedInfo.RaidSpeciesIVs = $"{pk.IV_HP}/{pk.IV_ATK}/{pk.IV_DEF}/{pk.IV_SPA}/{pk.IV_SPD}/{pk.IV_SPE}";
-                        RaidEmbedInfo.RaidSpeciesTeraType = $"{(MoveType)container.Raids[i].TeraType}";
+                        RaidEmbedInfo.RaidSpeciesTeraType = $"{raid.GetTeraType(entity)}";
                         RaidEmbedInfo.Moves = string.Concat(moves.Where(z => z != 0).Select(z => $"{strings.Move[z]}\n")).TrimEnd(Environment.NewLine.ToCharArray());
                         RaidEmbedInfo.ScaleText = $"{PokeSizeDetailedUtil.GetSizeRating(pk.Scale)}";
                         RaidEmbedInfo.ScaleNumber = pk.Scale;
