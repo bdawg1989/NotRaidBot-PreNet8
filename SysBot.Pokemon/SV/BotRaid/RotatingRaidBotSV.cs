@@ -76,7 +76,6 @@ namespace SysBot.Pokemon.SV.BotRaid
         private uint denIdIndex1;
         private bool indicesInitialized = false;
 
-
         public override async Task MainLoop(CancellationToken token)
         {
 
@@ -1245,7 +1244,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             {
                 swapWithIndex = originalIdsSet ? (raidType == "Base" ? 0 : 1) : currentRaidIndex;
             }
-           // Log($"Current Index: {currentRaidIndex}, Swap With Index: {swapWithIndex} (RaidType: {raidType})");
+            // Log($"Current Index: {currentRaidIndex}, Swap With Index: {swapWithIndex} (RaidType: {raidType})");
 
             // Get the pointers for the current raid index and the determined index
             List<long> currentPointer = CalculateDirectPointer(currentRaidIndex);
@@ -1269,7 +1268,7 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             if (!hasSwapped && (raidType == "Might" || raidType == "Distribution"))
             {
-               // Log("Performing initial swap for Might or Distribution raid.");
+                // Log("Performing initial swap for Might or Distribution raid.");
 
                 // Get the IDs to swap with
                 uint swapAreaId = swapWithIndex == 0 ? areaIdIndex0 : areaIdIndex1;
@@ -1307,6 +1306,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 hasSwapped = false;
             }
         }
+
         private async Task<uint> ReadValue(string fieldName, int size, List<long> pointer, CancellationToken token)
         {
             byte[] valueBytes = await SwitchConnection.PointerPeek(size, pointer, token).ConfigureAwait(false);
@@ -1461,7 +1461,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
             return currentRotationCount;
         }
-
 
         private void ProcessRandomRotation()
         {
@@ -2548,7 +2547,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             await CloseGame(Hub.Config, token).ConfigureAwait(false);
             await StartGameRaid(Hub.Config, token).ConfigureAwait(false);
         }
-
 
         private static string AltPokeImg(PKM pkm)
         {

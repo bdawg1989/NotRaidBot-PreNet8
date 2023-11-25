@@ -31,6 +31,7 @@ namespace SysBot.Pokemon.WinForms
 
             SetButtonStartStateSafe(false);
         }
+
         private async Task InitializeAsync()
         {
             string discordName = string.Empty;
@@ -93,6 +94,7 @@ namespace SysBot.Pokemon.WinForms
                 RTB_Logs.Refresh();
             }
         }
+
         private void RTB_Logs_TextChanged(object sender, EventArgs e)
         {
             RTB_Logs.Invalidate();
@@ -238,7 +240,6 @@ namespace SysBot.Pokemon.WinForms
             var lines = JsonSerializer.Serialize(cfg, ProgramConfigContext.Default.ProgramConfig);
             File.WriteAllText(Program.ConfigPath, lines);
         }
-
 
         [JsonSerializable(typeof(ProgramConfig))]
         [JsonSourceGenerationOptions(WriteIndented = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
@@ -421,6 +422,7 @@ namespace SysBot.Pokemon.WinForms
                 }
             }
         }
+
         private void ApplySylveonTheme()
         {
             // Define Sylveon-theme colors
@@ -487,7 +489,6 @@ namespace SysBot.Pokemon.WinForms
             B_Start.ForeColor = ElegantWhite;
         }
 
-
         private void ApplyGengarTheme()
         {
             // Define Gengar-theme colors
@@ -553,7 +554,6 @@ namespace SysBot.Pokemon.WinForms
             B_Start.BackColor = HauntingBlue;
             B_Start.ForeColor = GhostlyGrey;
         }
-
 
         private void ApplyLightTheme()
         {
@@ -685,8 +685,6 @@ namespace SysBot.Pokemon.WinForms
             B_Start.ForeColor = SoftWhite;
         }
 
-
-
         private void ApplyDarkTheme()
         {
             // Define the dark theme colors
@@ -784,8 +782,6 @@ namespace SysBot.Pokemon.WinForms
                 Application.Exit();
             }
         }
-
-
 
         private async Task RegisterLicenseAsync()
         {
