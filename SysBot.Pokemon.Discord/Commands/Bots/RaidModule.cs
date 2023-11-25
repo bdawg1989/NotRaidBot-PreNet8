@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -446,6 +447,47 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             }
         }
 
+        [Command("addRaidPK")]
+        [Alias("rp")]
+        [Summary("Adds provided showdown set Pokémon to the users Raid in Queue.")]
+        public async Task AddRaidPK()
+        {
+            var attachment = Context.Message.Attachments.FirstOrDefault();
+            if (attachment == default)
+            {
+                await ReplyAsync("No attachment provided!").ConfigureAwait(false);
+                return;
+            }
+
+            var att = await NetUtil.DownloadPKMAsync(attachment).ConfigureAwait(false);
+            var pk = GetRequest(att);
+            if (pk == null)
+            {
+                await ReplyAsync("Attachment provided is not compatible with this module!").ConfigureAwait(false);
+                return;
+            }
+            else
+            { 
+                var userId = Context.User.Id;
+                var raidParameters = Hub.Config.RotatingRaidSV.ActiveRaids;
+                var raidToUpdate = raidParameters.FirstOrDefault(r => r.RequestedByUserID == userId);
+                var set = ShowdownParsing.GetShowdownText(pk);
+                string[] partyPK = set.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                if (raidToUpdate != null)
+                {
+                    raidToUpdate.PartyPK = partyPK;
+                    await Context.Message.DeleteAsync().ConfigureAwait(false);
+                    var embed = RPEmbed.PokeEmbed(pk, Context.User.Username);
+                    await ReplyAsync(embed: embed).ConfigureAwait(false);
+                }
+                else
+                {
+                    var msg = "You don't have a raid in queue!";
+                    await ReplyAsync(msg).ConfigureAwait(false);
+                }
+            }
+        }
+
         [Command("raidQueueStatus")]
         [Alias("rqs")]
         [Summary("Checks the number of raids before the user's request and gives an ETA.")]
@@ -729,5 +771,17 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             Name = name,
             Comment = "Banned on " + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") + " UTC" + $"({comment})"
         };
+
+        private static T? GetRequest(Download<PKM> dl)
+        {
+            if (!dl.Success)
+                return null;
+            return dl.Data switch
+            {
+                null => null,
+                T pk => pk,
+                _ => EntityConverter.ConvertToType(dl.Data, typeof(T), out _) as T,
+            };
+        }
     }
 }
