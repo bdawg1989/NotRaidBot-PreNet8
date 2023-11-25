@@ -573,42 +573,21 @@ namespace SysBot.Pokemon.SV.BotRaid
                 return;
             }
 
-            // If screenshotDelay is exactly 22000 ms, process battle actions first
-            if (screenshotDelay == (int)ScreenshotTimingOptions._22000)
+            // Handle duplicates and embeds first
+            if (!await HandleDuplicatesAndEmbeds(lobbyTrainersFinal, token))
             {
-                await Task.Delay(10000, token).ConfigureAwait(false);
-                // Process battle actions
-                if (!await ProcessBattleActions(token))
-                {
-                    await ReOpenGame(Hub.Config, token);
-                    return;
-                }
-
-                // Then handle duplicates and embeds
-                if (!await HandleDuplicatesAndEmbeds(lobbyTrainersFinal, token))
-                {
-                    await ReOpenGame(Hub.Config, token);
-                    return;
-                }
+                await ReOpenGame(Hub.Config, token);
+                return;
             }
-            else
+
+            // Delay to start ProcessBattleActions
+            await Task.Delay(10_000, token).ConfigureAwait(false);
+
+            // Process battle actions
+            if (!await ProcessBattleActions(token))
             {
-                // For any other delay, handle duplicates and embeds first
-                if (!await HandleDuplicatesAndEmbeds(lobbyTrainersFinal, token))
-                {
-                    await ReOpenGame(Hub.Config, token);
-                    return;
-                }
-
-                // Delay to start ProcessBattleActions
-                await Task.Delay(10_000, token).ConfigureAwait(false);
-
-                // Process battle actions
-                if (!await ProcessBattleActions(token))
-                {
-                    await ReOpenGame(Hub.Config, token);
-                    return;
-                }
+                await ReOpenGame(Hub.Config, token);
+                return;
             }
 
             // Handle end of raid actions

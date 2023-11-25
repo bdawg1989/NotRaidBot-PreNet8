@@ -180,7 +180,7 @@ namespace SysBot.Pokemon
             [Category(FeatureToggle), Description("When enabled, the bot will attempt take screenshots for the Raid Embeds. If you experience crashes often about \"Size/Parameter\" try setting this to false.")]
             public bool TakeScreenshot { get; set; } = true;
 
-            [Category(Hosting), Description("Delay in milliseconds for capturing a screenshot once in the raid.\n300 Captures Raid Mon.\n1500 Captures Players Only.\n22000 Captures players and Raid Mon.")]
+            [Category(Hosting), Description("Delay in milliseconds for capturing a screenshot once in the raid.\n300 Captures Raid Mon.\n1500 Captures Players Only.\n3000 Captures players and Raid Mon.")]
             public ScreenshotTimingOptions ScreenshotTiming { get; set; } = ScreenshotTimingOptions._1500; // default to 1500 ms
 
             [Category(FeatureToggle), Description("When enabled, the bot will hide the raid code from the Discord embed.")]
