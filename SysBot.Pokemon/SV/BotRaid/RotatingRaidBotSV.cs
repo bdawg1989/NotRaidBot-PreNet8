@@ -450,6 +450,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                             // Only get and send the raid code if it's not a "Free For All"
                             var code = await GetRaidCode(token).ConfigureAwait(false);
                             await user.SendMessageAsync($"Your Raid Code is **{code}**").ConfigureAwait(false);
+                            await EnqueueEmbed(null, "", false, false, false, false, token).ConfigureAwait(false);
                         }
                         catch (Discord.Net.HttpException ex)
                         {
@@ -1556,18 +1557,25 @@ namespace SysBot.Pokemon.SV.BotRaid
             if (Settings.ActiveRaids[RotationCount].AddedByRACommand)
             {
                 var user = Settings.ActiveRaids[RotationCount].User;
-                if (user != null)
+
+                // Determine if the raid is a "Free For All"
+                bool isFreeForAll = !Settings.ActiveRaids[RotationCount].IsCoded || EmptyRaid >= Settings.LobbyOptions.EmptyRaidLimit;
+
+                if (user != null && !isFreeForAll)
                 {
                     try
                     {
-                        await user.SendMessageAsync("Your raid is about to start!").ConfigureAwait(false);
+                        // Only send the message if it's not a "Free For All"
+                        await user.SendMessageAsync("Get Ready!  Your raid is about to start!").ConfigureAwait(false);
                     }
                     catch (Discord.Net.HttpException ex)
                     {
+                        // Handle exception (e.g., log the error or send a message to a logging channel)
                         Log($"Failed to send DM to {user.Username}. They might have DMs turned off. Exception: {ex.Message}");
                     }
                 }
             }
+
             Log("Preparing lobby...");
             LobbyFiltersCategory settings = new LobbyFiltersCategory();
 
