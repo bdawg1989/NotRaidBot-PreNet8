@@ -1088,47 +1088,42 @@ namespace SysBot.Pokemon.SV.BotRaid
             // Get the enabled star categories from MysteryRaidsSettings
             var mysteryRaidsSettings = Settings.RaidSettings.MysteryRaidsSettings;
 
-            // Check if all options are false
-            if (!mysteryRaidsSettings.Unlocked3Star && !mysteryRaidsSettings.Unlocked4Star &&
-                !mysteryRaidsSettings.Unlocked5Star && !mysteryRaidsSettings.Unlocked6Star)
+            // Check if all options are false within each star setting
+            bool anyOptionEnabled =
+                (mysteryRaidsSettings.Unlocked3StarSettings.Allow1StarRaids ||
+                 mysteryRaidsSettings.Unlocked3StarSettings.Allow2StarRaids ||
+                 mysteryRaidsSettings.Unlocked3StarSettings.Allow3StarRaids) ||
+                (mysteryRaidsSettings.Unlocked4StarSettings.Allow1StarRaids ||
+                 mysteryRaidsSettings.Unlocked4StarSettings.Allow2StarRaids ||
+                 mysteryRaidsSettings.Unlocked4StarSettings.Allow3StarRaids ||
+                 mysteryRaidsSettings.Unlocked4StarSettings.Allow4StarRaids) ||
+                (mysteryRaidsSettings.Unlocked5StarSettings.Allow3StarRaids ||
+                 mysteryRaidsSettings.Unlocked5StarSettings.Allow4StarRaids ||
+                 mysteryRaidsSettings.Unlocked5StarSettings.Allow5StarRaids) ||
+                (mysteryRaidsSettings.Unlocked6StarSettings.Allow3StarRaids ||
+                 mysteryRaidsSettings.Unlocked6StarSettings.Allow4StarRaids ||
+                 mysteryRaidsSettings.Unlocked6StarSettings.Allow5StarRaids ||
+                 mysteryRaidsSettings.Unlocked6StarSettings.Allow6StarRaids);
+
+            // If no options are enabled, then disable Mystery Raids
+            if (!anyOptionEnabled)
             {
                 Log("All Mystery Raids options are disabled. Mystery Raids will be turned off.");
-                Settings.RaidSettings.MysteryRaids = false; // Disable Mystery Raids
-                return; // Exit the method
+                Settings.RaidSettings.MysteryRaids = false;
+                return;
             }
 
-            // Create a list of enabled StoryProgressLevels based on the enum values
-            var enabledLevels = new List<GameProgress>();
-            if (mysteryRaidsSettings.Unlocked3Star) enabledLevels.Add(GameProgress.Unlocked3Stars);
-            if (mysteryRaidsSettings.Unlocked4Star) enabledLevels.Add(GameProgress.Unlocked4Stars);
-            if (mysteryRaidsSettings.Unlocked5Star) enabledLevels.Add(GameProgress.Unlocked5Stars);
-            if (mysteryRaidsSettings.Unlocked6Star) enabledLevels.Add(GameProgress.Unlocked6Stars);
+            // Create a list of possible difficulties based on the enabled settings
+            var possibleDifficulties = new List<int>();
+            if (mysteryRaidsSettings.Unlocked3StarSettings.Allow1StarRaids) possibleDifficulties.Add(1);
+            if (mysteryRaidsSettings.Unlocked3StarSettings.Allow2StarRaids) possibleDifficulties.Add(2);
+            if (mysteryRaidsSettings.Unlocked3StarSettings.Allow3StarRaids) possibleDifficulties.Add(3);
+            if (mysteryRaidsSettings.Unlocked4StarSettings.Allow4StarRaids) possibleDifficulties.Add(4);
+            if (mysteryRaidsSettings.Unlocked5StarSettings.Allow5StarRaids) possibleDifficulties.Add(5);
+            if (mysteryRaidsSettings.Unlocked6StarSettings.Allow6StarRaids) possibleDifficulties.Add(6);
 
-            // Randomly pick a StoryProgressLevel from the enabled levels
-            GameProgress gameProgress = enabledLevels[random.Next(enabledLevels.Count)];
-
-            // Determine minimum and maximum difficulty based on StoryProgressLevel
-            int minDifficulty, maxDifficulty;
-            switch (gameProgress)
-            {
-                case GameProgress.Unlocked3Stars:
-                    minDifficulty = 1; maxDifficulty = 3;
-                    break;
-                case GameProgress.Unlocked4Stars:
-                    minDifficulty = 1; maxDifficulty = 4;
-                    break;
-                case GameProgress.Unlocked5Stars:
-                    minDifficulty = 3; maxDifficulty = 5;
-                    break;
-                case GameProgress.Unlocked6Stars:
-                    minDifficulty = 3; maxDifficulty = 6;
-                    break;
-                default:
-                    minDifficulty = 1; maxDifficulty = 6; // Default case
-                    break;
-            }
-
-            int randomDifficultyLevel = random.Next(minDifficulty, maxDifficulty + 1);
+            // Randomly pick a difficulty level from the possible difficulties
+            int randomDifficultyLevel = possibleDifficulties[random.Next(possibleDifficulties.Count)];
 
             // Determine the crystal type based on difficulty level
             var crystalType = randomDifficultyLevel switch
@@ -1146,7 +1141,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 Title = "Mystery Shiny Raid",
                 AddedByRACommand = true,
                 DifficultyLevel = randomDifficultyLevel,
-                StoryProgressLevel = (int)gameProgress,
+                StoryProgressLevel = (int)GetGameProgressFromDifficulty(randomDifficultyLevel),
                 CrystalType = crystalType,
                 IsShiny = true
             };
@@ -1161,6 +1156,20 @@ namespace SysBot.Pokemon.SV.BotRaid
             // Log the addition for debugging purposes
             Log($"Added Mystery Shiny Raid with seed: {randomSeed:X} at position {insertPosition}");
         }
+
+        // Helper method to determine GameProgress based on difficulty
+        private GameProgress GetGameProgressFromDifficulty(int difficultyLevel)
+        {
+            return difficultyLevel switch
+            {
+                1 or 2 or 3 => GameProgress.Unlocked3Stars,
+                4 => GameProgress.Unlocked4Stars,
+                5 => GameProgress.Unlocked5Stars,
+                6 => GameProgress.Unlocked6Stars,
+                _ => throw new ArgumentException("Invalid difficulty level.")
+            };
+        }
+
 
         private static uint GenerateRandomShinySeed()
         {
