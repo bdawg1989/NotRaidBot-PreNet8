@@ -864,14 +864,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 await Click(A, 1_000, token).ConfigureAwait(false);
 
             await CountRaids(trainers, token).ConfigureAwait(false);
-
-            // Check if the current raid is not a Might or Distribution Raid and it's not the first run
-            if (!firstRun && (Settings.ActiveRaids[RotationCount].CrystalType != TeraCrystalType.Might &&
-                              Settings.ActiveRaids[RotationCount].CrystalType != TeraCrystalType.Distribution))
-            {
-                await LocateSeedIndex(token).ConfigureAwait(false);
-            }
-
+            await LocateSeedIndex(token).ConfigureAwait(false);
             await Task.Delay(0_500, token).ConfigureAwait(false);
             await CloseGame(Hub.Config, token).ConfigureAwait(false);
 
@@ -2753,6 +2746,15 @@ namespace SysBot.Pokemon.SV.BotRaid
                     {
                         if (container.Raids[i].Seed == targetSeed)
                         {
+                            // Check if it's not the first run and if the raid is either Might or Distribution
+                            if (!firstRun && (Settings.ActiveRaids[rc].CrystalType == TeraCrystalType.Might || Settings.ActiveRaids[rc].CrystalType == TeraCrystalType.Distribution))
+                            {
+                                // Skip updating SeedIndexToReplace and RotationCount for these cases
+                                Log("Skipping seed index update for Might or Distribution raid.");
+                                continue; // Move to the next iteration of the loop
+                            }
+
+                            // Update SeedIndexToReplace and RotationCount for other cases
                             SeedIndexToReplace = i;
                             RotationCount = rc;
                             Log($"Raid Den Located at {i + 1:00}");
