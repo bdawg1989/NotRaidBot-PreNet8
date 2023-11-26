@@ -864,7 +864,14 @@ namespace SysBot.Pokemon.SV.BotRaid
                 await Click(A, 1_000, token).ConfigureAwait(false);
 
             await CountRaids(trainers, token).ConfigureAwait(false);
-            await LocateSeedIndex(token).ConfigureAwait(false);
+
+            // Check if the current raid is not a Might or Distribution Raid and it's not the first run
+            if (!firstRun && (Settings.ActiveRaids[RotationCount].CrystalType != TeraCrystalType.Might &&
+                              Settings.ActiveRaids[RotationCount].CrystalType != TeraCrystalType.Distribution))
+            {
+                await LocateSeedIndex(token).ConfigureAwait(false);
+            }
+
             await Task.Delay(0_500, token).ConfigureAwait(false);
             await CloseGame(Hub.Config, token).ConfigureAwait(false);
 
@@ -1385,7 +1392,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                 };
             }
         }
-
         private async Task SanitizeRotationCount(CancellationToken token)
         {
             await Task.Delay(0_050, token).ConfigureAwait(false);
@@ -1438,10 +1444,11 @@ namespace SysBot.Pokemon.SV.BotRaid
             RotationCount = FindNextPriorityRaidIndex(RotationCount, Settings.ActiveRaids);
             Log($"Next raid in the list: {Settings.ActiveRaids[RotationCount].Species}.");
         }
-
         private int FindNextPriorityRaidIndex(int currentRotationCount, List<RotatingRaidParameters> raids)
         {
             int count = raids.Count;
+
+            // First, check for user-requested RA command raids that are not Mystery Shiny Raids
             for (int i = 0; i < count; i++)
             {
                 int index = (currentRotationCount + i) % count;
@@ -1451,14 +1458,58 @@ namespace SysBot.Pokemon.SV.BotRaid
                 {
                     return index;
                 }
-                else if (Settings.RaidSettings.MysteryRaids && raid.Title.Contains("Mystery Shiny Raid"))
+            }
+            // If no user-requested raids are found, check for Mystery Shiny Raids if enabled
+            if (Settings.RaidSettings.MysteryRaids)
+            {
+                for (int i = 0; i < count; i++)
                 {
-                    return index;
+                    int index = (currentRotationCount + i) % count;
+                    RotatingRaidParameters raid = raids[index];
+
+                    if (raid.Title.Contains("Mystery Shiny Raid"))
+                    {
+                        return index;
+                    }
                 }
             }
+
+            // If no priority raids are found, return the current rotation count
             return currentRotationCount;
         }
+        private void DisableMysteryRaidsIfEventActive()
+        {
+            if (Settings.EventSettings.EventActive)
+            {
+                bool settingsChanged = false;
 
+                // Check and update settings for 3-star raids
+                if (Settings.RaidSettings.MysteryRaidsSettings.Unlocked3StarSettings.Enabled)
+                {
+                    Settings.RaidSettings.MysteryRaidsSettings.Unlocked3StarSettings.Enabled = false;
+                    settingsChanged = true;
+                }
+
+                // Check and update settings for 4-star raids
+                if (Settings.RaidSettings.MysteryRaidsSettings.Unlocked4StarSettings.Enabled)
+                {
+                    Settings.RaidSettings.MysteryRaidsSettings.Unlocked4StarSettings.Enabled = false;
+                    settingsChanged = true;
+                }
+
+                // Check and update settings for 5-star raids
+                if (Settings.RaidSettings.MysteryRaidsSettings.Unlocked5StarSettings.Enabled)
+                {
+                    Settings.RaidSettings.MysteryRaidsSettings.Unlocked5StarSettings.Enabled = false;
+                    settingsChanged = true;
+                }
+
+                if (settingsChanged)
+                {
+                    Log("Mystery Raids for 3, 4, and 5 stars have been disabled due to an active event.");
+                }
+            }
+        }
         private void ProcessRandomRotation()
         {
             // Turn off RandomRotation if both RandomRotation and MysteryRaid are true
@@ -2637,6 +2688,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                         {
                             eventRaidFoundP = true;
                             Settings.EventSettings.EventActive = true;
+                            DisableMysteryRaidsIfEventActive();
                             eventRaidPAreaId = (int)raid.Area;
                             eventRaidPDenId = (int)raid.Den;
 
