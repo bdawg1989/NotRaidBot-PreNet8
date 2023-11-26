@@ -322,6 +322,12 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
                 return;
             }
 
+            // If EventActive is true, force storyProgressLevel to 6
+            if (settings.EventSettings.EventActive && storyProgressLevel != 6)
+            {
+                await ReplyAsync("Currently only Story Progress Level 6 (6* Unlocked) is allowed due to Active Event Settings.").ConfigureAwait(false);
+                return;
+            }
             // Determine the correct map
             var selectedMap = IsKitakami ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea;
             var rewardsToShow = settings.EmbedToggles.RewardsToShow;
