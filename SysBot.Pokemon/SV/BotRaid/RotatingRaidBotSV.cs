@@ -1085,31 +1085,64 @@ namespace SysBot.Pokemon.SV.BotRaid
             uint randomSeed = GenerateRandomShinySeed();
             Random random = new Random();
 
-            // Get the enabled star categories from MysteryRaidsSettings
+            // Get the settings object
             var mysteryRaidsSettings = Settings.RaidSettings.MysteryRaidsSettings;
 
-            // Create a list of possible difficulties based on the enabled settings
-            var possibleDifficulties = new List<int>();
-            if (mysteryRaidsSettings.Unlocked3StarSettings.Allow1StarRaids) possibleDifficulties.Add(1);
-            if (mysteryRaidsSettings.Unlocked3StarSettings.Allow2StarRaids) possibleDifficulties.Add(2);
-            if (mysteryRaidsSettings.Unlocked3StarSettings.Allow3StarRaids) possibleDifficulties.Add(3);
-            if (mysteryRaidsSettings.Unlocked4StarSettings.Allow1StarRaids) possibleDifficulties.Add(1);
-            if (mysteryRaidsSettings.Unlocked4StarSettings.Allow2StarRaids) possibleDifficulties.Add(2);
-            if (mysteryRaidsSettings.Unlocked4StarSettings.Allow3StarRaids) possibleDifficulties.Add(3);
-            if (mysteryRaidsSettings.Unlocked4StarSettings.Allow4StarRaids) possibleDifficulties.Add(4);
-            if (mysteryRaidsSettings.Unlocked5StarSettings.Allow3StarRaids) possibleDifficulties.Add(3);
-            if (mysteryRaidsSettings.Unlocked5StarSettings.Allow4StarRaids) possibleDifficulties.Add(4);
-            if (mysteryRaidsSettings.Unlocked5StarSettings.Allow5StarRaids) possibleDifficulties.Add(5);
-            if (mysteryRaidsSettings.Unlocked6StarSettings.Allow3StarRaids) possibleDifficulties.Add(3);
-            if (mysteryRaidsSettings.Unlocked6StarSettings.Allow4StarRaids) possibleDifficulties.Add(4);
-            if (mysteryRaidsSettings.Unlocked6StarSettings.Allow5StarRaids) possibleDifficulties.Add(5);
-            if (mysteryRaidsSettings.Unlocked6StarSettings.Allow6StarRaids) possibleDifficulties.Add(6);
+            // Check if any Mystery Raid setting is enabled
+            if (!(mysteryRaidsSettings.Unlocked3StarSettings.Enabled || mysteryRaidsSettings.Unlocked4StarSettings.Enabled ||
+                  mysteryRaidsSettings.Unlocked5StarSettings.Enabled || mysteryRaidsSettings.Unlocked6StarSettings.Enabled))
+            {
+                Log("All Mystery Raids options are disabled. Mystery Raids will be turned off.");
+                Settings.RaidSettings.MysteryRaids = false; // Disable Mystery Raids
+                return; // Exit the method
+            }
 
-            // Ensure that there is at least one possible difficulty level enabled
+            // Create a list of enabled StoryProgressLevels
+            var enabledLevels = new List<GameProgress>();
+            if (mysteryRaidsSettings.Unlocked3StarSettings.Enabled) enabledLevels.Add(GameProgress.Unlocked3Stars);
+            if (mysteryRaidsSettings.Unlocked4StarSettings.Enabled) enabledLevels.Add(GameProgress.Unlocked4Stars);
+            if (mysteryRaidsSettings.Unlocked5StarSettings.Enabled) enabledLevels.Add(GameProgress.Unlocked5Stars);
+            if (mysteryRaidsSettings.Unlocked6StarSettings.Enabled) enabledLevels.Add(GameProgress.Unlocked6Stars);
+
+            // Randomly pick a StoryProgressLevel from the enabled levels
+            GameProgress gameProgress = enabledLevels[random.Next(enabledLevels.Count)];
+
+            // Initialize a list to store possible difficulties
+            List<int> possibleDifficulties = new List<int>();
+
+            // Determine possible difficulties based on the selected GameProgress
+            switch (gameProgress)
+            {
+                case GameProgress.Unlocked3Stars:
+                    if (mysteryRaidsSettings.Unlocked3StarSettings.Allow1StarRaids) possibleDifficulties.Add(1);
+                    if (mysteryRaidsSettings.Unlocked3StarSettings.Allow2StarRaids) possibleDifficulties.Add(2);
+                    if (mysteryRaidsSettings.Unlocked3StarSettings.Allow3StarRaids) possibleDifficulties.Add(3);
+                    break;
+                case GameProgress.Unlocked4Stars:
+                    if (mysteryRaidsSettings.Unlocked4StarSettings.Allow1StarRaids) possibleDifficulties.Add(1);
+                    if (mysteryRaidsSettings.Unlocked4StarSettings.Allow2StarRaids) possibleDifficulties.Add(2);
+                    if (mysteryRaidsSettings.Unlocked4StarSettings.Allow3StarRaids) possibleDifficulties.Add(3);
+                    if (mysteryRaidsSettings.Unlocked4StarSettings.Allow4StarRaids) possibleDifficulties.Add(4);
+                    break;
+                case GameProgress.Unlocked5Stars:
+                    if (mysteryRaidsSettings.Unlocked5StarSettings.Allow3StarRaids) possibleDifficulties.Add(3);
+                    if (mysteryRaidsSettings.Unlocked5StarSettings.Allow4StarRaids) possibleDifficulties.Add(4);
+                    if (mysteryRaidsSettings.Unlocked5StarSettings.Allow5StarRaids) possibleDifficulties.Add(5);
+                    break;
+                case GameProgress.Unlocked6Stars:
+                    if (mysteryRaidsSettings.Unlocked6StarSettings.Allow3StarRaids) possibleDifficulties.Add(3);
+                    if (mysteryRaidsSettings.Unlocked6StarSettings.Allow4StarRaids) possibleDifficulties.Add(4);
+                    if (mysteryRaidsSettings.Unlocked6StarSettings.Allow5StarRaids) possibleDifficulties.Add(5);
+                    if (mysteryRaidsSettings.Unlocked6StarSettings.Allow6StarRaids) possibleDifficulties.Add(6);
+                    break;
+            }
+
+            // Check if there are any enabled difficulty levels
             if (!possibleDifficulties.Any())
             {
-                Log("No possible difficulties are enabled. Cannot create a Mystery Shiny Raid.");
-                return;
+                Log("No difficulty levels enabled for the selected Story Progress. Mystery Raids will be turned off.");
+                Settings.RaidSettings.MysteryRaids = false; // Disable Mystery Raids
+                return; // Exit the method
             }
 
             // Randomly pick a difficulty level from the possible difficulties
@@ -1131,7 +1164,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 Title = "Mystery Shiny Raid",
                 AddedByRACommand = true,
                 DifficultyLevel = randomDifficultyLevel,
-                StoryProgressLevel = (int)GetGameProgressFromDifficulty(randomDifficultyLevel),
+                StoryProgressLevel = (int)gameProgress,
                 CrystalType = crystalType,
                 IsShiny = true
             };
@@ -1146,19 +1179,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             // Log the addition for debugging purposes
             Log($"Added Mystery Shiny Raid with seed: {randomSeed:X} at position {insertPosition}");
         }
-        // Helper method to determine GameProgress based on difficulty
-        private GameProgress GetGameProgressFromDifficulty(int difficultyLevel)
-        {
-            return difficultyLevel switch
-            {
-                1 or 2 or 3 => GameProgress.Unlocked3Stars,
-                4 => GameProgress.Unlocked4Stars,
-                5 => GameProgress.Unlocked5Stars,
-                6 => GameProgress.Unlocked6Stars,
-                _ => throw new ArgumentException("Invalid difficulty level.")
-            };
-        }
-
 
         private static uint GenerateRandomShinySeed()
         {

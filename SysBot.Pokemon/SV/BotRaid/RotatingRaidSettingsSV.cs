@@ -204,6 +204,7 @@ namespace SysBot.Pokemon
 
         public class Unlocked3StarSettings
         {
+            public bool Enabled { get; set; } = true;
             [Category("DifficultyLevels"), Description("Allow 1* Raids in 3* Unlocked Raids.")]
             public bool Allow1StarRaids { get; set; } = true;
 
@@ -218,6 +219,7 @@ namespace SysBot.Pokemon
 
         public class Unlocked4StarSettings
         {
+            public bool Enabled { get; set; } = true;
             [Category("DifficultyLevels"), Description("Allow 1* Raids in 4* Unlocked Raids.")]
             public bool Allow1StarRaids { get; set; } = true;
 
@@ -235,6 +237,7 @@ namespace SysBot.Pokemon
         [Category("MysteryRaids"), TypeConverter(typeof(ExpandableObjectConverter))]
         public class Unlocked5StarSettings
         {
+            public bool Enabled { get; set; } = true;
             [Category("DifficultyLevels"), Description("Allow 3* Raids in 5* Unlocked Raids.")]
             public bool Allow3StarRaids { get; set; } = true;
 
@@ -249,6 +252,7 @@ namespace SysBot.Pokemon
         [Category("MysteryRaids"), TypeConverter(typeof(ExpandableObjectConverter))]
         public class Unlocked6StarSettings
         {
+            public bool Enabled { get; set; } = true;
             [Category("DifficultyLevels"), Description("Allow 3* Raids in 6* Unlocked Raids.")]
             public bool Allow3StarRaids { get; set; } = true;
 
