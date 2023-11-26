@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
+using static SysBot.Pokemon.RotatingRaidSettingsSV;
 
 namespace SysBot.Pokemon
 {
@@ -186,23 +187,84 @@ namespace SysBot.Pokemon
             [Category(FeatureToggle), Description("When enabled, the bot will hide the raid code from the Discord embed.")]
             public bool HideRaidCode { get; set; } = false;
         }
+
         [Category("MysteryRaids"), TypeConverter(typeof(ExpandableObjectConverter))]
         public class MysteryRaidsSettings
         {
-            [Description("When true, 3* Raids are unlocked in Mystery Raids.")]
-            public bool Unlocked3Star { get; set; } = true;
-
-            [Description("When true, 4* Raids are unlocked in Mystery Raids.")]
-            public bool Unlocked4Star { get; set; } = true;
-
-            [Description("When true, 5* Raids are unlocked in Mystery Raids.")]
-            public bool Unlocked5Star { get; set; } = true;
-
-            [Description("When true, 6* Raids are unlocked in Mystery Raids.")]
-            public bool Unlocked6Star { get; set; } = true;
+            [TypeConverter(typeof(ExpandableObjectConverter))]
+            public Unlocked3StarSettings Unlocked3StarSettings { get; set; } = new Unlocked3StarSettings();
+            [TypeConverter(typeof(ExpandableObjectConverter))]
+            public Unlocked4StarSettings Unlocked4StarSettings { get; set; } = new Unlocked4StarSettings();
+            [TypeConverter(typeof(ExpandableObjectConverter))]
+            public Unlocked5StarSettings Unlocked5StarSettings { get; set; } = new Unlocked5StarSettings();
+            [TypeConverter(typeof(ExpandableObjectConverter))]
+            public Unlocked6StarSettings Unlocked6StarSettings { get; set; } = new Unlocked6StarSettings();
 
             public override string ToString() => "Mystery Raids Settings";
         }
+
+        public class Unlocked3StarSettings
+        {
+            [Category("DifficultyLevels"), Description("Allow 1* Raids in 3* Unlocked Raids.")]
+            public bool Allow1StarRaids { get; set; } = true;
+
+            [Category("DifficultyLevels"), Description("Allow 2* Raids in 3* Unlocked Raids.")]
+            public bool Allow2StarRaids { get; set; } = true;
+
+            [Category("DifficultyLevels"), Description("Allow 3* Raids in 3* Unlocked Raids.")]
+            public bool Allow3StarRaids { get; set; } = true;
+
+            public override string ToString() => "3* Raids Settings";
+        }
+
+        public class Unlocked4StarSettings
+        {
+            [Category("DifficultyLevels"), Description("Allow 1* Raids in 4* Unlocked Raids.")]
+            public bool Allow1StarRaids { get; set; } = true;
+
+            [Category("DifficultyLevels"), Description("Allow 2* Raids in 4* Unlocked Raids.")]
+            public bool Allow2StarRaids { get; set; } = true;
+
+            [Category("DifficultyLevels"), Description("Allow 3* Raids in 4* Unlocked Raids.")]
+            public bool Allow3StarRaids { get; set; } = true;
+
+            [Category("DifficultyLevels"), Description("Allow 4* Raids in 4* Unlocked Raids.")]
+            public bool Allow4StarRaids { get; set; } = true;
+
+            public override string ToString() => "4* Raids Settings";
+        }
+        [Category("MysteryRaids"), TypeConverter(typeof(ExpandableObjectConverter))]
+        public class Unlocked5StarSettings
+        {
+            [Category("DifficultyLevels"), Description("Allow 3* Raids in 5* Unlocked Raids.")]
+            public bool Allow3StarRaids { get; set; } = true;
+
+            [Category("DifficultyLevels"), Description("Allow 4* Raids in 5* Unlocked Raids.")]
+            public bool Allow4StarRaids { get; set; } = true;
+
+            [Category("DifficultyLevels"), Description("Allow 5* Raids in 5* Unlocked Raids.")]
+            public bool Allow5StarRaids { get; set; } = true;
+
+            public override string ToString() => "5* Raids Settings";
+        }
+        [Category("MysteryRaids"), TypeConverter(typeof(ExpandableObjectConverter))]
+        public class Unlocked6StarSettings
+        {
+            [Category("DifficultyLevels"), Description("Allow 3* Raids in 6* Unlocked Raids.")]
+            public bool Allow3StarRaids { get; set; } = true;
+
+            [Category("DifficultyLevels"), Description("Allow 4* Raids in 6* Unlocked Raids.")]
+            public bool Allow4StarRaids { get; set; } = true;
+
+            [Category("DifficultyLevels"), Description("Allow 5* Raids in 6* Unlocked Raids.")]
+            public bool Allow5StarRaids { get; set; } = true;
+
+            [Category("DifficultyLevels"), Description("Allow 6* Raids in 6* Unlocked Raids.")]
+            public bool Allow6StarRaids { get; set; } = true;
+
+            public override string ToString() => "6* Raids Settings";
+        }
+
 
         [Category(Hosting), TypeConverter(typeof(CategoryConverter<LobbyFiltersCategory>))]
         public class LobbyFiltersCategory
