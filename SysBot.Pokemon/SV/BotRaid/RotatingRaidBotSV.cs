@@ -439,11 +439,16 @@ namespace SysBot.Pokemon.SV.BotRaid
                 if (Settings.ActiveRaids[RotationCount].AddedByRACommand)
                 {
                     var user = Settings.ActiveRaids[RotationCount].User;
-                    var code = await GetRaidCode(token).ConfigureAwait(false);
-                    if (user != null)
+
+                    // Determine if the raid is a "Free For All"
+                    bool isFreeForAll = !Settings.ActiveRaids[RotationCount].IsCoded || EmptyRaid >= Settings.LobbyOptions.EmptyRaidLimit;
+
+                    if (user != null && !isFreeForAll)
                     {
                         try
                         {
+                            // Only get and send the raid code if it's not a "Free For All"
+                            var code = await GetRaidCode(token).ConfigureAwait(false);
                             await user.SendMessageAsync($"Your Raid Code is **{code}**").ConfigureAwait(false);
                         }
                         catch (Discord.Net.HttpException ex)
@@ -453,7 +458,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                         }
                     }
                 }
-
 
                 // Read trainers until someone joins.
                 (partyReady, lobbyTrainers) = await ReadTrainers(token).ConfigureAwait(false);
@@ -1714,7 +1718,6 @@ namespace SysBot.Pokemon.SV.BotRaid
         {
             var data = await SwitchConnection.PointerPeek(6, Offsets.TeraRaidCodePointer, token).ConfigureAwait(false);
             TeraRaidCode = Encoding.ASCII.GetString(data);
-            Log($"Raid Code: {TeraRaidCode}");
             return $"\n{TeraRaidCode}\n";
         }
 
@@ -2021,33 +2024,33 @@ namespace SysBot.Pokemon.SV.BotRaid
                 // First Run detected. Not sending the embed to start raid rotation.
                 return;
             }
-            if (Settings.ActiveRaids[RotationCount].AddedByRACommand)
+
+            string code = string.Empty;
+
+            // Determine if the raid is a "Free For All" based on the settings and conditions
+            if (Settings.ActiveRaids[RotationCount].IsCoded && EmptyRaid < Settings.LobbyOptions.EmptyRaidLimit)
             {
-                // Check if the raid is a Mystery Shiny Raid
-                if (Settings.ActiveRaids[RotationCount].Title != "Mystery Shiny Raid")
-                {
-                    // Apply the delay only if it's not a Mystery Shiny Raid
-                    await Task.Delay(Settings.EmbedToggles.RequestEmbedTime * 1000).ConfigureAwait(false);  // Delay for RequestEmbedTime seconds
-                }
+                // If it's not a "Free For All", retrieve the raid code
+                code = await GetRaidCode(token).ConfigureAwait(false);
+            }
+            else
+            {
+                // If it's a "Free For All", set the code as such
+                code = "Free For All";
+            }
+
+            // Apply delay only if the raid was added by RA command, not a Mystery Shiny Raid, and has a code
+            if (Settings.ActiveRaids[RotationCount].AddedByRACommand &&
+                Settings.ActiveRaids[RotationCount].Title != "Mystery Shiny Raid" &&
+                code != "Free For All")
+            {
+                await Task.Delay(Settings.EmbedToggles.RequestEmbedTime * 1000).ConfigureAwait(false);
             }
 
             // Description can only be up to 4096 characters.
             //var description = Settings.ActiveRaids[RotationCount].Description.Length > 0 ? string.Join("\n", Settings.ActiveRaids[RotationCount].Description) : "";
             var description = Settings.EmbedToggles.RaidEmbedDescription.Length > 0 ? string.Join("\n", Settings.EmbedToggles.RaidEmbedDescription) : "";
             if (description.Length > 4096) description = description[..4096];
-
-            string code = string.Empty;
-            if (names is null && !upnext)
-            {
-                if (Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.OpenLobby)
-                {
-                    code = $"**{(Settings.ActiveRaids[RotationCount].IsCoded && EmptyRaid < Settings.LobbyOptions.EmptyRaidLimit ? await GetRaidCode(token).ConfigureAwait(false) : "Free For All")}**";
-                }
-                else
-                {
-                    code = $"**{(Settings.ActiveRaids[RotationCount].IsCoded && !Settings.EmbedToggles.HideRaidCode ? await GetRaidCode(token).ConfigureAwait(false) : Settings.ActiveRaids[RotationCount].IsCoded && Settings.EmbedToggles.HideRaidCode ? "||Is Hidden!||" : "Free For All")}**";
-                }
-            }
 
             if (EmptyRaid == Settings.LobbyOptions.EmptyRaidLimit && Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.OpenLobby)
                 EmptyRaid = 0;
@@ -2059,7 +2062,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             if (Settings.EmbedToggles.TakeScreenshot && !upnext)
                 try
                 {
-                    // Assuming this is another place where a network call is made
                     bytes = await SwitchConnection.PixelPeek(token).ConfigureAwait(false) ?? Array.Empty<byte>();
                 }
                 catch (Exception ex)
