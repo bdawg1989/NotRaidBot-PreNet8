@@ -768,6 +768,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             DateTime battleStartTime = DateTime.Now;
             bool hasPerformedAction1 = false;
             bool timedOut = false;
+            bool hasPressedHome = false;
 
             while (await IsConnectedToLobby(token).ConfigureAwait(false))
             {
@@ -819,11 +820,12 @@ namespace SysBot.Pokemon.SV.BotRaid
                     nextUpdateMinute += 2; // Update the time for the next status update.
                 }
                 // Check if the battle has been ongoing for 6 minutes
-                if (timeInBattle.TotalMinutes >= 6)
+                if (timeInBattle.TotalMinutes >= 6 && !hasPressedHome)
                 {
                     // Hit Home button twice in case we are stuck
                     await Click(HOME, 0_500, token).ConfigureAwait(false);
                     await Click(HOME, 0_500, token).ConfigureAwait(false);
+                    hasPressedHome = true;
                 }
                 // Make sure to wait some time before the next iteration to prevent a tight loop
                 await Task.Delay(1000, token); // Wait for a second before checking again
