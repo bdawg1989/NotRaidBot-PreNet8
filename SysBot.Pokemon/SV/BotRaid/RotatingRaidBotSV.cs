@@ -2239,10 +2239,13 @@ namespace SysBot.Pokemon.SV.BotRaid
                 embed.AddField(" **__Special Rewards__**", string.IsNullOrEmpty($"{RaidEmbedInfo.SpecialRewards}") ? "No Rewards To Display" : $"{RaidEmbedInfo.SpecialRewards}", true);
                 RaidEmbedInfo.SpecialRewards = string.Empty;
             }
+            // Fetch the type advantage using the static RaidSpeciesTeraType from RaidEmbedInfo
+            string typeAdvantage = GetTypeAdvantage(RaidEmbedInfo.RaidSpeciesTeraType);
 
-            if (!disband && names is null && !upnext)
+            // Only include the Type Advantage if not posting 'upnext' embed with the 'Preparing Raid' title and if the raid isn't starting or disbanding
+            if (!disband && !upnext && !raidstart && Settings.EmbedToggles.IncludeTypeAdvantage)
             {
-                embed.AddField(Settings.EmbedToggles.IncludeCountdown ? $"**__Raid Starting__**:\n**<t:{DateTimeOffset.Now.ToUnixTimeSeconds() + Settings.RaidSettings.TimeToWait}:R>**" : $"**Waiting in lobby!**", $"Raid Code: **{code}**", true);
+                embed.AddField(" **__Type Advantage__**", typeAdvantage, true);
                 embed.AddField("\u200b", "\u200b", true);
             }
 
@@ -2251,13 +2254,9 @@ namespace SysBot.Pokemon.SV.BotRaid
                 embed.AddField(" **__Special Rewards__**", string.IsNullOrEmpty($"{RaidEmbedInfo.SpecialRewards}") ? "No Rewards To Display" : $"{RaidEmbedInfo.SpecialRewards}", true);
                 RaidEmbedInfo.SpecialRewards = string.Empty;
             }
-            // Fetch the type advantage using the static RaidSpeciesTeraType from RaidEmbedInfo
-            string typeAdvantage = GetTypeAdvantage(RaidEmbedInfo.RaidSpeciesTeraType);
-
-            // Only include the Type Advantage if not posting 'upnext' embed with the 'Preparing Raid' title and if the raid isn't starting or disbanding
-            if (!disband && !upnext && !raidstart && Settings.EmbedToggles.IncludeTypeAdvantage)
+            if (!disband && names is null && !upnext)
             {
-                embed.AddField(" **__Type Advantage__**", typeAdvantage, true);
+                embed.AddField(Settings.EmbedToggles.IncludeCountdown ? $"**__Raid Starting__**:\n**<t:{DateTimeOffset.Now.ToUnixTimeSeconds() + Settings.RaidSettings.TimeToWait}:R>**" : $"**Waiting in lobby!**", $"Raid Code: **{code}**", true);
             }
             if (!disband && names is not null && !upnext)
             {
