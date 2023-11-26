@@ -89,7 +89,7 @@ namespace SysBot.Pokemon
         [Description("1500 milliseconds")]
         _1500 = 1500, // Team SS
         [Description("3000 milliseconds")]
-        _3000 = 3000 // Everything SS
+        _5000 = 5000 // Everything SS
     }
 
     public enum GenderDependent : ushort
