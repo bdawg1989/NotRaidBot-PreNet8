@@ -450,7 +450,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                             // Only get and send the raid code if it's not a "Free For All"
                             var code = await GetRaidCode(token).ConfigureAwait(false);
                             await user.SendMessageAsync($"Your Raid Code is **{code}**").ConfigureAwait(false);
-                            await EnqueueEmbed(null, "", false, false, false, false, token).ConfigureAwait(false);
                         }
                         catch (Discord.Net.HttpException ex)
                         {
@@ -524,7 +523,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             if (Settings.ActiveRaids[RotationCount].CrystalType == TeraCrystalType.Might ||
                 Settings.ActiveRaids[RotationCount].CrystalType == TeraCrystalType.Distribution)
             {
-                Log("Skipping SeedIndexToReplace update for Might or Distribution Raid.");
+                // Skipping SeedIndexToReplace update for Might or Distribution Raid
                 return;
             }
 
