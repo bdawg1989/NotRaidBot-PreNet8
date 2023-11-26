@@ -513,11 +513,11 @@ namespace SysBot.Pokemon.SV.BotRaid
 
         }
 
-        private async Task LocateSeedIndex(int index, CancellationToken token)
+        private async Task LocateSeedIndex(CancellationToken token)
         {
             // Skip updating SeedIndexToReplace for Might or Distribution Raids
-            if (Settings.ActiveRaids[index].CrystalType == TeraCrystalType.Might ||
-                Settings.ActiveRaids[index].CrystalType == TeraCrystalType.Distribution)
+            if (Settings.ActiveRaids[RotationCount].CrystalType == TeraCrystalType.Might ||
+                Settings.ActiveRaids[RotationCount].CrystalType == TeraCrystalType.Distribution)
             {
                 Log("Skipping SeedIndexToReplace update for Might or Distribution Raid.");
                 return;
@@ -549,7 +549,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
             Log($"Index not located.");
         }
-
         private async Task CompleteRaid(CancellationToken token)
         {
             var trainers = new List<(ulong, RaidMyStatus)>();
@@ -839,13 +838,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             await Click(B, 0_500, token).ConfigureAwait(false);
             await Click(DDOWN, 0_500, token).ConfigureAwait(false);
             await Click(A, 0_500, token).ConfigureAwait(false);
-
-            if (Settings.ActiveRaids.Count > 1)
-            {
-                await SanitizeRotationCount(token).ConfigureAwait(false);
-            }
-
-            await EnqueueEmbed(null, "", false, false, true, false, token).ConfigureAwait(false);
             bool ready = true;
 
             if (Settings.LobbyOptions.LobbyMethod == LobbyMethodOptions.SkipRaid)
@@ -872,11 +864,14 @@ namespace SysBot.Pokemon.SV.BotRaid
                 await Click(A, 1_000, token).ConfigureAwait(false);
 
             await CountRaids(trainers, token).ConfigureAwait(false);
+            await LocateSeedIndex(token).ConfigureAwait(false);
 
-            // Store the current raid index
-            int currentRaidIndex = RotationCount;
-
-            await LocateSeedIndex(currentRaidIndex, token).ConfigureAwait(false);
+            // Update RotationCount after locating seed index
+            if (Settings.ActiveRaids.Count > 1)
+            {
+                await SanitizeRotationCount(token).ConfigureAwait(false);
+            }
+            await EnqueueEmbed(null, "", false, false, true, false, token).ConfigureAwait(false);
             await Task.Delay(0_500, token).ConfigureAwait(false);
             await CloseGame(Hub.Config, token).ConfigureAwait(false);
 
