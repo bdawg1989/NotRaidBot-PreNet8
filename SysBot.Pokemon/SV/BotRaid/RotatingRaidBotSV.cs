@@ -515,14 +515,29 @@ namespace SysBot.Pokemon.SV.BotRaid
 
         private async Task LocateSeedIndex(CancellationToken token)
         {
-            // Skip updating SeedIndexToReplace for Might or Distribution Raids
-            if (Settings.ActiveRaids[RotationCount].CrystalType == TeraCrystalType.Might ||
-                Settings.ActiveRaids[RotationCount].CrystalType == TeraCrystalType.Distribution)
+            // If it's the first run, always update SeedIndexToReplace
+            if (firstRun)
             {
-                Log("Skipping SeedIndexToReplace update for Might or Distribution Raid.");
+                await UpdateSeedIndex(token);
                 return;
             }
 
+            // Get the current crystal type
+            TeraCrystalType currentCrystalType = await GetCurrentCrystalType(token);
+
+            // Skip updating SeedIndexToReplace for Might or Distribution Raids (not the first run)
+            if (currentCrystalType == TeraCrystalType.Might || currentCrystalType == TeraCrystalType.Distribution)
+            {
+                Log("Skipping SeedIndexToReplace update for Might or Distribution Raid (not the first run).");
+                return;
+            }
+
+            // Update SeedIndexToReplace if it's not a Might or Distribution Raid
+            await UpdateSeedIndex(token);
+        }
+
+        private async Task UpdateSeedIndex(CancellationToken token)
+        {
             var data = await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP, 2304, token).ConfigureAwait(false);
             for (int i = 0; i < 69; i++)
             {
@@ -1393,6 +1408,21 @@ namespace SysBot.Pokemon.SV.BotRaid
                 };
             }
         }
+        private async Task<TeraCrystalType> GetCurrentCrystalType(CancellationToken token)
+        {
+            // Use the pointer for the current raid index
+            List<long> ptr = DeterminePointer(SeedIndexToReplace);
+
+            // Offset for the crystal type in the data structure
+            ptr[3] += 0x08; // This is assuming the crystal type is 8 bytes offset from the seed
+
+            // Read the crystal type from the memory
+            var crystalBytes = await SwitchConnection.PointerPeek(1, ptr, token).ConfigureAwait(false);
+            var crystalType = (TeraCrystalType)crystalBytes[0];
+
+            return crystalType;
+        }
+
         private async Task SanitizeRotationCount(CancellationToken token)
         {
             await Task.Delay(0_050, token).ConfigureAwait(false);
