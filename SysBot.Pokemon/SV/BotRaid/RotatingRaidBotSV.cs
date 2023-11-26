@@ -2753,6 +2753,15 @@ namespace SysBot.Pokemon.SV.BotRaid
                     {
                         if (container.Raids[i].Seed == targetSeed)
                         {
+                            // Check if it's not the first run and if the raid is either Might or Distribution
+                            if (!firstRun && (Settings.ActiveRaids[rc].CrystalType == TeraCrystalType.Might || Settings.ActiveRaids[rc].CrystalType == TeraCrystalType.Distribution))
+                            {
+                                // Skip updating SeedIndexToReplace and RotationCount for these cases
+                                Log("Skipping seed index update for Might or Distribution raid.");
+                                continue; // Move to the next iteration of the loop
+                            }
+
+                            // Update SeedIndexToReplace and RotationCount for other cases
                             SeedIndexToReplace = i;
                             RotationCount = rc;
                             Log($"Raid Den Located at {i + 1:00}");
