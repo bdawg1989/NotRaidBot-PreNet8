@@ -326,13 +326,8 @@ namespace SysBot.Pokemon.SV.BotRaid
                     await ReadRaids(true, token).ConfigureAwait(false);
                 }
 
-                if (!Settings.ActiveRaids[RotationCount].IsSet)
-                {
-                    Log($"Preparing parameter for {Settings.ActiveRaids[RotationCount].Species}");
-                    await ReadRaids(false, token).ConfigureAwait(false);
-                }
-                else
-                    Log($"Parameter for {Settings.ActiveRaids[RotationCount].Species} has been set previously, skipping raid reads.");
+                Log($"Preparing parameter for {Settings.ActiveRaids[RotationCount].Species}");
+                await ReadRaids(false, token).ConfigureAwait(false);
 
                 var currentSeed = BitConverter.ToUInt64(await SwitchConnection.ReadBytesAbsoluteAsync(RaidBlockPointerP, 8, token).ConfigureAwait(false), 0);
                 if (TodaySeed != currentSeed || LobbyError >= 2)
@@ -2852,7 +2847,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                         var areaText = $"{Areas.GetArea((int)(allRaids[i].Area - 1), allRaids[i].MapParent)} - Den {allRaids[i].Den}";
                         Log($"Seed {seed:X8} found for {(Species)allEncounters[i].Species} in {areaText}");
                         Settings.ActiveRaids[a].Seed = $"{seed:X8}";
-
+                        firstRun = false;
                         var stars = allRaids[i].IsEvent ? allEncounters[i].Stars : allRaids[i].GetStarCount(allRaids[i].Difficulty, StoryProgress, allRaids[i].IsBlack);
                         var encounter = allRaids[i].GetTeraEncounter(container, allRaids[i].IsEvent ? 3 : StoryProgress, raid_delivery_group_id);
                         var pkinfo = RaidExtensions<PK9>.GetRaidPrintName(pk);
@@ -2879,7 +2874,9 @@ namespace SysBot.Pokemon.SV.BotRaid
                         RaidEmbedInfo.Moves = string.Concat(moves.Where(z => z != 0).Select(z => $"{strings.Move[z]}\n")).TrimEnd(Environment.NewLine.ToCharArray());
                         RaidEmbedInfo.ScaleText = $"{PokeSizeDetailedUtil.GetSizeRating(pk.Scale)}";
                         RaidEmbedInfo.ScaleNumber = pk.Scale;
-                        Settings.ActiveRaids[a].IsSet = false;
+                        // Update Species and SpeciesForm in ActiveRaids
+                        Settings.ActiveRaids[a].Species = (Species)allEncounters[i].Species;
+                        Settings.ActiveRaids[a].SpeciesForm = allEncounters[i].Form;
                         done = true;
                     }
                 }
