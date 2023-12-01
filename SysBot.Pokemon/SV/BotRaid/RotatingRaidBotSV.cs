@@ -765,65 +765,76 @@ namespace SysBot.Pokemon.SV.BotRaid
             bool timedOut = false;
             bool hasPressedHome = false;
 
-            while (await IsConnectedToLobby(token).ConfigureAwait(false))
+            try
             {
-                TimeSpan timeInBattle = DateTime.Now - battleStartTime;
+                while (await IsConnectedToLobby(token).ConfigureAwait(false))
+                {
+                    TimeSpan timeInBattle = DateTime.Now - battleStartTime;
 
-                // Check for battle timeout
-                if (timeInBattle.TotalMinutes >= 15)
-                {
-                    Log("Battle timed out after 15 minutes. Even Netflix asked if I was still watching...");
-                    timedOut = true;
-                    break;
-                }
-
-                // Handle the first action with a delay
-                if (!hasPerformedAction1)
-                {
-                    int action1DelayInSeconds = Settings.ActiveRaids[RotationCount].Action1Delay;
-                    var action1Name = Settings.ActiveRaids[RotationCount].Action1;
-                    int action1DelayInMilliseconds = action1DelayInSeconds * 1000;
-                    Log($"Waiting {action1DelayInSeconds} seconds. No rush, we're chilling.");
-                    await Task.Delay(action1DelayInMilliseconds, token).ConfigureAwait(false);
-                    await MyActionMethod(token).ConfigureAwait(false);
-                    Log($"{action1Name} done. Wasn't that fun?");
-                    hasPerformedAction1 = true;
-                }
-                else
-                {
-                    // Execute raid actions based on configuration
-                    switch (Settings.LobbyOptions.Action)
+                    // Check for battle timeout
+                    if (timeInBattle.TotalMinutes >= 15)
                     {
-                        case RaidAction.AFK:
-                            await Task.Delay(3_000, token).ConfigureAwait(false);
-                            break;
-
-                        case RaidAction.MashA:
-                            if (await IsConnectedToLobby(token).ConfigureAwait(false))
-                            {
-                                int mashADelayInMilliseconds = (int)(Settings.LobbyOptions.MashADelay * 1000);
-                                await Click(A, mashADelayInMilliseconds, token).ConfigureAwait(false);
-                            }
-                            break;
+                        Log("Battle timed out after 15 minutes. Even Netflix asked if I was still watching...");
+                        timedOut = true;
+                        break;
                     }
-                }
 
-                // Periodic battle status log at 2-minute intervals
-                if (timeInBattle.TotalMinutes >= nextUpdateMinute)
-                {
-                    Log($"{nextUpdateMinute} minutes have passed. We are still in battle...");
-                    nextUpdateMinute += 2; // Update the time for the next status update.
+                    // Handle the first action with a delay
+                    if (!hasPerformedAction1)
+                    {
+                        int action1DelayInSeconds = Settings.ActiveRaids[RotationCount].Action1Delay;
+                        var action1Name = Settings.ActiveRaids[RotationCount].Action1;
+                        int action1DelayInMilliseconds = action1DelayInSeconds * 1000;
+                        Log($"Waiting {action1DelayInSeconds} seconds. No rush, we're chilling.");
+                        await Task.Delay(action1DelayInMilliseconds, token).ConfigureAwait(false);
+                        await MyActionMethod(token).ConfigureAwait(false);
+                        Log($"{action1Name} done. Wasn't that fun?");
+                        hasPerformedAction1 = true;
+                    }
+                    else
+                    {
+                        // Execute raid actions based on configuration
+                        switch (Settings.LobbyOptions.Action)
+                        {
+                            case RaidAction.AFK:
+                                await Task.Delay(3_000, token).ConfigureAwait(false);
+                                break;
+
+                            case RaidAction.MashA:
+                                if (await IsConnectedToLobby(token).ConfigureAwait(false))
+                                {
+                                    int mashADelayInMilliseconds = (int)(Settings.LobbyOptions.MashADelay * 1000);
+                                    await Click(A, mashADelayInMilliseconds, token).ConfigureAwait(false);
+                                }
+                                break;
+                        }
+                    }
+
+                    // Periodic battle status log at 2-minute intervals
+                    if (timeInBattle.TotalMinutes >= nextUpdateMinute)
+                    {
+                        Log($"{nextUpdateMinute} minutes have passed. We are still in battle...");
+                        nextUpdateMinute += 2; // Update the time for the next status update.
+                    }
+
+                    // Check if the battle has been ongoing for 6 minutes
+                    if (timeInBattle.TotalMinutes >= 6 && !hasPressedHome)
+                    {
+                        // Hit Home button twice in case we are stuck
+                        await Click(HOME, 0_500, token).ConfigureAwait(false);
+                        await Click(HOME, 0_500, token).ConfigureAwait(false);
+                        hasPressedHome = true;
+                    }
+
+                    // Make sure to wait some time before the next iteration to prevent a tight loop
+                    await Task.Delay(1000, token); // Wait for a second before checking again
                 }
-                // Check if the battle has been ongoing for 6 minutes
-                if (timeInBattle.TotalMinutes >= 6 && !hasPressedHome)
-                {
-                    // Hit Home button twice in case we are stuck
-                    await Click(HOME, 0_500, token).ConfigureAwait(false);
-                    await Click(HOME, 0_500, token).ConfigureAwait(false);
-                    hasPressedHome = true;
-                }
-                // Make sure to wait some time before the next iteration to prevent a tight loop
-                await Task.Delay(1000, token); // Wait for a second before checking again
+            }
+            catch (Exception ex)
+            {
+                Log($"Exception occurred: {ex.Message}");
+                await ReOpenGame(Hub.Config, token);
+                return false;
             }
 
             return !timedOut;
