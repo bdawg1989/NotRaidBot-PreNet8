@@ -767,6 +767,11 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             while (await IsConnectedToLobby(token).ConfigureAwait(false))
             {
+                // Check if the lobby is still connected
+                if (!await IsConnectedToLobby(token).ConfigureAwait(false))
+                {
+                    return false;
+                }
                 TimeSpan timeInBattle = DateTime.Now - battleStartTime;
 
                 // Check for battle timeout
