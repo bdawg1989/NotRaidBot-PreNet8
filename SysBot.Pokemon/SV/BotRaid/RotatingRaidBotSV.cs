@@ -1028,15 +1028,15 @@ namespace SysBot.Pokemon.SV.BotRaid
                 byte[] seedBytes = BitConverter.GetBytes(seed);
                 await SwitchConnection.PointerPoke(seedBytes, ptr, token).ConfigureAwait(false);
 
-                // Overriding the crystal type
+                // Adjust the pointer for the crystal type depending on the raid type
                 var crystalPtr = new List<long>(ptr);
-                crystalPtr[3] += 0x08; // Adjusting the pointer for the crystal type
+                crystalPtr[3] += 0x08;
+
                 byte[] crystalBytes = BitConverter.GetBytes((int)crystalType);
                 await SwitchConnection.PointerPoke(crystalBytes, crystalPtr, token).ConfigureAwait(false);
                 await Task.Delay(1_500, token).ConfigureAwait(false);
-                // Determine raid type as a string
+
                 string raidType = crystalType == TeraCrystalType.Might ? "Might" : "Distribution";
-                // Call SwapRaidLocationsAsync with the raid type
                 await SwapRaidLocationsAsync(index, raidType, token).ConfigureAwait(false);
                 await Task.Delay(1_500, token).ConfigureAwait(false);
                 await SyncSeedToIndexZero(index, raidType, token).ConfigureAwait(false);
@@ -1219,10 +1219,12 @@ namespace SysBot.Pokemon.SV.BotRaid
             if (index == -1)
                 return;
 
+            // The target index is always 0 as per the new requirement
+            const int targetIndex = 0;
+
             // Determine pointers for the specified index and the target index
             List<long> ptrAtIndex = DeterminePointer(index); // Pointer for the current index
-            int targetIndex = raidType == "Might" ? 0 : 1; // Sync to index 0 for Might and index 1 for Distribution
-            List<long> ptrAtTarget = DeterminePointer(targetIndex); // Pointer for the target index
+            List<long> ptrAtTarget = DeterminePointer(targetIndex); // Pointer for the target index (always 0)
 
             // Read the seed from the specified index
             var seedBytesAtIndex = await SwitchConnection.PointerPeek(4, ptrAtIndex, token).ConfigureAwait(false);
@@ -1231,40 +1233,29 @@ namespace SysBot.Pokemon.SV.BotRaid
             // Write the seed to the target index
             byte[] seedBytesToWrite = BitConverter.GetBytes(seedAtIndex);
             await SwitchConnection.PointerPoke(seedBytesToWrite, ptrAtTarget, token).ConfigureAwait(false);
-            // Log($"Synced seed from index {index} to index {targetIndex}");
+
+            Log($"Synced seed from index {index} to index {targetIndex}");
         }
+
 
         private async Task SwapRaidLocationsAsync(int currentRaidIndex, string raidType, CancellationToken token)
         {
-            int swapWithIndex;
-            if (raidType == "Might")
-            {
-                swapWithIndex = 0; // Swap with index 0 for Might raids
-            }
-            else if (raidType == "Distribution")
-            {
-                swapWithIndex = 1; // Swap with index 1 for Distribution raids
-            }
-            else
-            {
-                swapWithIndex = originalIdsSet ? (raidType == "Base" ? 0 : 1) : currentRaidIndex;
-            }
-            // Log($"Current Index: {currentRaidIndex}, Swap With Index: {swapWithIndex} (RaidType: {raidType})");
+            // We always swap with index 0
+            const int swapWithIndex = 0;
 
-            // Get the pointers for the current raid index and the determined index
+            // Get the pointers for the current raid index and index 0
             List<long> currentPointer = CalculateDirectPointer(currentRaidIndex);
             List<long> swapPointer = CalculateDirectPointer(swapWithIndex);
 
             int areaIdOffset = 20; // Corrected Area ID offset
             int denIdOffset = 25; // Corrected Den ID offset
 
-            // Read and store area and den ID values for indices 0 and 1
+            // Read and store area and den ID values for index 0
             if (!originalIdsSet)
             {
-                areaIdIndex0 = await ReadValue("Area ID", 4, AdjustPointer(CalculateDirectPointer(0), areaIdOffset), token);
-                denIdIndex0 = await ReadValue("Den ID", 4, AdjustPointer(CalculateDirectPointer(0), denIdOffset), token);
-                areaIdIndex1 = await ReadValue("Area ID", 4, AdjustPointer(CalculateDirectPointer(1), areaIdOffset), token);
-                denIdIndex1 = await ReadValue("Den ID", 4, AdjustPointer(CalculateDirectPointer(1), denIdOffset), token);
+                areaIdIndex0 = await ReadValue("Area ID", 4, AdjustPointer(swapPointer, areaIdOffset), token);
+                denIdIndex0 = await ReadValue("Den ID", 4, AdjustPointer(swapPointer, denIdOffset), token);
+                originalIdsSet = true;
             }
 
             // Read values from current index
@@ -1273,20 +1264,11 @@ namespace SysBot.Pokemon.SV.BotRaid
 
             if (!hasSwapped && (raidType == "Might" || raidType == "Distribution"))
             {
-                // Log("Performing initial swap for Might or Distribution raid.");
-
-                // Get the IDs to swap with
-                uint swapAreaId = swapWithIndex == 0 ? areaIdIndex0 : areaIdIndex1;
-                uint swapDenId = swapWithIndex == 0 ? denIdIndex0 : denIdIndex1;
-
-                // Swap IDs between the current index and index 0/1
-                await LogAndUpdateValue("Area ID", swapAreaId, 4, AdjustPointer(currentPointer, areaIdOffset), token);
-                await LogAndUpdateValue("Den ID", swapDenId, 4, AdjustPointer(currentPointer, denIdOffset), token);
-
-                // Update index 0 or 1 with the original IDs
-                List<long> originalPointer = CalculateDirectPointer(swapWithIndex);
-                await LogAndUpdateValue("Area ID", currentAreaId, 4, AdjustPointer(originalPointer, areaIdOffset), token);
-                await LogAndUpdateValue("Den ID", currentDenId, 4, AdjustPointer(originalPointer, denIdOffset), token);
+                // Perform swap
+                await LogAndUpdateValue("Area ID", areaIdIndex0, 4, AdjustPointer(currentPointer, areaIdOffset), token);
+                await LogAndUpdateValue("Den ID", denIdIndex0, 4, AdjustPointer(currentPointer, denIdOffset), token);
+                await LogAndUpdateValue("Area ID", currentAreaId, 4, AdjustPointer(swapPointer, areaIdOffset), token);
+                await LogAndUpdateValue("Den ID", currentDenId, 4, AdjustPointer(swapPointer, denIdOffset), token);
 
                 originalAreaId = currentAreaId;
                 originalDenId = currentDenId;
@@ -1295,22 +1277,21 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
             else if (hasSwapped && (raidType != "Might" && raidType != "Distribution"))
             {
-                Log("Reversing swap for Black or Base raid.");
-
-                // Determine the correct index that was originally swapped with
-                int reverseSwapIndex = originalIdsSet && raidType == "Base" ? 0 : 1;
+                // Reversing swap for other raid types
+                Log("Reversing swap for non-Might/Distribution raid.");
 
                 // Swap current index back with original IDs
                 await LogAndUpdateValue("Area ID", originalAreaId, 4, AdjustPointer(currentPointer, areaIdOffset), token);
                 await LogAndUpdateValue("Den ID", originalDenId, 4, AdjustPointer(currentPointer, denIdOffset), token);
 
-                // Swap index 0 or 1 back to its original state
-                await LogAndUpdateValue("Area ID", reverseSwapIndex == 0 ? areaIdIndex0 : areaIdIndex1, 4, AdjustPointer(CalculateDirectPointer(reverseSwapIndex), areaIdOffset), token);
-                await LogAndUpdateValue("Den ID", reverseSwapIndex == 0 ? denIdIndex0 : denIdIndex1, 4, AdjustPointer(CalculateDirectPointer(reverseSwapIndex), denIdOffset), token);
+                // Restore index 0 to its original state
+                await LogAndUpdateValue("Area ID", areaIdIndex0, 4, AdjustPointer(swapPointer, areaIdOffset), token);
+                await LogAndUpdateValue("Den ID", denIdIndex0, 4, AdjustPointer(swapPointer, denIdOffset), token);
 
                 hasSwapped = false;
             }
         }
+
 
         private async Task<uint> ReadValue(string fieldName, int size, List<long> pointer, CancellationToken token)
         {

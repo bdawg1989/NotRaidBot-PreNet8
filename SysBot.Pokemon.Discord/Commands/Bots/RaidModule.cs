@@ -29,7 +29,6 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
             string seedValue,
             int level,
             int storyProgressLevel = 6,
-            string dlc = "p",
             string? eventType = null)  // New optional parameter for specifying event type
 
         {
@@ -63,10 +62,11 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
 
             try
             {
+                var selectedMap = IsKitakami ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea;
                 var rewardsToShow = settings.EmbedToggles.RewardsToShow;
                 var raidDeliveryGroupID = settings.EventSettings.RaidDeliveryGroupID;
                 var isEvent = eventType == "Event";
-                var (_, embed) = RaidInfoCommand(seedValue, (int)crystalType, dlc != "p" ? TeraRaidMapParent.Kitakami : TeraRaidMapParent.Paldea, storyProgressLevel, raidDeliveryGroupID, rewardsToShow, isEvent);
+                var (_, embed) = RaidInfoCommand(seedValue, (int)crystalType, selectedMap, storyProgressLevel, raidDeliveryGroupID, rewardsToShow, isEvent);
                 await ReplyAsync(embed: embed);
             }
             catch (Exception ex)
